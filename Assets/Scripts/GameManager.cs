@@ -22,7 +22,5 @@ public class GameManager : MonoBehaviour
     public void StartGame()
     {
         SceneManager.LoadScene("MainScene");
-        startButton.gameObject.SetActive(false);
-        titleText.gameObject.SetActive(false);
     }
 }
