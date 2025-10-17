@@ -36,6 +36,7 @@ public class PickUpScript : MonoBehaviour
                 {
                     //make sure pickup tag is attached
                     if (hit.transform.gameObject.tag == "canPickUp")
+
                     {
                         //pass in object hit into the PickUpObject function
                         PickUpObject(hit.transform.gameObject);
