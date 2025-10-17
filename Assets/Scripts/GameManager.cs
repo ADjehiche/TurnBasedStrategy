@@ -23,4 +23,9 @@ public class GameManager : MonoBehaviour
     {
         SceneManager.LoadScene("LevelOne");
     }
+
+    public void OpenControls()
+    {
+        SceneManager.LoadScene("ControlsPage");
+    }
 }
