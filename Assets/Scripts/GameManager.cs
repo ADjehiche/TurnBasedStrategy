@@ -28,4 +28,8 @@ public class GameManager : MonoBehaviour
     {
         SceneManager.LoadScene("ControlsPage");
     }
+
+    public void OpenMenu(){
+        SceneManager.LoadScene("TitleScene");
+    }
 }
