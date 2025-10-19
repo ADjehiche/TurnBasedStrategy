@@ -8,13 +8,16 @@ namespace CardGame
     public class CardSystem : ScriptableObject
     {
         public string cardName;
+
+        public string cardTypeText;
         public CardType cardType;
         public int health;
 
         public int damageMin;
         public int damageMax;
         public DamageType damageType;
-
+        
+        public Sprite cardSprite;
         public enum CardType
         {
             melee,
