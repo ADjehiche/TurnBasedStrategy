@@ -85,3 +85,18 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
+# --- Custom fixes for nested Unity sub-projects ---
+# Ignore all nested Library, PackageCache, and ScriptAssemblies folders anywhere in Assets
+**/Library/
+**/PackageCache/
+**/ScriptAssemblies/
+**/Library_DISABLED/
+**/PackageCache_DISABLED/
+
+# Specifically ignore the RPGHero asset's embedded sub-projects
+Assets/External Assets/RPGHero/**/Library*
+Assets/External Assets/RPGHero/**/PackageCache*
+Assets/External Assets/RPGHero/**/ScriptAssemblies*
+
+# Ignore Mac system junk
+.DS_Store
