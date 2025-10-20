@@ -9,7 +9,7 @@
 
 This is a prototype for a 3D single-player game that blends third-person exploration with turn-based, card-driven combat.
 
-The core concept is that the player explores a dungeon to find clues. When a clue is found, they are pulled into a battle where they must use a set of card-actions to defeat an enemy NPC.
+The core concept is that the player explores a dungeon to find clues. The objective is to escape the dungeon by finding clues through exploration, the player may encounter an NPC and engage in a turn based card combat.
 
 ## Core Prototype Features
 
