@@ -8,6 +8,9 @@ public class GameManager : MonoBehaviour
 {
     public TextMeshProUGUI titleText;
     public Button startButton;
+    private const string LevelOne = "LevelOne";
+    private const string ControlsPage = "ControlsPage";
+    private const string BattleScene = "BattleScene";
     // Start is called before the first frame update
     void Start()
     {
@@ -21,17 +24,17 @@ public class GameManager : MonoBehaviour
     }
     public void StartGame()
     {
-        SceneManager.LoadScene("LevelOne");
+        SceneManager.LoadScene(LevelOne);
     }
 
     public void OpenControls()
     {
-        SceneManager.LoadScene("ControlsPage");
+        SceneManager.LoadScene(ControlsPage);
     }
 
     public void StartBattle()
     {
-        SceneManager.LoadScene("BattleScene");
+        SceneManager.LoadScene(BattleScene);
         Cursor.lockState = CursorLockMode.None;
     } 
 }
