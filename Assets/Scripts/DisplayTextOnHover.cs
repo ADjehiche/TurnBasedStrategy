@@ -10,11 +10,25 @@ public class DisplayTextOnHover : MonoBehaviour
 
     void OnMouseOver()
     {
-        textBox.text = displayText;
+        if (textBox != null)
+        {
+            textBox.text = displayText;
+        }
     }
 
     void OnMouseExit()
     {
-        textBox.text = "";
+        if (textBox != null)
+        {
+            textBox.text = "";
+        }
+    }
+    
+    void OnDestroy()
+    {
+        if (textBox != null)
+        {
+            textBox.text = "";
+        }
     }
 }

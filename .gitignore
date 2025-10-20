@@ -56,6 +56,19 @@ ExportedObj/
 # Unity3D generated file on crash reports
 sysinfo.txt
 
+# Mono / Unity crash reports and related crash artifacts
+# Ignore mono_crash JSON files created by Unity/Mono (e.g. mono_crash.0.0.json)
+mono_crash*.json
+mono_crash.*.json
+# Common native crash and stacktrace files
+*.stacktrace
+*.dmp
+*.crash
+# macOS / Unity Crash Reports folder
+CrashReports/
+# Generic crash logs
+crash-*.log
+
 # Builds
 # *.apk
 # *.aab
@@ -71,3 +84,4 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
