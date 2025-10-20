@@ -28,4 +28,9 @@ public class GameManager : MonoBehaviour
     {
         SceneManager.LoadScene("ControlsPage");
     }
+
+    public void StartBattle()
+    {
+        SceneManager.LoadScene("BattleScene");
+    } 
 }
