@@ -3,14 +3,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 public class PlayerController : MonoBehaviour
 {
     public Rigidbody rb;
     public GameObject camHolder;
     public float speed, sensitivity, maxForce, jumpForce;
-    private Vector2 move, look, jump;
+    private Vector2 move, look;
     private float lookRotation;
     public bool grounded;
+    private GameManager gameManager;
 
     public void OnMove(InputAction.CallbackContext context)
     {
@@ -28,6 +30,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
     }
 
     // Update is called once per frame
@@ -84,6 +87,13 @@ public class PlayerController : MonoBehaviour
     public void SetGrounded(bool state)
     {
         grounded = state;
+    }
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("battleTrigger"))
+        {
+            gameManager.StartBattle();
+        }
     }
     
 }
