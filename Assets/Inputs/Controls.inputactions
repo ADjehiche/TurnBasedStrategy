@@ -40,7 +40,16 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
-                }
+                },
+                {
+                    "name": "PickUp",
+                    "type": "Button",
+                    "id": "a3ab45de-bc65-4d9b-9a5d-41aeb1b3f5ac",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
             ],
             "bindings": [
                 {
@@ -271,6 +280,28 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "92345678-1234-5678-abcd-ef1234567890",
+                    "path": "<Keyboard>/e",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "PickUp",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "abcd1234-5678-90ef-abcd-ef1234567890",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Rotate",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
