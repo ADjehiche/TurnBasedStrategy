@@ -50,15 +50,6 @@
                     "interactions": "",
                     "initialStateCheck": false
                 },
-                {
-                    "name": "Rotate",
-                    "type": "Button",
-                    "id": "c63a0302-5589-4a6a-a8f6-2a6cd4a69ed4",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                }
             ],
             "bindings": [
                 {
