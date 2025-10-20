@@ -13,12 +13,9 @@ public class CardDisplay : MonoBehaviour
     public TMP_Text nameText;
     public TMP_Text healthText;
     public TMP_Text damageText;
+
+    public TMP_Text typeText;
   
-
-
-
-
-
     void Start()
     {
         UpdateCardDisplay();
@@ -29,6 +26,7 @@ public class CardDisplay : MonoBehaviour
     public void UpdateCardDisplay()
     {
         nameText.text = cardData.cardName;
+        typeText.text = cardData.cardType.ToString(); 
         healthText.text = cardData.health.ToString();
         damageText.text = $"{cardData.damageMin} - {cardData.damageMax}";
         

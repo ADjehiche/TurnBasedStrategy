@@ -9,7 +9,6 @@ namespace CardGame
     {
         public string cardName;
 
-        public string cardTypeText;
         public CardType cardType;
         public int health;
 
