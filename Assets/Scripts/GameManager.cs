@@ -32,5 +32,6 @@ public class GameManager : MonoBehaviour
     public void StartBattle()
     {
         SceneManager.LoadScene("BattleScene");
+        Cursor.lockState = CursorLockMode.None;
     } 
 }
