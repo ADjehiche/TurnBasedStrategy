@@ -18,8 +18,6 @@ public class DoorTrigger : MonoBehaviour
         {
             Destroy(door);
             Destroy(other.gameObject);
-            Destroy(key.GetComponent<DisplayTextOnHover>());
-            Destroy(key);
         }
     }
 }
