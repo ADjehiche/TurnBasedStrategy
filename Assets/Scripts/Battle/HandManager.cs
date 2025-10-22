@@ -58,10 +58,28 @@ public class HandManager : MonoBehaviour
 
     private void HandleCardResolved(GameObject cardGO)
     {
+        // 1) extract the Card data BEFORE destroying
+        CardGame.Card cardData = null;
+
+        var instance = cardGO.GetComponent<CardInstance>();
+        if (instance != null) cardData = instance.Data;
+        else
+        {
+            var display = cardGO.GetComponent<CardDisplay>();
+            if (display != null) cardData = display.cardData;
+        }
+
+        // 2) remove from hand + destroy the UI
         if (cardsInHand.Remove(cardGO))
         {
             Destroy(cardGO);
             UpdateHandVisuals();
+        }
+
+        // 3) send to discard pile
+        if (deckManager != null && cardData != null)
+        {
+            deckManager.Discard(cardData);
         }
     }
 
