@@ -1,7 +1,7 @@
 # Dungeon Decks (Working Title)
 
 **Course:** ECS657U / ECS7003P - Prototype Submission
-**Group Members:** Acil, Yasir, Khaled, Alzain
+**Group Members:** Acil, Yasir, Khaled, Alzain,
 
 ---
 
@@ -13,9 +13,9 @@ The core concept is that the player explores a dungeon to find clues. The object
 
 ## Core Prototype Features
 
-[cite_start]This prototype is a **"minimum viable product"** [cite: 79] designed to test the core gameplay loop: the transition from exploration to combat.
+This prototype is a **"minimum viable product"** designed to test the core gameplay loop: the transition from exploration to combat.
 
-[cite_start]In line with the module's marking criteria for "Focus"[cite: 92], this prototype implements *only* core features. All non-core elements (like deckbuilding, card rewards, and checkpoints) have been cut to be developed for the final game.
+In line with the module's marking criteria for "Focus", this prototype implements *only* core features. All non-core elements (like deckbuilding, card rewards, and checkpoints) have been cut to be developed for the final game.
 
 * **Two Game Modes:** A core `GameManager` script that switches the player between "Out-of-Battle" exploration and "In-Battle" combat.
 * **3D Exploration:** The player can navigate a small dungeon environment using keyboard and mouse controls.
@@ -46,6 +46,8 @@ The core concept is that the player explores a dungeon to find clues. The object
     * **Throw item:**: `Left Mouse Click`
 
 * **In-Battle:**
+   * **Draw Card**: `Mouse`
+   * **Attack**: With Card Drawn: `Click on Enemy`
 
 ## Technical Note: Git LFS
 

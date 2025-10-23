@@ -20,10 +20,22 @@ public class TurnManager : MonoBehaviour
     
     [Header("UI References")]
     [SerializeField] private Button endTurnButton;
-    
+
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
-    
+
+
+    [Header("Turn Resources")]
+    [SerializeField] private DeckManager deckManager;
+    [SerializeField] private HandManager handManager;
+    [SerializeField] private PlayerStamina playerStamina;
+
+    [Header("Turn Rules")]
+    private int cardsPerTurn = 3;
+    private bool refillStaminaEachTurn = true;
+
+
+
     private void Awake()
     {
         // Singleton pattern implementation
@@ -67,6 +79,11 @@ public class TurnManager : MonoBehaviour
         {
             Debug.LogError("[TurnManager] EndTurnButton not found! Please assign it in the inspector or ensure it exists in the scene.");
         }
+
+        if (deckManager == null)   deckManager   = FindObjectOfType<DeckManager>();
+        if (handManager == null)   handManager   = FindObjectOfType<HandManager>();
+        if (playerStamina == null) playerStamina = FindObjectOfType<PlayerStamina>();
+
         StartPlayerTurn();
     }
     
@@ -82,23 +99,30 @@ public class TurnManager : MonoBehaviour
             Debug.Log($"[TurnManager] OnDestroy called on {gameObject.name}");
         }
     }
-    
+
     public void StartPlayerTurn()
     {
+      
         CurrentTurn = TurnState.PlayerTurn;
 
-        
-        
         if (enableDebugLogs)
-        {
-            Debug.Log($"[TurnManager] StartPlayerTurn - CurrentTurn set to {CurrentTurn} (Instance: {GetInstanceID()})");
-        }
-        
+            Debug.Log($"[TurnManager] StartPlayerTurn -> PlayerTurn");
+
+        // Refill stamina at the start of the turn
+        if (refillStaminaEachTurn && playerStamina != null)
+            playerStamina.Refill();
+
+        // Draw fresh hand for the new turn
+        DrawCardsForPlayerTurn();
+       
+
+        // Enable the End Turn button
         if (endTurnButton != null)
-        {
             endTurnButton.interactable = true;
-        }
+
+        OnTurnChanged?.Invoke(CurrentTurn);
     }
+    
     
     public void OnEndTurnButtonPressed()
     {
@@ -121,22 +145,41 @@ public class TurnManager : MonoBehaviour
         
         EndPlayerTurn();
     }
-    
+
     private void EndPlayerTurn()
     {
         if (enableDebugLogs)
         {
             Debug.Log($"[TurnManager] EndPlayerTurn called. Transitioning from {CurrentTurn}");
         }
-        
+
         CurrentTurn = TurnState.EnemyTurn;
-        
+
         if (endTurnButton != null)
         {
             endTurnButton.interactable = false;
         }
-        
+        // Discard all remaining (unplayed) cards at end of player turn
+        if (handManager != null)
+            handManager.DiscardAllInHand();
+
         StartCoroutine(ProcessEnemyTurn());
+    }
+    
+    private void DrawCardsForPlayerTurn()
+    {
+
+        // Debug.Log($"[TurnManager] DrawCardsForPlayerTurn called! Drawing {cardsPerTurn} cards. DrawPile has: {deckManager.drawPile.Count} cards");
+
+        if (deckManager == null || handManager == null) return;
+
+        var cards = deckManager.Draw(cardsPerTurn); // DeckManager.Draw() auto-reshuffles from discard when empty
+        if (cards == null || cards.Count == 0) return;
+
+        Debug.Log($"[TurnManager] Actually drew {cards.Count} cards");
+
+        foreach (var c in cards)
+            handManager.AddCardToHand(c);
     }
     
     private System.Collections.IEnumerator ProcessEnemyTurn()

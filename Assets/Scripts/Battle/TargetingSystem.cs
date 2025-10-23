@@ -182,25 +182,5 @@ public class TargetingSystem : MonoBehaviour
         {
             Debug.Log("Hit 2D collider, but no EnemyHealth on it.");
         }
-    }
-        // Old system - kept for reference
-    // void Update()
-    // {
-    //     if (!IsBusy) return;
-
-    //     // Left-click: confirm target under cursor
-    //     if (Input.GetMouseButtonDown(0))
-    //     {
-    //         TryTargetAtScreenPoint(Input.mousePosition, Camera.main);
-    //         // TryTargetAtScreenPoint will apply damage and call onComplete (which resets the card)
-    //     }
-
-    //     // Right-click or ESC: cancel targeting (resets the card)
-    //     if (Input.GetMouseButtonDown(1) || Input.GetKeyDown(KeyCode.Escape))
-    //     {
-    //         CancelTargeting();
-    //     }
-    // }
-
-    
+    }    
 }

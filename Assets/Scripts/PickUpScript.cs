@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -16,7 +17,10 @@ public class PickUpScript : MonoBehaviour
     private PlayerInput playerInput;
     private InputAction pickUpAction;
     private InputAction fireAction;
-
+    private const String PICKUP_ACTION_NAME = "PickUp";
+    private const String FIRE_ACTION_NAME = "Fire";
+    private const String CAN_PICKUP_TAG = "canPickUp";
+    private const String HOLD_LAYER_NAME = "holdLayer";
     void Awake()
     {
         playerInput = GetComponentInParent<PlayerInput>();
@@ -27,9 +31,9 @@ public class PickUpScript : MonoBehaviour
         }
 
         // Get references to the actions we need
-        pickUpAction = playerInput.actions["PickUp"];
-        fireAction = playerInput.actions["Fire"];
-        
+        pickUpAction = playerInput.actions[PICKUP_ACTION_NAME];
+        fireAction = playerInput.actions[FIRE_ACTION_NAME];
+
         // Setup callbacks for the actions
         pickUpAction.performed += ctx => OnPickUpPerformed();
         fireAction.performed += ctx => OnFirePerformed();
@@ -49,7 +53,7 @@ public class PickUpScript : MonoBehaviour
 
     void Start()
     {
-        LayerNumber = LayerMask.NameToLayer("holdLayer");
+        LayerNumber = LayerMask.NameToLayer(HOLD_LAYER_NAME);
     }
     void Update()
     {
@@ -66,7 +70,7 @@ public class PickUpScript : MonoBehaviour
             RaycastHit hit;
             if (Physics.Raycast(transform.position, transform.TransformDirection(Vector3.forward), out hit, pickUpRange))
             {
-                if (hit.transform.gameObject.CompareTag("canPickUp"))
+                if (hit.transform.gameObject.CompareTag(CAN_PICKUP_TAG))
                 {
                     PickUpObject(hit.transform.gameObject);
                 }
