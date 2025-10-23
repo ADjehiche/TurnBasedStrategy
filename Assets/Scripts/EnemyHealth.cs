@@ -24,6 +24,7 @@ public class EnemyHealth : MonoBehaviour
         if (currentHP <= 0)
         {
             Debug.Log("Enemy died");
+            BattleState.SetOver(true);
             Destroy(gameObject);
         }
     }

@@ -7,8 +7,8 @@ public class PlayerStamina : MonoBehaviour
 
 
     [Header("Stamina")]
-    public int maxStamina = 3;
-    public int currentStamina = 3;
+    public int maxStamina = 10;
+    public int currentStamina = 10;
 
     void Awake()
     {

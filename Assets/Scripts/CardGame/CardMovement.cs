@@ -171,6 +171,7 @@ public class CardMovement : MonoBehaviour, IDragHandler, IPointerDownHandler, IP
                         {
                             Debug.Log("Card played and resolved.");
                             TransistionToState0();
+                            
                         });
                     }
                     else

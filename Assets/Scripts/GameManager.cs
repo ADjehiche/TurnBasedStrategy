@@ -10,7 +10,8 @@ public class GameManager : MonoBehaviour
     public Button startButton;
     private const string LevelOne = "LevelOne";
     private const string ControlsPage = "ControlsPage";
-    private const string BattleScene = "BattleScene";
+    private const string BattleScene = "Battle_Template";
+    private const string TitleScene = "TitleScene";
     // Start is called before the first frame update
     void Start()
     {
@@ -24,17 +25,23 @@ public class GameManager : MonoBehaviour
     }
     public void StartGame()
     {
-        SceneManager.LoadScene(LevelOne);
+        // Use LoadSceneMode.Single to properly initialize lighting
+        SceneManager.LoadScene(LevelOne, LoadSceneMode.Single);
     }
 
     public void OpenControls()
     {
-        SceneManager.LoadScene(ControlsPage);
+        SceneManager.LoadScene(ControlsPage, LoadSceneMode.Single);
+    }
+
+    public void OpenMenu()
+    {
+        SceneManager.LoadScene(TitleScene, LoadSceneMode.Single);
     }
 
     public void StartBattle()
     {
-        SceneManager.LoadScene(BattleScene);
+        SceneManager.LoadScene(BattleScene, LoadSceneMode.Single);
         Cursor.lockState = CursorLockMode.None;
     } 
 }
