@@ -21,10 +21,12 @@ public class HandManager : MonoBehaviour
 
     void Start()
     {
-
+        Debug.Log($"[HandManager] Awake called on {gameObject.name}");       
     }
     public void AddCardToHand(Card cardData)
     {
+        Debug.Log($"[HandManager] AddCardToHand called for card: {cardData.name}. Current hand size: {cardsInHand.Count}");
+
         // 1) Instantiate under the hand transform
         GameObject newCard = Instantiate(cardPrefab, handTransform.position, Quaternion.identity, handTransform);
         cardsInHand.Add(newCard);
@@ -85,15 +87,39 @@ public class HandManager : MonoBehaviour
 
 
     
-    // for later use for the turns to remove cards from hand, its genric for now
-    //     public void RemoveCardFromHand(GameObject cardGO)
-    // {
-    //     if (cardsInHand.Remove(cardGO))
-    //     {
-    //         Destroy(cardGO);
-    //         UpdateHandVisuals();
-    //     }
-    // }
+    // Discard every remaining (unplayed) card from the hand and clear the UI.
+    public void DiscardAllInHand()
+    {
+        if (cardsInHand.Count == 0) return;
+
+        // Work on a copy so we can safely Destroy & clear the original list.
+        var snapshot = new List<GameObject>(cardsInHand);
+
+        foreach (var go in snapshot)
+        {
+            
+            CardGame.Card cardData = null;
+
+            var instance = go.GetComponent<CardInstance>();
+            if (instance != null) cardData = instance.Data;
+            else
+            {
+                var display = go.GetComponent<CardDisplay>();
+                if (display != null) cardData = display.cardData;
+            }
+
+            // Send to discard pile
+            if (deckManager != null && cardData != null)
+                deckManager.Discard(cardData);
+
+            // Kill the UI object
+            Destroy(go);
+        }
+
+        // Clear list and re-layout
+        cardsInHand.Clear();
+        UpdateHandVisuals();
+    }
 
     void Update()
     {
