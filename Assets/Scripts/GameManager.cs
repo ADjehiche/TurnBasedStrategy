@@ -16,6 +16,20 @@ public class GameManager : MonoBehaviour
     public Vector3 playerPosition;
     public bool hasSavedState = false;
 
+    void Awake()
+    {
+        // if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+        // DontDestroyOnLoad(gameObject); // keep it across scenes 
+    }
+
+    // call this before starting the battle
+    public void SavePlayerPosition(Vector3 pos)
+    {
+        playerPosition = pos;
+        hasSavedState = true;
+    }
+
     public void StartGame()
     {
         // Use LoadSceneMode.Single to properly initialize lighting
@@ -34,8 +48,18 @@ public class GameManager : MonoBehaviour
 
     public void StartBattle()
     {
+        // If we didn't get a position earlier, try to grab the player's current position now
+        if (!hasSavedState)
+        {
+            var p = GameObject.FindGameObjectWithTag("Player");
+            if (p != null) SavePlayerPosition(p.transform.position);
+        }
+
+        // Save return position for after the battle
+        GameSession.SetReturnPosition(playerPosition);
+
         SceneManager.LoadScene(BattleScene, LoadSceneMode.Single);
         Cursor.lockState = CursorLockMode.None;
-    } 
+    }
     
 }

@@ -31,7 +31,9 @@ public class BattleManager : MonoBehaviour
     
     private void ReturnToLevelOne()
     {
+        GameSession.EnemyDefeated = true;
         Debug.LogWarning("GameManager instance not found, using direct scene loading");
-        SceneManager.LoadScene("TitleScene");
+        SceneManager.LoadScene("LevelOne", LoadSceneMode.Single);
+        
     }
 }

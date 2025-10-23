@@ -14,6 +14,7 @@ public class EnemyHealth : MonoBehaviour
         if (gameObject.tag != "Enemy")
         {
             Debug.LogWarning("EnemyHealth object should have the 'Enemy' tag for proper cleanup after battle");
+            tag = "Enemy";
         }
     }
 
