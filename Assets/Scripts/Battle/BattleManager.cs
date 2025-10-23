@@ -31,15 +31,7 @@ public class BattleManager : MonoBehaviour
     
     private void ReturnToLevelOne()
     {
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.ReturnToLevelOne();
-        }
-        else
-        {
-            Debug.LogWarning("GameManager instance not found, using direct scene loading");
-            SceneManager.LoadScene("LevelOne");
-            Cursor.lockState = CursorLockMode.Locked;
-        }
+        Debug.LogWarning("GameManager instance not found, using direct scene loading");
+        SceneManager.LoadScene("TitleScene");
     }
 }
