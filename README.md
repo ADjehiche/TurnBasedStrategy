@@ -46,7 +46,7 @@ In line with the module's marking criteria for "Focus", this prototype implement
     * **Throw item:**: `Left Mouse Click`
 
 * **In-Battle:**
-   * **Draw Card**: ** `Mouse`
+   * **Draw Card**: `Mouse`
    * **Attack**: ** With Card Drawn: `Click on Enemy`
 
 ## Technical Note: Git LFS
