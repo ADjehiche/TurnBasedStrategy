@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement; // Needed for scene loading
+
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -45,7 +47,7 @@ public class PlayerHealth : MonoBehaviour
             OnPlayerDeath();
         }
     }
-
+  
     public void Heal(int amount)
     {
         if (amount <= 0) return;
