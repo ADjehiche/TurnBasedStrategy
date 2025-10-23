@@ -5,8 +5,17 @@ public class EnemyHealth : MonoBehaviour
     public int maxHP = 20;
     public int currentHP = 20;
 
-    public event System.Action<int,int> OnHealthChanged; // (current, max)
+    public event System.Action<int, int> OnHealthChanged; // (current, max)
     // public int hp = 20;
+
+    void Awake()
+    {
+        // Make sure this object has the "Enemy" tag for proper cleanup
+        if (gameObject.tag != "Enemy")
+        {
+            Debug.LogWarning("EnemyHealth object should have the 'Enemy' tag for proper cleanup after battle");
+        }
+    }
 
     void Start()
     {
