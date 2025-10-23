@@ -37,7 +37,7 @@ public class PlayerStateHandler : MonoBehaviour
 
         try
         {
-            GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+            GameObject[] enemies = GameObject.FindGameObjectsWithTag(ENEMY_TAG);
             foreach (GameObject enemy in enemies)
             {
                 Debug.Log("Destroyed enemy after battle");
