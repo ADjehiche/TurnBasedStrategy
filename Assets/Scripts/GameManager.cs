@@ -16,14 +16,6 @@ public class GameManager : MonoBehaviour
     public Vector3 playerPosition;
     public bool hasSavedState = false;
 
-    void Awake() {
-        if (Instance == null) {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        } else {
-            Destroy(gameObject);
-        }
-    }
     public void StartGame()
     {
         // Use LoadSceneMode.Single to properly initialize lighting
@@ -46,13 +38,4 @@ public class GameManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
     } 
     
-    public void ReturnToLevelOne()
-    {
-        // Set flag to indicate we're returning from battle
-        hasSavedState = true;
-        
-        // Return to LevelOne scene
-        SceneManager.LoadScene(LevelOne);
-        Cursor.lockState = CursorLockMode.Locked;
-    }
 }
