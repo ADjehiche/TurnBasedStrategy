@@ -35,18 +35,11 @@ public class PlayerStateHandler : MonoBehaviour
             Destroy(trigger);
         }
 
-        try
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (GameObject enemy in enemies)
         {
-            GameObject[] enemies = GameObject.FindGameObjectsWithTag(ENEMY_TAG);
-            foreach (GameObject enemy in enemies)
-            {
-                Debug.Log("Destroyed enemy after battle");
-                Destroy(enemy);
-            }
-        }
-        catch (UnityException)
-        {
-            Debug.LogWarning("Enemy tag not found in project. Consider adding it to use this feature.");
+            Debug.Log("Destroyed enemy after battle");
+            Destroy(enemy);
         }
     }
 }
