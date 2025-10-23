@@ -76,7 +76,8 @@ public class PlayerHealth : MonoBehaviour
     {
         Debug.Log("[PlayerHealth] Player defeated!");
         BattleState.SetOver(true);
-        
+        SceneManager.LoadScene("DeathScene");
+
         // Disable turn manager
         if (TurnManager.Instance != null)
         {
