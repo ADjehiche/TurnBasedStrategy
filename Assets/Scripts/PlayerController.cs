@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     private float lookRotation;
     public bool grounded;
     private GameManager gameManager;
+    private const String BATTLE_TRIGGER_TAG = "battleTrigger";  // Make sure your battle trigger has this tag!
 
     public void OnMove(InputAction.CallbackContext context)
     {
@@ -90,7 +91,7 @@ public class PlayerController : MonoBehaviour
     }
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("battleTrigger"))
+        if (other.CompareTag(BATTLE_TRIGGER_TAG))
         {
             gameManager.StartBattle();
         }

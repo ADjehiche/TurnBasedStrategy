@@ -10,18 +10,19 @@ public class GameManager : MonoBehaviour
     public Button startButton;
     private const string LevelOne = "LevelOne";
     private const string ControlsPage = "ControlsPage";
-    private const string BattleScene = "Battle_Template";
+    private const string BattleScene = "BattleScene";
     private const string TitleScene = "TitleScene";
-    // Start is called before the first frame update
-    void Start()
-    {
+    public static GameManager Instance;
+    public Vector3 playerPosition;
+    public bool hasSavedState = false;
 
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
+    void Awake() {
+        if (Instance == null) {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        } else {
+            Destroy(gameObject);
+        }
     }
     public void StartGame()
     {
@@ -44,4 +45,14 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(BattleScene, LoadSceneMode.Single);
         Cursor.lockState = CursorLockMode.None;
     } 
+    
+    public void ReturnToLevelOne()
+    {
+        // Set flag to indicate we're returning from battle
+        hasSavedState = true;
+        
+        // Return to LevelOne scene
+        SceneManager.LoadScene(LevelOne);
+        Cursor.lockState = CursorLockMode.Locked;
+    }
 }
