@@ -34,8 +34,6 @@ public class EnemyHealth : MonoBehaviour
         {
             Debug.Log("Enemy died");
             BattleState.SetOver(true);
-            
-            // Destroy the enemy object
             Destroy(gameObject);
         }
     }
