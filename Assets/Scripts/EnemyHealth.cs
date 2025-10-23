@@ -34,10 +34,8 @@ public class EnemyHealth : MonoBehaviour
         {
             Debug.Log("Enemy died");
             BattleState.SetOver(true);
-
-            // Return to LevelOne when enemy is defeated
-            GameManager.Instance.ReturnToLevelOne();
-
+            
+            // Destroy the enemy object
             Destroy(gameObject);
         }
     }

@@ -10,7 +10,7 @@ public class GameManager : MonoBehaviour
     public Button startButton;
     private const string LevelOne = "LevelOne";
     private const string ControlsPage = "ControlsPage";
-    private const string BattleScene = "BattleScene";
+    private const string BattleScene = "Battle_Template";
     private const string TitleScene = "TitleScene";
     public static GameManager Instance;
     public Vector3 playerPosition;
