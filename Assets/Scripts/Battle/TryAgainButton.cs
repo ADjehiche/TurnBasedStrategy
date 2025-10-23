@@ -6,6 +6,8 @@ public class TryAgainButton : MonoBehaviour
     // This method will be called when the button is clicked
     public void RestartLevel()
     {
+        GameSession.Reset();
         SceneManager.LoadScene("TitleScene");
+        
     }
 }
