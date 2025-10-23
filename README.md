@@ -1,7 +1,7 @@
 # Dungeon Decks (Working Title)
 
 **Course:** ECS657U / ECS7003P - Prototype Submission
-**Group Members:** Acil, Yasir, Khaled, Alzain
+**Group Members:** Acil, Yasir, Khaled, Alzain,
 
 ---
 

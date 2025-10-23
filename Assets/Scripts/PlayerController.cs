@@ -13,6 +13,8 @@ public class PlayerController : MonoBehaviour
     private float lookRotation;
     public bool grounded;
     private GameManager gameManager;
+    private const String GAMEMANAGER_NAME = "GameManager";
+    private const String BATTLE_TRIGGER_TAG = "battleTrigger";
 
     public void OnMove(InputAction.CallbackContext context)
     {
@@ -30,7 +32,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
+        gameManager = GameObject.Find(GAMEMANAGER_NAME).GetComponent<GameManager>();
     }
 
     // Update is called once per frame
@@ -90,7 +92,7 @@ public class PlayerController : MonoBehaviour
     }
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("battleTrigger"))
+        if (other.CompareTag(BATTLE_TRIGGER_TAG))
         {
             gameManager.StartBattle();
         }
