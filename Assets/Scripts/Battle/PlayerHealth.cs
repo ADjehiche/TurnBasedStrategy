@@ -6,13 +6,12 @@ public class PlayerHealth : MonoBehaviour
     public static PlayerHealth Instance { get; private set; }
 
     [Header("Health Settings")]
-    [SerializeField] private int maxHealth = 30;
+    [SerializeField] private int maxHealth = 20;
     [SerializeField] private int currentHealth;
 
     [Header("UI References")]
     [SerializeField] private Slider healthSlider;
-    [SerializeField] private Text healthText; // Optional: displays "30/30"
-
+    [SerializeField] private Text healthText; 
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
 

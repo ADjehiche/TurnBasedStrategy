@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
     private const string LevelOne = "LevelOne";
     private const string ControlsPage = "ControlsPage";
     private const string BattleScene = "BattleScene";
+    private const string TitleScene = "TitleScene";
     // Start is called before the first frame update
     void Start()
     {
@@ -30,6 +31,11 @@ public class GameManager : MonoBehaviour
     public void OpenControls()
     {
         SceneManager.LoadScene(ControlsPage);
+    }
+
+    public void OpenMenu()
+    {
+        SceneManager.LoadScene(TitleScene);
     }
 
     public void StartBattle()
