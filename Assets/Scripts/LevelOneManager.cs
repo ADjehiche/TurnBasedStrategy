@@ -13,6 +13,8 @@ public class LevelOneReturnManager : MonoBehaviour
             var p = GameSession.ReturnPosition;
             p.y = player.position.y;   
             player.position = p;
+            
+            player.rotation = Quaternion.Euler(0, 30, 0);
 
             GameSession.HasReturnPosition = false; 
         }
