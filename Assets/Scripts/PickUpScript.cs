@@ -95,6 +95,12 @@ public class PickUpScript : MonoBehaviour
     {
         if (pickUpObj.GetComponent<Rigidbody>())
         {
+            // Check if this is the key and trigger caption
+            if (pickUpObj.name == "Key")
+            {
+                TriggerKeyPickupCaption();
+            }
+            
             heldObj = pickUpObj;
             heldObjRb = pickUpObj.GetComponent<Rigidbody>();
             heldObjRb.isKinematic = true;
@@ -133,6 +139,21 @@ public class PickUpScript : MonoBehaviour
         if (hits.Length > 1)
         {
             heldObj.transform.position = transform.position + new Vector3(0f, -0.5f, 0f);
+        }
+    }
+    
+    private void TriggerKeyPickupCaption()
+    {
+        // Find and trigger the caption controller when key is picked up
+        var levelController = FindFirstObjectByType<LevelOneCaptionController>();
+        if (levelController != null)
+        {
+            levelController.OnKeyPickedUp();
+            Debug.Log("PickUpScript: Key pickup caption triggered!");
+        }
+        else
+        {
+            Debug.LogWarning("PickUpScript: LevelOneCaptionController not found in scene");
         }
     }
 }

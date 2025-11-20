@@ -53,6 +53,10 @@ public class DoorTrigger : MonoBehaviour
     private IEnumerator OpenDoorCoroutine()
     {
         isOpening = true;
+        
+        // Trigger celebration monologue when door starts opening
+        TriggerDoorOpenCaption();
+        
         Transform doorT = door.transform;
 
         Vector3 hingeWorldPos = (hingePoint != null) ? hingePoint.position : doorT.TransformPoint(hingeLocalOffset);
@@ -79,5 +83,20 @@ public class DoorTrigger : MonoBehaviour
         isOpening = false;
 
         Destroy(this.gameObject);
+    }
+    
+    private void TriggerDoorOpenCaption()
+    {
+        // Find and trigger the caption controller when door opens
+        var levelController = FindFirstObjectByType<LevelOneCaptionController>();
+        if (levelController != null)
+        {
+            levelController.OnDoorOpened();
+            Debug.Log("DoorTrigger: Door open celebration caption triggered!");
+        }
+        else
+        {
+            Debug.LogWarning("DoorTrigger: LevelOneCaptionController not found in scene");
+        }
     }
 }
