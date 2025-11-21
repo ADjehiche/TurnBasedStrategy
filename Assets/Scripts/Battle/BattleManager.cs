@@ -32,8 +32,19 @@ public class BattleManager : MonoBehaviour
     private void ReturnToLevelOne()
     {
         GameSession.EnemyDefeated = true;
-        Debug.LogWarning("GameManager instance not found, using direct scene loading");
-        SceneManager.LoadScene("LevelOne", LoadSceneMode.Single);
+        Debug.Log($"[BattleManager] Setting EnemyDefeated to true, GameManager exists: {GameManager.Instance != null}");
         
+        // Try to ensure GameManager state is set
+        if (GameManager.Instance != null)
+        {
+            Debug.Log("[BattleManager] GameManager found, ensuring hasSavedState is true");
+            GameManager.Instance.hasSavedState = true;
+        }
+        else
+        {
+            Debug.LogWarning("[BattleManager] GameManager instance not found, using direct scene loading");
+        }
+        
+        SceneManager.LoadScene("LevelOne", LoadSceneMode.Single);
     }
 }

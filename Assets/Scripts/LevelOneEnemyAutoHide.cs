@@ -7,7 +7,6 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
     [SerializeField] private RuntimeAnimatorController deathController; // Drag the death controller here
     [SerializeField] private RuntimeAnimatorController screamController; // Drag the scream controller here
     [SerializeField] private RuntimeAnimatorController slash01Controller; // Drag the slash01 controller here
-    [SerializeField] private float deathAnimationDuration = 2f; // Adjust based on your animation length
     [SerializeField] private float animationCycleTime = 3f; // Time between animation changes
     
     private bool isAnimationCycling = false;
@@ -18,6 +17,9 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
         {
             animator = GetComponent<Animator>();
         }
+        
+        // Add debug logging to see the state
+        Debug.Log($"Skeleton Start - EnemyDefeated: {GameSession.EnemyDefeated}");
         
         if (GameSession.EnemyDefeated)
         {
@@ -32,11 +34,14 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
     
     private void PlayDeathAnimation()
     {
+        Debug.Log("[LevelOneEnemyAutoHide] PlayDeathAnimation called - skeleton will stay visible");
+        
         if (animator != null)
         {
             if (deathController != null)
             {
                 animator.runtimeAnimatorController = deathController;
+                Debug.Log("[LevelOneEnemyAutoHide] Playing death animation");
             }
             else
             {
@@ -57,14 +62,10 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
                     animator.Play("anim");
                 }
             }
-            
-            // Disable the GameObject after the animation completes
-            Invoke(nameof(HideAfterAnimation), deathAnimationDuration);
         }
         else
         {
-            // Fallback: just hide immediately if no animator found
-            gameObject.SetActive(false);
+            Debug.LogWarning("[LevelOneEnemyAutoHide] No animator found - skeleton will remain visible");
         }
     }
     
@@ -78,11 +79,6 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
                 return true;
         }
         return false;
-    }
-    
-    private void HideAfterAnimation()
-    {
-        gameObject.SetActive(false);
     }
     
     private void StartAnimationCycling()
