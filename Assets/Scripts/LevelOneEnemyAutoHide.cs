@@ -10,6 +10,7 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
     [SerializeField] private float animationCycleTime = 3f; // Time between animation changes
     
     private bool isAnimationCycling = false;
+    private SkeletonAudioController audioController;
     
     void Start()
     {
@@ -17,6 +18,9 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
         {
             animator = GetComponent<Animator>();
         }
+        
+        // Get audio controller if present
+        audioController = GetComponent<SkeletonAudioController>();
         
         // Add debug logging to see the state
         Debug.Log($"Skeleton Start - EnemyDefeated: {GameSession.EnemyDefeated}");
@@ -35,6 +39,12 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
     private void PlayDeathAnimation()
     {
         Debug.Log("[LevelOneEnemyAutoHide] PlayDeathAnimation called - skeleton will stay visible");
+        
+        // Play death sound
+        if (audioController != null)
+        {
+            audioController.PlayDeathSound();
+        }
         
         if (animator != null)
         {
@@ -107,6 +117,12 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
         {
             Debug.Log("Switching skeleton to slash01 animation");
             
+            // Play slash sound
+            if (audioController != null)
+            {
+                audioController.PlaySlashSound();
+            }
+            
             if (slash01Controller != null)
             {
                 // Switch controller and force animation to start from beginning
@@ -126,6 +142,12 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
         if (isAnimationCycling && animator != null)
         {
             Debug.Log("Switching skeleton to scream animation");
+            
+            // Play scream sound
+            if (audioController != null)
+            {
+                audioController.PlayScreamSound();
+            }
             
             if (screamController != null)
             {
