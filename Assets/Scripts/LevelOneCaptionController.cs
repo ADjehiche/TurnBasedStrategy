@@ -8,15 +8,18 @@ public class LevelOneCaptionController : MonoBehaviour
     [SerializeField] private string keyPickupMonologue = "I wonder if this key would work on the door...";
     [SerializeField] private string keyFoundMessage = "Ooh, a key!";
     [SerializeField] private string doorOpenCelebration = "Yes! I'm free at last!";
+    [SerializeField] private string enemySpottedWarning = "What... is that thing?!";
     
     [Header("Timing")]
     [SerializeField] private float startDelay = 2f; // Delay before showing initial instruction
     [SerializeField] private float instructionDuration = 4f;
     [SerializeField] private float monologueDuration = 3f;
+    [SerializeField] private float warningDuration = 2.5f;
     
     private bool hasShownStartInstruction = false;
     private bool hasShownKeyPickup = false;
     private bool hasShownDoorOpen = false;
+    private bool hasShownEnemySpotted = false;
     
     void Start()
     {
@@ -75,6 +78,19 @@ public class LevelOneCaptionController : MonoBehaviour
     }
     
     /// <summary>
+    /// Call this when the player spots an enemy
+    /// </summary>
+    public void OnEnemySpotted()
+    {
+        if (!hasShownEnemySpotted && CaptionManager.Instance != null)
+        {
+            CaptionManager.Instance.ShowMonologue(enemySpottedWarning, warningDuration);
+            hasShownEnemySpotted = true;
+            Debug.Log("LevelOneCaptionController: Enemy spotted warning triggered");
+        }
+    }
+    
+    /// <summary>
     /// Manually trigger the start instruction (useful for testing)
     /// </summary>
     [ContextMenu("Show Start Instruction")]
@@ -105,6 +121,15 @@ public class LevelOneCaptionController : MonoBehaviour
     }
     
     /// <summary>
+    /// Manually trigger the enemy spotted warning (useful for testing)
+    /// </summary>
+    [ContextMenu("Trigger Enemy Spotted")]
+    public void TriggerEnemySpotted()
+    {
+        OnEnemySpotted();
+    }
+    
+    /// <summary>
     /// Reset the caption states (useful for testing)
     /// </summary>
     [ContextMenu("Reset Caption States")]
@@ -113,6 +138,7 @@ public class LevelOneCaptionController : MonoBehaviour
         hasShownStartInstruction = false;
         hasShownKeyPickup = false;
         hasShownDoorOpen = false;
+        hasShownEnemySpotted = false;
         Debug.Log("LevelOneCaptionController: States reset");
     }
 }

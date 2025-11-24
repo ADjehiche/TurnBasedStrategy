@@ -6,7 +6,8 @@ public class EnemyHealth : MonoBehaviour
     public int currentHP = 20;
 
     public event System.Action<int, int> OnHealthChanged; // (current, max)
-    // public int hp = 20;
+    
+    private SkeletonAudioController audioController;
 
     void Awake()
     {
@@ -16,6 +17,9 @@ public class EnemyHealth : MonoBehaviour
             Debug.LogWarning("EnemyHealth object should have the 'Enemy' tag for proper cleanup after battle");
             tag = "Enemy";
         }
+        
+        // Get audio controller if available
+        audioController = GetComponent<SkeletonAudioController>();
     }
 
     void Start()
@@ -34,10 +38,16 @@ public class EnemyHealth : MonoBehaviour
         if (currentHP <= 0)
         {
             Debug.Log("Enemy died");
+            
+            // Play death sound if audio controller is available
+            if (audioController != null)
+            {
+                audioController.PlayDeathSound();
+            }
+            
             BattleState.SetOver(true);
-            Destroy(gameObject);
+            Destroy(gameObject, 0.5f); // Small delay to let death sound play
         }
     }
-
 
 }

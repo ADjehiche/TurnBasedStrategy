@@ -55,6 +55,17 @@ public class GameManager : MonoBehaviour
             if (p != null) SavePlayerPosition(p.transform.position);
         }
 
+        // Disable footsteps during battle
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            var footstepAudio = player.GetComponent<PlayerFootstepAudio>();
+            if (footstepAudio != null)
+            {
+                footstepAudio.SetEnabled(false);
+            }
+        }
+
         // Save return position for after the battle
         GameSession.SetReturnPosition(playerPosition);
 
