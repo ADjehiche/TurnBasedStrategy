@@ -50,6 +50,19 @@ public class PickUpScript : MonoBehaviour
         pickUpAction?.Disable();
         fireAction?.Disable();
     }
+    
+    void OnDestroy()
+    {
+        // Unsubscribe from input action callbacks to prevent errors
+        if (pickUpAction != null)
+        {
+            pickUpAction.performed -= ctx => OnPickUpPerformed();
+        }
+        if (fireAction != null)
+        {
+            fireAction.performed -= ctx => OnFirePerformed();
+        }
+    }
 
     void Start()
     {

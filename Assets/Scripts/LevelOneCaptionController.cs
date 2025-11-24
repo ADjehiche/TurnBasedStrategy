@@ -16,25 +16,23 @@ public class LevelOneCaptionController : MonoBehaviour
     [SerializeField] private float monologueDuration = 3f;
     [SerializeField] private float warningDuration = 2.5f;
     
-    private bool hasShownStartInstruction = false;
-    private bool hasShownKeyPickup = false;
-    private bool hasShownDoorOpen = false;
-    private bool hasShownEnemySpotted = false;
-    
     void Start()
     {
-        // Show the initial instruction after a short delay
-        StartCoroutine(ShowStartInstructionDelayed());
+        // Show the initial instruction after a short delay (only if not shown before)
+        if (!GameSession.HasShownStartInstruction)
+        {
+            StartCoroutine(ShowStartInstructionDelayed());
+        }
     }
     
     private IEnumerator ShowStartInstructionDelayed()
     {
         yield return new WaitForSeconds(startDelay);
         
-        if (!hasShownStartInstruction && CaptionManager.Instance != null)
+        if (!GameSession.HasShownStartInstruction && CaptionManager.Instance != null)
         {
             CaptionManager.Instance.ShowInstruction(escapeInstruction, instructionDuration);
-            hasShownStartInstruction = true;
+            GameSession.HasShownStartInstruction = true;
             Debug.Log("LevelOneCaptionController: Showing start instruction");
         }
     }
@@ -44,11 +42,11 @@ public class LevelOneCaptionController : MonoBehaviour
     /// </summary>
     public void OnKeyPickedUp()
     {
-        if (!hasShownKeyPickup && CaptionManager.Instance != null)
+        if (!GameSession.HasShownKeyPickup && CaptionManager.Instance != null)
         {
             // First show a quick system message, then the monologue
             StartCoroutine(ShowKeyPickupSequence());
-            hasShownKeyPickup = true;
+            GameSession.HasShownKeyPickup = true;
             Debug.Log("LevelOneCaptionController: Key pickup sequence triggered");
         }
     }
@@ -69,10 +67,10 @@ public class LevelOneCaptionController : MonoBehaviour
     /// </summary>
     public void OnDoorOpened()
     {
-        if (!hasShownDoorOpen && CaptionManager.Instance != null)
+        if (!GameSession.HasShownDoorOpen && CaptionManager.Instance != null)
         {
             CaptionManager.Instance.ShowMonologue(doorOpenCelebration, monologueDuration);
-            hasShownDoorOpen = true;
+            GameSession.HasShownDoorOpen = true;
             Debug.Log("LevelOneCaptionController: Door open celebration triggered");
         }
     }
@@ -82,10 +80,10 @@ public class LevelOneCaptionController : MonoBehaviour
     /// </summary>
     public void OnEnemySpotted()
     {
-        if (!hasShownEnemySpotted && CaptionManager.Instance != null)
+        if (!GameSession.HasShownEnemySpotted && CaptionManager.Instance != null)
         {
             CaptionManager.Instance.ShowMonologue(enemySpottedWarning, warningDuration);
-            hasShownEnemySpotted = true;
+            GameSession.HasShownEnemySpotted = true;
             Debug.Log("LevelOneCaptionController: Enemy spotted warning triggered");
         }
     }
@@ -135,10 +133,10 @@ public class LevelOneCaptionController : MonoBehaviour
     [ContextMenu("Reset Caption States")]
     public void ResetStates()
     {
-        hasShownStartInstruction = false;
-        hasShownKeyPickup = false;
-        hasShownDoorOpen = false;
-        hasShownEnemySpotted = false;
+        GameSession.HasShownStartInstruction = false;
+        GameSession.HasShownKeyPickup = false;
+        GameSession.HasShownDoorOpen = false;
+        GameSession.HasShownEnemySpotted = false;
         Debug.Log("LevelOneCaptionController: States reset");
     }
 }

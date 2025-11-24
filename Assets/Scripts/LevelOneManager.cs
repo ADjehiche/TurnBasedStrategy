@@ -43,6 +43,9 @@ public class LevelOneReturnManager : MonoBehaviour
 
         // Clean up items that were already collected
         CleanupCollectedItems();
+        
+        // Restore companion if it was active
+        RestoreCompanion();
 
         if (enemyRoot != null && GameSession.EnemyDefeated)
         {
@@ -135,6 +138,42 @@ public class LevelOneReturnManager : MonoBehaviour
                     Debug.Log("[LevelOneReturnManager] Door opened instantly and trigger removed");
                 }
             }
+        }
+    }
+    
+    private void RestoreCompanion()
+    {
+        // Check if companion was active before battle
+        if (!GameSession.CompanionActive)
+        {
+            return; // Companion not active, nothing to restore
+        }
+        
+        // Find companion in scene
+        GameObject companionObj = GameObject.FindGameObjectWithTag("Companion");
+        
+        if (companionObj == null)
+        {
+            Debug.LogWarning("[LevelOneReturnManager] Companion was active but not found in scene! Make sure CompanionBlob has 'Companion' tag.");
+            return;
+        }
+        
+        CompanionFollower companion = companionObj.GetComponent<CompanionFollower>();
+        
+        if (companion != null && player != null)
+        {
+            // Position companion near player
+            Vector3 companionPosition = player.position + new Vector3(-1.5f, 1f, -1.5f);
+            companionObj.transform.position = companionPosition;
+            
+            // Activate following
+            companion.SetFollowing(true);
+            
+            Debug.Log("[LevelOneReturnManager] Companion restored and following player");
+        }
+        else
+        {
+            Debug.LogWarning("[LevelOneReturnManager] Companion found but missing CompanionFollower component!");
         }
     }
 }
