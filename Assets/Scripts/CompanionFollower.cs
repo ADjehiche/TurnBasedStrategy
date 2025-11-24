@@ -11,13 +11,13 @@ public class CompanionFollower : MonoBehaviour
     [SerializeField] private Transform player;
     
     [Tooltip("Offset from player position (x=side, y=height, z=forward/back)")]
-    [SerializeField] private Vector3 followOffset = new Vector3(-1f, 1f, -1f);
+    [SerializeField] private Vector3 followOffset = new Vector3(1.2f, 0.5f, 1.5f); // Right side, low, in front
     
     [Tooltip("How quickly the companion follows the player")]
     [SerializeField] private float followSpeed = 5f;
     
     [Tooltip("Minimum distance before companion starts moving")]
-    [SerializeField] private float minFollowDistance = 0.5f;
+    [SerializeField] private float minFollowDistance = 0.3f;
     
     [Header("Floating Animation")]
     [Tooltip("Speed of the bobbing/floating motion")]
