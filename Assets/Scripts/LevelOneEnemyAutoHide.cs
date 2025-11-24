@@ -9,8 +9,15 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
     [SerializeField] private RuntimeAnimatorController slash01Controller; // Drag the slash01 controller here
     [SerializeField] private float animationCycleTime = 3f; // Time between animation changes
     
+    [Header("Skeleton Key Drop")]
+    [Tooltip("Prefab of the skeleton key to spawn when enemy is defeated")]
+    [SerializeField] private GameObject skeletonKeyPrefab;
+    [Tooltip("Offset from skeleton position to spawn the key")]
+    [SerializeField] private Vector3 keySpawnOffset = new Vector3(0f, 0.5f, 0f);
+    
     private bool isAnimationCycling = false;
     private SkeletonAudioController audioController;
+    private bool hasDroppedKey = false; // Prevent duplicate key spawns
     
     void Start()
     {
@@ -28,6 +35,7 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
         if (GameSession.EnemyDefeated)
         {
             PlayDeathAnimation();
+            SpawnSkeletonKey(); // Spawn key if skeleton is already defeated
         }
         else
         {
@@ -173,6 +181,33 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
         {
             animator.Play("anim", 0, 0f); // Play state "anim" in layer 0 from time 0
         }
+    }
+    
+    /// <summary>
+    /// Spawns the skeleton key at the skeleton's position
+    /// Only spawns once, even if called multiple times
+    /// </summary>
+    private void SpawnSkeletonKey()
+    {
+        if (hasDroppedKey)
+        {
+            Debug.Log("[LevelOneEnemyAutoHide] Key already spawned, skipping");
+            return;
+        }
+
+        if (skeletonKeyPrefab == null)
+        {
+            Debug.LogWarning("[LevelOneEnemyAutoHide] Skeleton key prefab not assigned! Cannot spawn key.");
+            return;
+        }
+
+        // Spawn key at skeleton position with offset
+        Vector3 spawnPosition = transform.position + keySpawnOffset;
+        GameObject spawnedKey = Instantiate(skeletonKeyPrefab, spawnPosition, Quaternion.identity);
+        spawnedKey.name = "SkeletonKey"; // Give it a unique name
+        
+        hasDroppedKey = true;
+        Debug.Log($"[LevelOneEnemyAutoHide] Spawned skeleton key at {spawnPosition}");
     }
     
     private void OnDestroy()

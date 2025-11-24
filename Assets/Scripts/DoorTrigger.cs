@@ -9,6 +9,12 @@ public class DoorTrigger : MonoBehaviour
     [SerializeField] private GameObject door;
     [SerializeField] private string keyTag = "key";
 
+    [Header("Key Type Restriction")]
+    [Tooltip("Which type of key can open this door")]
+    [SerializeField] private KeyType requiredKeyType = KeyType.AnyKey;
+    [Tooltip("If true, any key can open this door (ignores requiredKeyType)")]
+    [SerializeField] private bool acceptAnyKey = false;
+
     [Header("Hinge")]
     [SerializeField] private Transform hingePoint;
     [SerializeField] private Vector3 hingeLocalOffset = Vector3.zero;
@@ -38,8 +44,22 @@ public class DoorTrigger : MonoBehaviour
 
         if (other.CompareTag(keyTag))
         {
+            // Check if this key is allowed to open this door
+            if (!IsKeyAllowed(other.gameObject))
+            {
+                Debug.Log($"[DoorTrigger] Wrong key type! This door requires: {requiredKeyType}");
+                return;
+            }
+
+            // Destroy the colliding object (child collider)
             if (other.gameObject != null)
                 Destroy(other.gameObject);
+            
+            // Also destroy the parent key GameObject (the actual key prefab root)
+            if (other.transform.parent != null)
+                Destroy(other.transform.parent.gameObject);
+            
+            // Destroy the original key reference if it exists
             if (key != null)
                 Destroy(key);
 
@@ -47,6 +67,40 @@ public class DoorTrigger : MonoBehaviour
             {
                 StartCoroutine(OpenDoorCoroutine());
             }
+        }
+    }
+
+    /// <summary>
+    /// Check if the given key object is allowed to open this door
+    /// </summary>
+    private bool IsKeyAllowed(GameObject keyObject)
+    {
+        // If door accepts any key, allow it
+        if (acceptAnyKey || requiredKeyType == KeyType.AnyKey)
+        {
+            return true;
+        }
+
+        // Check if key has SkeletonKeyBehavior component
+        // Check both the object itself and its parent (since key uses child collider)
+        var skeletonKey = keyObject.GetComponent<SkeletonKeyBehavior>();
+        if (skeletonKey == null && keyObject.transform.parent != null)
+        {
+            skeletonKey = keyObject.transform.parent.GetComponent<SkeletonKeyBehavior>();
+        }
+
+        if (skeletonKey != null)
+        {
+            // Key has a type marker, check if it matches
+            Debug.Log($"[DoorTrigger] Found {skeletonKey.keyType} key, door requires: {requiredKeyType}");
+            return skeletonKey.keyType == requiredKeyType;
+        }
+        else
+        {
+            // No SkeletonKeyBehavior component means it's the original key
+            // Original key can only open doors that require OriginalKey
+            Debug.Log($"[DoorTrigger] Found original key, door requires: {requiredKeyType}");
+            return requiredKeyType == KeyType.OriginalKey;
         }
     }
 
