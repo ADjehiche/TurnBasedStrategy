@@ -9,16 +9,40 @@ public class LevelOneReturnManager : MonoBehaviour
     void Start()
     {
         // Put the player back to where they entered the battle from
-        if (GameSession.HasReturnPosition && player != null)
+        if (player != null)
         {
-            var p = GameSession.ReturnPosition;
-            p.y = player.position.y;   
-            player.position = p;
+            Vector3 spawnPosition;
             
+            // Use battle trigger center if available (preferred), otherwise use return position
+            if (GameSession.BattleTriggerCenter != Vector3.zero)
+            {
+                spawnPosition = GameSession.BattleTriggerCenter;
+                
+                // Move player backward (negative Z) to avoid re-triggering the battle trigger
+                spawnPosition += new Vector3(0, 0, -3f); // 3 units back
+                
+                Debug.Log($"[LevelOneReturnManager] Using battle trigger center with offset: {spawnPosition}");
+            }
+            else if (GameSession.HasReturnPosition)
+            {
+                spawnPosition = GameSession.ReturnPosition;
+                spawnPosition.y = player.position.y;
+                Debug.Log($"[LevelOneReturnManager] Using return position: {spawnPosition}");
+            }
+            else
+            {
+                spawnPosition = player.position;
+                Debug.Log("[LevelOneReturnManager] No saved position, keeping current position");
+            }
+            
+            player.position = spawnPosition;
             player.rotation = Quaternion.Euler(0, 30, 0);
 
-            GameSession.HasReturnPosition = false; 
+            GameSession.HasReturnPosition = false;
         }
+
+        // Clean up items that were already collected
+        CleanupCollectedItems();
 
         if (enemyRoot != null && GameSession.EnemyDefeated)
         {
@@ -58,6 +82,59 @@ public class LevelOneReturnManager : MonoBehaviour
             // No auto-hide enemies found, deactivate the entire enemyRoot as before
             Debug.Log("[LevelOneReturnManager] No auto-hide enemies found, deactivating enemyRoot");
             enemyRoot.SetActive(true);
+        }
+    }
+    
+    private void CleanupCollectedItems()
+    {
+        // Remove original key if it was collected
+        if (GameSession.OriginalKeyCollected)
+        {
+            GameObject originalKey = GameObject.Find("Key");
+            if (originalKey != null)
+            {
+                Debug.Log("[LevelOneReturnManager] Destroying original key (already collected)");
+                Destroy(originalKey);
+            }
+        }
+        
+        // Handle door state if it was opened
+        if (GameSession.DoorOpened)
+        {
+            GameObject doorTriggerObj = GameObject.Find("Door");
+            if (doorTriggerObj != null)
+            {
+                DoorTrigger doorTrigger = doorTriggerObj.GetComponent<DoorTrigger>();
+                
+                if (doorTrigger != null)
+                {
+                    // Instantly open the door instead of destroying it
+                    Debug.Log("[LevelOneReturnManager] Door was already opened - setting to open position");
+                    
+                    // Get the door GameObject reference from the trigger
+                    GameObject door = doorTrigger.GetType()
+                        .GetField("door", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                        ?.GetValue(doorTrigger) as GameObject;
+                    
+                    if (door == null)
+                    {
+                        // Fallback: assume the door is the same GameObject
+                        door = doorTriggerObj;
+                    }
+                    
+                    // Get open settings from the trigger (default values if not accessible)
+                    float openAngle = -90f;  // Default from DoorTrigger
+                    bool useYAxis = true;    // Default from DoorTrigger
+                    
+                    // Rotate door to open position instantly
+                    Vector3 axis = useYAxis ? Vector3.up : Vector3.right;
+                    door.transform.Rotate(axis, openAngle, Space.World);
+                    
+                    // Remove the trigger component so door can't be interacted with again
+                    Destroy(doorTrigger);
+                    Debug.Log("[LevelOneReturnManager] Door opened instantly and trigger removed");
+                }
+            }
         }
     }
 }

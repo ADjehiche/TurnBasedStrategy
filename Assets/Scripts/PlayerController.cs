@@ -231,6 +231,14 @@ public class PlayerController : MonoBehaviour
     {
         if (other.CompareTag(BATTLE_TRIGGER_TAG))
         {
+            // Save battle trigger center for proper respawn position
+            Vector3 triggerCenter = other.bounds.center;
+            triggerCenter.y = transform.position.y; // Keep player's Y position
+            GameSession.SetBattleTriggerPosition(triggerCenter);
+            
+            // Also save for GameManager (backward compatibility)
+            gameManager.SavePlayerPosition(triggerCenter);
+            
             gameManager.StartBattle();
         }
     }

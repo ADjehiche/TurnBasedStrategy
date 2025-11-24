@@ -108,6 +108,13 @@ public class DoorTrigger : MonoBehaviour
     {
         isOpening = true;
         
+        // Mark door as opened (for first door only)
+        if (gameObject.name == "Door" || gameObject.name.Contains("Door") && !gameObject.name.Contains("Door_2"))
+        {
+            GameSession.DoorOpened = true;
+            Debug.Log("[DoorTrigger] First door opened - marked in GameSession");
+        }
+        
         // Trigger celebration monologue when door starts opening
         TriggerDoorOpenCaption();
         
@@ -136,7 +143,8 @@ public class DoorTrigger : MonoBehaviour
 
         isOpening = false;
 
-        Destroy(this.gameObject);
+        // Destroy only the DoorTrigger component, not the entire GameObject
+        Destroy(this);
     }
     
     private void TriggerDoorOpenCaption()

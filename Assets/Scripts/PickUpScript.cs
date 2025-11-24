@@ -99,6 +99,9 @@ public class PickUpScript : MonoBehaviour
             if (pickUpObj.name == "Key")
             {
                 TriggerKeyPickupCaption();
+                // Mark original key as collected
+                GameSession.OriginalKeyCollected = true;
+                Debug.Log("[PickUpScript] Original key collected - marked in GameSession");
             }
             
             heldObj = pickUpObj;
