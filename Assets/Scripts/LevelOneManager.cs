@@ -12,9 +12,32 @@ public class LevelOneReturnManager : MonoBehaviour
         if (player != null)
         {
             Vector3 spawnPosition;
+            Quaternion spawnRotation = player.rotation; // Default to current
             
+            // Check if respawning from death
+            if (GameSession.IsRespawning && GameSession.HasCheckpoint)
+            {
+                spawnPosition = GameSession.CheckpointPosition;
+                spawnRotation = GameSession.CheckpointRotation;
+                
+                // Move player back 3 units on Z axis to avoid immediately re-triggering
+                spawnPosition += new Vector3(0, 0, -3f);
+                
+                Debug.Log($"[LevelOneReturnManager] ⚰️ Respawning at checkpoint: {spawnPosition} (moved back 3 units)");
+                
+                // Reset player health to full
+                PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
+                if (playerHealth != null)
+                {
+                    playerHealth.ResetHealth();
+                    Debug.Log("[LevelOneReturnManager] Health reset to max");
+                }
+                
+                // Clear respawn flag
+                GameSession.IsRespawning = false;
+            }
             // Use battle trigger center if available (preferred), otherwise use return position
-            if (GameSession.BattleTriggerCenter != Vector3.zero)
+            else if (GameSession.BattleTriggerCenter != Vector3.zero)
             {
                 spawnPosition = GameSession.BattleTriggerCenter;
                 
@@ -36,6 +59,7 @@ public class LevelOneReturnManager : MonoBehaviour
             }
             
             player.position = spawnPosition;
+            player.rotation = spawnRotation;
             // Rotation now uses whatever is set in Unity Editor (no override)
 
             GameSession.HasReturnPosition = false;

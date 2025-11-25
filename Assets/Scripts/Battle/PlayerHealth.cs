@@ -74,8 +74,14 @@ public class PlayerHealth : MonoBehaviour
 
     private void OnPlayerDeath()
     {
-        Debug.Log("[PlayerHealth] Player defeated!");
+        Debug.Log("[PlayerHealth] Player defeated! Loading death screen...");
+        
         BattleState.SetOver(true);
+        
+        // Mark that we're respawning from death (for when Try Again is pressed)
+        GameSession.IsRespawning = true;
+        
+        // Load death screen (Try Again button will reload to checkpoint)
         SceneManager.LoadScene("DeathScene");
 
         // Disable turn manager
