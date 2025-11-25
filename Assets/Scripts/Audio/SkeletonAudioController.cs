@@ -1,64 +1,67 @@
 using UnityEngine;
 
 /// <summary>
-/// Handles audio playback for skeleton animations
-/// Call these methods from Animation Events or scripts
+/// Handles audio for skeleton enemy
+/// Plays scream and slash sounds during animations
 /// </summary>
 public class SkeletonAudioController : MonoBehaviour
 {
-    [Header("Sound Names - Must match AudioManager")]
+    [Header("Sound Names")]
     [SerializeField] private string screamSoundName = "SkeletonScream";
     [SerializeField] private string slashSoundName = "SkeletonSlash";
     [SerializeField] private string deathSoundName = "SkeletonDeath";
     
-    [Header("Settings")]
-    [SerializeField] private bool debugLogs = true;
+    [Header("Debug")]
+    [SerializeField] private bool showDebugLogs = true;
     
     /// <summary>
-    /// Play skeleton scream sound
+    /// Play scream sound immediately
     /// </summary>
     public void PlayScreamSound()
     {
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.Play(screamSoundName);
-            if (debugLogs) Debug.Log($"[SkeletonAudio] Playing scream sound: {screamSoundName}");
+            if (showDebugLogs)
+                Debug.Log($"[SkeletonAudio] Playing scream: {screamSoundName}");
         }
         else
         {
-            Debug.LogWarning("[SkeletonAudio] AudioManager instance not found!");
+            Debug.LogWarning("[SkeletonAudio] AudioManager not found!");
         }
     }
     
     /// <summary>
-    /// Play skeleton slash sound
+    /// Play slash sound immediately
     /// </summary>
     public void PlaySlashSound()
     {
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.Play(slashSoundName);
-            if (debugLogs) Debug.Log($"[SkeletonAudio] Playing slash sound: {slashSoundName}");
+            if (showDebugLogs)
+                Debug.Log($"[SkeletonAudio] Playing slash: {slashSoundName}");
         }
         else
         {
-            Debug.LogWarning("[SkeletonAudio] AudioManager instance not found!");
+            Debug.LogWarning("[SkeletonAudio] AudioManager not found!");
         }
     }
     
     /// <summary>
-    /// Play skeleton death sound
+    /// Play death sound immediately
     /// </summary>
     public void PlayDeathSound()
     {
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.Play(deathSoundName);
-            if (debugLogs) Debug.Log($"[SkeletonAudio] Playing death sound: {deathSoundName}");
+            if (showDebugLogs)
+                Debug.Log($"[SkeletonAudio] Playing death: {deathSoundName}");
         }
         else
         {
-            Debug.LogWarning("[SkeletonAudio] AudioManager instance not found!");
+            Debug.LogWarning("[SkeletonAudio] AudioManager not found!");
         }
     }
 }

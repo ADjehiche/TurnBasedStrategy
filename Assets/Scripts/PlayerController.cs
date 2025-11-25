@@ -35,10 +35,14 @@ public class PlayerController : MonoBehaviour
     {
         look = context.ReadValue<Vector2>();
     }
+    
+    // Jump disabled - not used in this game
+    /*
     public void OnJump(InputAction.CallbackContext context)
     {
         Jump();
     }
+    */
 
     void Start()
     {
@@ -123,6 +127,8 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // Jump disabled - not used in this game
+    /*
     void Jump() {
         Vector3 jumpForces = Vector3.zero;
 
@@ -133,6 +139,7 @@ public class PlayerController : MonoBehaviour
         rb.AddForce(jumpForces, ForceMode.VelocityChange);
         
     }
+    */
     
     void UpdateMovementAnimation()
     {

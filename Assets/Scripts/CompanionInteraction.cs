@@ -12,27 +12,17 @@ public class CompanionInteraction : MonoBehaviour
     [Tooltip("Key code to interact with companion")]
     [SerializeField] private KeyCode interactionKey = KeyCode.F;
     
-    [Header("Dialogue")]
-    [Tooltip("Initial greeting from companion when player approaches")]
-    [SerializeField] private string companionGreeting = "[Fragment] You... hear me?";
+    [Header("Dialogue - Initial Greeting")]
+    [SerializeField] private string companionGreeting = "[Fragment] Hello... I've been waiting.";
+    [SerializeField] private string interactionPrompt = "[System] Press F to speak";
     
-    [Tooltip("Interaction instruction shown to player")]
-    [SerializeField] private string interactionPrompt = "[System] Press F";
-    
-    [Tooltip("Companion's first response")]
-    [SerializeField] private string companionResponse1 = "[Fragment] A Memory Keeper.";
-    
-    [Tooltip("Player's question")]
-    [SerializeField] private string playerQuestion = "[You] What are you?";
-    
-    [Tooltip("Companion explains")]
-    [SerializeField] private string companionExplanation = "[Fragment] Fragment. Your power. Stolen by cultists.";
-    
-    [Tooltip("Player asks for help")]
-    [SerializeField] private string playerRequest = "[You] Can you help me?";
-    
-    [Tooltip("Companion agrees")]
-    [SerializeField] private string companionAgreement = "[Fragment] Yes. Together, we escape.";
+    [Header("Dialogue - Conversation")]
+    [SerializeField] private string playerQuestion1 = "[You] What are you?";
+    [SerializeField] private string companionResponse1 = "[Fragment] Fragment. A piece of you.";
+    [SerializeField] private string playerQuestion2 = "[You] My memory?";
+    [SerializeField] private string companionExplanation = "[Fragment] Yes. Your power. Stolen by them.";
+    [SerializeField] private string playerRequest = "[You] Can you help me escape?";
+    [SerializeField] private string companionAgreement = "[Fragment] Together, we escape.";
     
     [Header("Timing")]
     [SerializeField] private float promptDuration = 2f;
@@ -171,34 +161,39 @@ public class CompanionInteraction : MonoBehaviour
         
         if (CaptionManager.Instance != null)
         {
-            // 1. Fragment identifies player
+            // 1. Player asks what it is
+            CaptionManager.Instance.ShowMonologue(playerQuestion1, dialogueDuration);
+            yield return new WaitForSeconds(dialogueDuration + 0.5f);
+            
+            // 2. Fragment reveals it's a piece of player
             CaptionManager.Instance.ShowMonologue(companionResponse1, dialogueDuration);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
-            // 2. Player asks what it is
-            CaptionManager.Instance.ShowMonologue(playerQuestion, dialogueDuration);
+            // 3. Player realizes it's their memory
+            CaptionManager.Instance.ShowMonologue(playerQuestion2, dialogueDuration);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
-            // 3. Fragment explains
+            // 4. Fragment explains the situation
             CaptionManager.Instance.ShowMonologue(companionExplanation, dialogueDuration + 0.5f);
             yield return new WaitForSeconds(dialogueDuration + 1f);
             
-            // 4. Player asks for help
+            // 5. Player asks for help
             CaptionManager.Instance.ShowMonologue(playerRequest, dialogueDuration);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
-            // 5. Fragment agrees
+            // 6. Fragment agrees
             CaptionManager.Instance.ShowMonologue(companionAgreement, dialogueDuration);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
-            // 6. System message
+            // 7. System message
             CaptionManager.Instance.ShowSystemMessage("[System] Fragment joined", 2f);
             yield return new WaitForSeconds(0.5f);
         }
         else
         {
+            Debug.Log(playerQuestion1);
             Debug.Log(companionResponse1);
-            Debug.Log(playerQuestion);
+            Debug.Log(playerQuestion2);
             Debug.Log(companionExplanation);
             Debug.Log(playerRequest);
             Debug.Log(companionAgreement);

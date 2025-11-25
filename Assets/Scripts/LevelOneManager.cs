@@ -36,7 +36,7 @@ public class LevelOneReturnManager : MonoBehaviour
             }
             
             player.position = spawnPosition;
-            player.rotation = Quaternion.Euler(0, 30, 0);
+            // Rotation now uses whatever is set in Unity Editor (no override)
 
             GameSession.HasReturnPosition = false;
         }
