@@ -192,6 +192,23 @@ public class TurnManager : MonoBehaviour
         // Wait for enemy actions
         yield return new WaitForSeconds(2f);
         
+        // Play skeleton scream before attack
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.Play("SkeletonScream");
+        }
+        
+        // Small delay after scream, then play slash sound (during attack animation)
+        yield return new WaitForSeconds(0.5f);
+        
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.Play("SkeletonSlash");
+        }
+        
+        // Brief moment for slash to register, then apply damage
+        yield return new WaitForSeconds(0.2f);
+        
         // Enemy attacks player
         int damage = UnityEngine.Random.Range(1, 6); // Random value between 1–5 (upper bound exclusive)
 

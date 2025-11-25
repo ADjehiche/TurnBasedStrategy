@@ -8,11 +8,25 @@ public class PlayerStateHandler : MonoBehaviour
 
     void Start()
     {
-        if (GameManager.Instance.hasSavedState)
+        Debug.Log($"[PlayerStateHandler] Start - GameManager exists: {GameManager.Instance != null}");
+        Debug.Log($"[PlayerStateHandler] Start - hasSavedState: {(GameManager.Instance != null ? GameManager.Instance.hasSavedState : "null")}");
+        Debug.Log($"[PlayerStateHandler] Start - GameSession.EnemyDefeated: {GameSession.EnemyDefeated}");
+        
+        // Check if we need to restore state after battle
+        bool shouldRestoreState = false;
+        
+        if (GameManager.Instance != null && GameManager.Instance.hasSavedState)
         {
             // Restore player position
             transform.position = GameManager.Instance.playerPosition;
-
+            Debug.Log($"[PlayerStateHandler] Restored player position to: {transform.position}");
+            shouldRestoreState = true;
+        }
+        
+        // Always check if enemy was defeated and handle battle trigger accordingly
+        if (GameSession.EnemyDefeated || shouldRestoreState)
+        {
+            Debug.Log("[PlayerStateHandler] Enemy defeated or state restored - cleaning up battle triggers and enemies");
             DestroyBattleTriggerAndEnemy();
         }
     }
@@ -28,18 +42,17 @@ public class PlayerStateHandler : MonoBehaviour
 
     private void DestroyBattleTriggerAndEnemy()
     {
+        // Always destroy battle triggers after battle
         GameObject[] battleTriggers = GameObject.FindGameObjectsWithTag(BATTLE_TRIGGER_TAG);
+        Debug.Log($"[PlayerStateHandler] Found {battleTriggers.Length} battle triggers with tag '{BATTLE_TRIGGER_TAG}'");
+        
         foreach (GameObject trigger in battleTriggers)
         {
-            Debug.Log("Destroyed battle trigger after battle");
+            Debug.Log($"[PlayerStateHandler] Destroying battle trigger: {trigger.name}");
             Destroy(trigger);
         }
 
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach (GameObject enemy in enemies)
-        {
-            Debug.Log("Destroyed enemy after battle");
-            Destroy(enemy);
-        }
+        // Enemy handling is now managed by LevelOneReturnManager
+        Debug.Log("[PlayerStateHandler] Enemy handling delegated to LevelOneReturnManager");
     }
 }

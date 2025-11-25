@@ -11,7 +11,11 @@ public class TargetingSystem : MonoBehaviour
 
     private GameObject activeCardGO;         // the GameObject of the card being played
 
-
+    [Header("Audio Settings")]
+    [Tooltip("Enable this when you have a player attack sound ready")]
+    [SerializeField] private bool playPlayerAttackSound = false;
+    [Tooltip("Name of the sound to play when player attacks (e.g., 'PlayerSlash', 'SwordHit')")]
+    [SerializeField] private string playerAttackSoundName = "PlayerAttack";
 
 
     // using the new Input System
@@ -154,7 +158,13 @@ public class TargetingSystem : MonoBehaviour
             int max = activeCardData.damageMax;
             int amount = Mathf.Clamp(Random.Range(min, max + 1), 0, int.MaxValue);
 
-            // Apply
+            // Play player attack sound if enabled (add your audio file first!)
+            if (playPlayerAttackSound && AudioManager.Instance != null)
+            {
+                AudioManager.Instance.Play(playerAttackSoundName);
+            }
+
+            // Apply damage
             enemy.TakeDamage(amount);
 
             // Tell HandManager to remove this card
