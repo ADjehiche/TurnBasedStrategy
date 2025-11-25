@@ -14,20 +14,29 @@ public class CompanionInteraction : MonoBehaviour
     
     [Header("Dialogue")]
     [Tooltip("Initial greeting from companion when player approaches")]
-    [SerializeField] private string companionGreeting = "Hello! I've been waiting for someone...";
+    [SerializeField] private string companionGreeting = "[Fragment] You... hear me?";
     
     [Tooltip("Interaction instruction shown to player")]
-    [SerializeField] private string interactionPrompt = "Press F to talk";
+    [SerializeField] private string interactionPrompt = "[System] Press F";
     
-    [Tooltip("Companion's response when befriended")]
-    [SerializeField] private string companionResponse = "Thank you! I'll follow you now.";
+    [Tooltip("Companion's first response")]
+    [SerializeField] private string companionResponse1 = "[Fragment] A Memory Keeper.";
     
-    [Tooltip("Player's thought after befriending")]
-    [SerializeField] private string playerThought = "This little blob seems friendly. I wonder what it can do...";
+    [Tooltip("Player's question")]
+    [SerializeField] private string playerQuestion = "[You] What are you?";
+    
+    [Tooltip("Companion explains")]
+    [SerializeField] private string companionExplanation = "[Fragment] Fragment. Your power. Stolen by cultists.";
+    
+    [Tooltip("Player asks for help")]
+    [SerializeField] private string playerRequest = "[You] Can you help me?";
+    
+    [Tooltip("Companion agrees")]
+    [SerializeField] private string companionAgreement = "[Fragment] Yes. Together, we escape.";
     
     [Header("Timing")]
     [SerializeField] private float promptDuration = 2f;
-    [SerializeField] private float dialogueDuration = 3f;
+    [SerializeField] private float dialogueDuration = 2.5f;
     
     [Header("References")]
     [Tooltip("Reference to the CompanionFollower component")]
@@ -156,23 +165,48 @@ public class CompanionInteraction : MonoBehaviour
     
     private IEnumerator BefriendDialogueSequence()
     {
+        // Lock movement during dialogue
+        if (PlayerMovementLock.Instance != null)
+            PlayerMovementLock.Instance.LockMovement("Fragment dialogue");
+        
         if (CaptionManager.Instance != null)
         {
-            // 1. Companion responds happily
-            CaptionManager.Instance.ShowMonologue(companionResponse, dialogueDuration);
-            
+            // 1. Fragment identifies player
+            CaptionManager.Instance.ShowMonologue(companionResponse1, dialogueDuration);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
-            // 2. Player's internal thought
-            CaptionManager.Instance.ShowMonologue(playerThought, dialogueDuration);
+            // 2. Player asks what it is
+            CaptionManager.Instance.ShowMonologue(playerQuestion, dialogueDuration);
+            yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
+            // 3. Fragment explains
+            CaptionManager.Instance.ShowMonologue(companionExplanation, dialogueDuration + 0.5f);
+            yield return new WaitForSeconds(dialogueDuration + 1f);
+            
+            // 4. Player asks for help
+            CaptionManager.Instance.ShowMonologue(playerRequest, dialogueDuration);
+            yield return new WaitForSeconds(dialogueDuration + 0.5f);
+            
+            // 5. Fragment agrees
+            CaptionManager.Instance.ShowMonologue(companionAgreement, dialogueDuration);
+            yield return new WaitForSeconds(dialogueDuration + 0.5f);
+            
+            // 6. System message
+            CaptionManager.Instance.ShowSystemMessage("[System] Fragment joined", 2f);
             yield return new WaitForSeconds(0.5f);
         }
         else
         {
-            Debug.Log($"💬 Companion: {companionResponse}");
-            Debug.Log($"💭 Player: {playerThought}");
+            Debug.Log(companionResponse1);
+            Debug.Log(playerQuestion);
+            Debug.Log(companionExplanation);
+            Debug.Log(playerRequest);
+            Debug.Log(companionAgreement);
         }
+        
+        // Unlock movement after dialogue
+        if (PlayerMovementLock.Instance != null)
+            PlayerMovementLock.Instance.UnlockMovement("Dialogue complete");
         
         // Activate companion following
         if (companionFollower != null)
@@ -183,7 +217,7 @@ public class CompanionInteraction : MonoBehaviour
             companionFollower.StartFollowing();
             
             if (showDebugLogs)
-                Debug.Log("[CompanionInteraction] ✅ Companion activated and following!");
+                Debug.Log("[CompanionInteraction] ✅ Fragment activated and following!");
         }
         else
         {

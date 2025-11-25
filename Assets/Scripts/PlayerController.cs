@@ -65,12 +65,62 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        // Don't process input when movement is locked
+        if (PlayerMovementLock.Instance != null && PlayerMovementLock.Instance.IsLocked())
+        {
+            return;
+        }
     }
 
     private void FixedUpdate()
     {
-        Move();
+        // Check if movement is locked
+        if (PlayerMovementLock.Instance != null && PlayerMovementLock.Instance.IsLocked())
+        {
+            // Don't process movement when locked
+            rb.velocity = new Vector3(0, rb.velocity.y, 0); // Keep y velocity for gravity
+            return;
+        }
+        
+        // Check for ground contact
+        RaycastHit hit;
+        grounded = Physics.Raycast(transform.position, Vector3.down, out hit, 1.1f);
+        
+        // Get input direction relative to camera
+        Vector3 moveDirection = Vector3.zero;
+        
+        if(camHolder != null)
+        {
+            // Calculate movement direction based on camera orientation
+            moveDirection = camHolder.transform.forward * move.y + camHolder.transform.right * move.x;
+            moveDirection.y = 0; // Keep movement horizontal
+            moveDirection = moveDirection.normalized;
+        }
+        
+        // Calculate target velocity
+        Vector3 velocity = moveDirection * speed;
+        velocity.y = rb.velocity.y; // Preserve vertical velocity
+        
+        // Apply force to reach target velocity
+        Vector3 velocityChange = velocity - rb.velocity;
+        velocityChange.y = 0; // Don't apply force vertically
+        
+        // Clamp the force
+        velocityChange = Vector3.ClampMagnitude(velocityChange, maxForce);
+        
+        // Apply the force
+        rb.AddForce(velocityChange, ForceMode.VelocityChange);
+        
+        // Update animation based on movement
+        bool isCurrentlyMoving = moveDirection.magnitude > 0.1f;
+        if (isCurrentlyMoving != isMoving)
+        {
+            isMoving = isCurrentlyMoving;
+            if (animator != null)
+            {
+                animator.SetBool("IsWalking", isMoving);
+            }
+        }
     }
 
     void Jump() {
@@ -82,30 +132,6 @@ public class PlayerController : MonoBehaviour
         }
         rb.AddForce(jumpForces, ForceMode.VelocityChange);
         
-    }
-
-    void Move()
-    {
-        Vector3 currentVelocity = rb.velocity;
-        Vector3 targetVelocity = new Vector3(move.x, 0, move.y);
-        targetVelocity *= speed;
-
-        targetVelocity = transform.TransformDirection(targetVelocity);
-
-        Vector3 velocityChange = (targetVelocity - currentVelocity);
-        velocityChange = new Vector3(velocityChange.x, 0, velocityChange.z);
-
-        Vector3.ClampMagnitude(velocityChange, maxForce);
-
-        rb.AddForce(velocityChange, ForceMode.VelocityChange);
-
-        // Handle movement animation with lower threshold for more responsive animation
-        bool currentlyMoving = move.magnitude > 0.01f; // Lower threshold for quicker response
-        if (currentlyMoving != isMoving)
-        {
-            isMoving = currentlyMoving;
-            UpdateMovementAnimation();
-        }
     }
     
     void UpdateMovementAnimation()
@@ -179,48 +205,19 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void Look() { 
-        transform.Rotate(Vector3.up * look.x * sensitivity);
-        lookRotation += -look.y * sensitivity;
-        lookRotation = Math.Clamp(lookRotation, -90, 90);
-        
-        if (attachCameraToHead && headBone != null)
-        {
-            // Calculate head-influenced position with direct offset application
-            Vector3 worldOffset = transform.TransformDirection(headCameraOffset);
-            Vector3 headPosition = headBone.position + worldOffset;
-            
-            // Calculate base position (original camera position)
-            Vector3 basePosition = transform.position + transform.TransformDirection(originalCameraPosition);
-            
-            // Blend between base position and head position based on influence
-            Vector3 targetPosition = Vector3.Lerp(basePosition, headPosition, headInfluence);
-            
-            camHolder.transform.position = Vector3.Lerp(
-                camHolder.transform.position,
-                targetPosition,
-                cameraSmoothing * Time.deltaTime
-            );
-            
-            // Keep camera rotation independent of head bone rotation
-            camHolder.transform.eulerAngles = new Vector3(lookRotation, transform.eulerAngles.y, 0);
-        }
-        else
-        {
-            // Original camera behavior with smoothing
-            camHolder.transform.localPosition = Vector3.Lerp(
-                camHolder.transform.localPosition, 
-                targetCameraPosition, 
-                cameraSmoothing * Time.deltaTime
-            );
-            
-            camHolder.transform.eulerAngles = new Vector3(lookRotation, camHolder.transform.eulerAngles.y, camHolder.transform.eulerAngles.z);
-        }
-    }
-
     void LateUpdate()
     {
-        Look();
+        // Don't rotate camera when movement is locked
+        if (PlayerMovementLock.Instance != null && PlayerMovementLock.Instance.IsLocked())
+        {
+            return;
+        }
+        
+        // Handle camera rotation
+        transform.Rotate(Vector3.up * look.x * sensitivity);
+        lookRotation += -look.y * sensitivity;
+        lookRotation = Mathf.Clamp(lookRotation, -90, 90);
+        camHolder.transform.localEulerAngles = new Vector3(lookRotation, 0, 0);
     }
 
     public void SetGrounded(bool state)
