@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: fb2965902474d4941b2dfa17455616a3
+guid: 7dc695b62edd14bd29789e8622a161cc
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -49,7 +49,7 @@ TextureImporter:
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
   spritePixelsToUnits: 256
-  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteBorder: {x: 160, y: 32, z: 167, w: 32}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
   alphaIsTransparency: 1
@@ -105,18 +105,40 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: Temp2Card_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 671
+        width: 67
+        height: 23
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 719c3ee44ae574acdb6890b666762b53
+      internalID: -1111066752
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
-    internalID: 0
+    spriteID: a773fc3e65a7640d293113ab19a0034c
+    internalID: 1654179679
     vertices: []
     indices: 
     edges: []
     weights: []
     secondaryTextures: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Temp2Card_0: -1111066752
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -7,50 +5,51 @@ using CardGame;
 
 public class CardDisplay : MonoBehaviour
 {
+    [Header("Data")]
     public Card cardData;
 
-    public Image cardImage;
-    public TMP_Text nameText;
-    public TMP_Text staminaText;
-    public TMP_Text damageText;
+    [Header("UI References")]
+    public Image cardImage;          // big art image
+    public TMP_Text nameText;        // card name
+    public TMP_Text staminaText;     // number in the stamina shield
+    public TMP_Text descriptionText; // bottom description box
 
-    public TMP_Text typeText;
-  
-    void Start()
+    private void OnEnable()
     {
-        UpdateCardDisplay();
-
-
+        Refresh();
     }
 
-    public void UpdateCardDisplay()
+    public void SetCard(Card newCard)
     {
-        nameText.text = cardData.cardName;
-        typeText.text = cardData.cardType.ToString();
-        staminaText.text = cardData.staminaCost.ToString();
-        damageText.text = $"{cardData.damageMin} - {cardData.damageMax}";
-
-
+        cardData = newCard;
+        Refresh();
     }
-    
+
     public void Refresh()
     {
         if (cardData == null)
         {
+            if (staminaText)     staminaText.text     = "";
+            if (descriptionText) descriptionText.text = "";
+            if (nameText)        nameText.text        = "";
+            if (cardImage)       cardImage.sprite     = null;
             Debug.LogWarning($"[{name}] No card data assigned to CardDisplay!");
             return;
         }
 
-        // Update all the displayed values based on the ScriptableObject data
-        nameText.text = cardData.cardName;
-        staminaText.text = cardData.staminaCost.ToString();
-        damageText.text = $"{cardData.damageMin} - {cardData.damageMax}";
-        typeText.text = cardData.cardType.ToString();
+        // Cost
+        if (staminaText)
+            staminaText.text = cardData.staminaCost.ToString();
 
-        // for later if we add images
-        // if (cardImage != null)
-        //     cardImage.sprite = cardData.cardSprite;
+        // Art
+        if (cardImage)
+            cardImage.sprite = cardData.artwork;
+
+        // Text – exactly like before: just use what you wrote on the card
+        if (descriptionText)
+            descriptionText.text = cardData.description;
+
+        if (nameText)
+            nameText.text = cardData.cardName;
     }
-
-  
 }

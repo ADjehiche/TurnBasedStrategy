@@ -154,9 +154,9 @@ public class TargetingSystem : MonoBehaviour
             }
 
             // Roll damage from card data
-            int min = activeCardData.damageMin;
-            int max = activeCardData.damageMax;
-            int amount = Mathf.Clamp(Random.Range(min, max + 1), 0, int.MaxValue);
+            // int min = activeCardData.damageMin;
+            // int max = activeCardData.damageMax;
+            // int amount = Mathf.Clamp(Random.Range(min, max + 1), 0, int.MaxValue);
 
             // Play player attack sound if enabled (add your audio file first!)
             if (playPlayerAttackSound && AudioManager.Instance != null)
@@ -165,7 +165,7 @@ public class TargetingSystem : MonoBehaviour
             }
 
             // Apply damage
-            enemy.TakeDamage(amount);
+            // enemy.TakeDamage(amount);
 
             // Tell HandManager to remove this card
             BattleEvents.RaiseCardResolved(activeCardGO);
