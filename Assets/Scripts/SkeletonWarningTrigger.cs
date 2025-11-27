@@ -97,6 +97,19 @@ public class SkeletonWarningTrigger : MonoBehaviour
         if (PlayerMovementLock.Instance != null)
             PlayerMovementLock.Instance.UnlockMovement("Warning complete - starting battle");
         
+        // Save checkpoint before battle starts
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            GameSession.SaveCheckpoint(
+                player.transform.position,
+                player.transform.rotation
+            );
+            
+            if (showDebugLogs)
+                Debug.Log("[SkeletonWarningTrigger] Checkpoint saved before battle");
+        }
+        
         // Small pause before battle starts
         yield return new WaitForSeconds(0.5f);
         
