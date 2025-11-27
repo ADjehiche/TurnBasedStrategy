@@ -58,35 +58,13 @@ public class DeckManager : MonoBehaviour
             return;
         }
 
-        void AddRandom(List<Card> pool)
-        {
-            if (pool == null || pool.Count == 0) return;
-            var card = pool[Random.Range(0, pool.Count)];
-            drawPile.Add(card);
-        }
+        // Add ALL unique cards to the deck (no duplicates)
+        drawPile.AddRange(attacks);
+        drawPile.AddRange(defenses);
+        drawPile.AddRange(utilities);
+        drawPile.AddRange(tacticals);
 
-        // Build deck: 2 Attack → 1 Defense → 1 Utility/Tactical, repeated until autoDeckSize is reached
-        while (drawPile.Count < autoDeckSize)
-        {
-            // 2 attacks
-            AddRandom(attacks);
-            if (drawPile.Count >= autoDeckSize) break;
-            AddRandom(attacks);
-            if (drawPile.Count >= autoDeckSize) break;
-
-            // 1 defense
-            AddRandom(defenses);
-            if (drawPile.Count >= autoDeckSize) break;
-
-            // 1 utility OR tactical
-            bool useUtility = utilities.Count > 0 && (tacticals.Count == 0 || Random.value < 0.5f);
-            if (useUtility)
-                AddRandom(utilities);
-            else
-                AddRandom(tacticals);
-        }
-
-        Debug.Log($"[DeckManager] Auto-built deck with {drawPile.Count} cards (2A/1D/1U-T pattern).");
+        Debug.Log($"[DeckManager] Built deck with {drawPile.Count} unique cards (no duplicates).");
     }
 
     public static void Shuffle<T>(List<T> list)

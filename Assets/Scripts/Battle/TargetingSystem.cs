@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
+using System.Collections.Generic;
 using CardGame;
 
 public class TargetingSystem : MonoBehaviour
@@ -107,11 +109,8 @@ public class TargetingSystem : MonoBehaviour
         CancelTargeting();
     }
 
-    public void TryTargetAtScreenPoint(Vector2 screenPos, Camera cam)
+   public void TryTargetAtScreenPoint(Vector2 screenPos, Camera cam)
     {
-        if (cam == null) cam = Camera.main;
-        if (cam == null) return;
-
         if (activeCardData == null)
         {
             Debug.LogError("[TargetingSystem] TryTargetAtScreenPoint with no active card.");
@@ -119,83 +118,148 @@ public class TargetingSystem : MonoBehaviour
             return;
         }
 
-        Vector3 world = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f));
-        Vector2 point = world;
+        EnemyHealth enemy   = null;
+        PlayerHealth player = null;
 
-        Collider2D hit = Physics2D.OverlapPoint(point);
-        EnemyHealth enemy   = hit ? hit.GetComponentInParent<EnemyHealth>() : null;
-        PlayerHealth player = hit ? hit.GetComponentInParent<PlayerHealth>() : null;
+        // FIRST: Check UI elements (for Canvas-based player/enemy)
+        if (EventSystem.current != null)
+        {
+            PointerEventData pointerData = new PointerEventData(EventSystem.current)
+            {
+                position = screenPos
+            };
+            List<RaycastResult> results = new List<RaycastResult>();
+            EventSystem.current.RaycastAll(pointerData, results);
 
-        // --- SIMPLE RULES ---
-        // Attack cards (TargetType.SingleEnemy) only valid if we clicked enemy
-        // Heal/block cards (TargetType.Self) only valid if we clicked player
+            Debug.Log($"[TargetingSystem] UI Raycast found {results.Count} UI elements at screen position {screenPos}");
 
+            foreach (var result in results)
+            {
+                if (result.gameObject == null) continue;
+
+                // Check for EnemyHealth - try self, parent, then children
+                if (enemy == null)
+                {
+                    enemy = result.gameObject.GetComponent<EnemyHealth>();
+                    if (enemy == null)
+                    {
+                        enemy = result.gameObject.GetComponentInParent<EnemyHealth>();
+                    }
+                    if (enemy == null)
+                    {
+                        enemy = result.gameObject.GetComponentInChildren<EnemyHealth>();
+                    }
+                    if (enemy != null)
+                    {
+                        Debug.Log($"[TargetingSystem] ✓ Found EnemyHealth on {enemy.gameObject.name} (clicked {result.gameObject.name})");
+                    }
+                }
+
+                // Check for PlayerHealth - try self, parent, then children
+                if (player == null)
+                {
+                    player = result.gameObject.GetComponent<PlayerHealth>();
+                    if (player == null)
+                    {
+                        player = result.gameObject.GetComponentInParent<PlayerHealth>();
+                    }
+                    if (player == null)
+                    {
+                        player = result.gameObject.GetComponentInChildren<PlayerHealth>();
+                    }
+                    if (player != null)
+                    {
+                        Debug.Log($"[TargetingSystem] ✓ Found PlayerHealth on {player.gameObject.name} (clicked {result.gameObject.name})");
+                    }
+                }
+
+                // If we found both, no need to keep checking
+                if (enemy != null && player != null) break;
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[TargetingSystem] EventSystem.current is NULL! UI raycasting won't work.");
+        }
+
+        // SECOND: Check world space objects (Physics2D)
+        if (enemy == null && player == null)
+        {
+            Ray ray = cam.ScreenPointToRay(screenPos);
+            RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, Mathf.Infinity);
+
+            if (hit.collider != null)
+            {
+                Debug.Log($"[TargetingSystem] Physics2D raycast hit: {hit.collider.gameObject.name}");
+
+                // Try to get EnemyHealth from what we clicked
+                enemy = hit.collider.GetComponent<EnemyHealth>();
+                if (enemy == null)
+                {
+                    enemy = hit.collider.GetComponentInParent<EnemyHealth>();
+                }
+
+                // Try to get PlayerHealth from what we clicked
+                player = hit.collider.GetComponent<PlayerHealth>();
+                if (player == null)
+                {
+                    player = hit.collider.GetComponentInParent<PlayerHealth>();
+                }
+            }
+            else
+            {
+                Debug.Log("[TargetingSystem] No Physics2D hit detected.");
+            }
+        }
+
+        // Validate the click based on card's target type
         switch (activeCardData.targetType)
         {
             case TargetType.SingleEnemy:
                 if (enemy == null)
                 {
-                    Debug.Log("[TargetingSystem] Clicked, but no enemy for Attack card.");
-                    return; // keep targeting, do nothing
+                    Debug.Log("[TargetingSystem] Attack card requires clicking on an enemy. Click cancelled.");
+                    return; // Don't cancel targeting - let them try again
                 }
                 break;
 
             case TargetType.Self:
                 if (player == null)
                 {
-                    // fallback: use PlayerHealth.Instance if no collider under cursor
-                    if (PlayerHealth.Instance != null)
-                    {
-                        player = PlayerHealth.Instance;
-                    }
-                    else
-                    {
-                        Debug.Log("[TargetingSystem] No player found for Self card.");
-                        return;
-                    }
+                    Debug.Log("[TargetingSystem] Self-target card requires clicking on the player. Click cancelled.");
+                    return; // Don't cancel targeting - let them try again
                 }
-                break;
-
-            case TargetType.None:
-                // global effect – no specific click needed; we can just apply on player by default if needed
                 break;
 
             default:
-                if (enemy == null && player == null)
-                {
-                    Debug.Log("[TargetingSystem] Clicked, but no valid target.");
-                    return;
-                }
-                break;
+                Debug.LogWarning($"[TargetingSystem] TargetType {activeCardData.targetType} not handled yet.");
+                CancelTargeting();
+                return;
         }
 
         // Stamina check
         if (PlayerStamina.Instance != null &&
             !PlayerStamina.Instance.Spend(activeCardData.staminaCost))
         {
-            Debug.Log("[TargetingSystem] Not enough stamina; cancelling.");
+            Debug.Log($"[TargetingSystem] Not enough stamina to play {activeCardData.cardName} (cost: {activeCardData.staminaCost}); cancelling.");
             CancelTargeting();
             return;
         }
 
+        // Success! Valid target clicked
+        string targetName = enemy != null ? "enemy" : (player != null ? "player" : "unknown");
+        Debug.Log($"[TargetingSystem] Successfully playing {activeCardData.cardName} on {targetName}!");
+
         // Apply effects
         ResolveCard(activeCardData, enemy, player);
 
-        // Audio (optional)
+        // Optional audio
         if (enemy != null && playPlayerAttackSound && AudioManager.Instance != null)
         {
             AudioManager.Instance.Play(playerAttackSoundName);
         }
 
-        // Remove card from hand
-        BattleEvents.RaiseCardResolved(activeCardGO);
-
-        // cleanup
-        onComplete?.Invoke();
-        onComplete     = null;
-        activeCardData = null;
-        activeCardGO   = null;
-
+        // Cleanup input actions BEFORE destroying card to prevent assertion errors
         if (uiClickAction != null && uiClickAction.action != null)
             uiClickAction.action.performed -= OnClickPerformed;
         if (uiCancelAction != null && uiCancelAction.action != null)
@@ -203,9 +267,18 @@ public class TargetingSystem : MonoBehaviour
         if (uiRightClickAction != null && uiRightClickAction.action != null)
             uiRightClickAction.action.performed -= OnCancelPerformed;
 
-        if (uiClickAction != null && uiClickAction.action != null)  uiClickAction.action.Disable();
+        if (uiClickAction != null && uiClickAction.action != null)   uiClickAction.action.Disable();
         if (uiCancelAction != null && uiCancelAction.action != null) uiCancelAction.action.Disable();
         if (uiRightClickAction != null && uiRightClickAction.action != null) uiRightClickAction.action.Disable();
+
+        // Remove card from hand (this destroys the GameObject)
+        BattleEvents.RaiseCardResolved(activeCardGO);
+
+        // Final cleanup
+        onComplete?.Invoke();
+        onComplete     = null;
+        activeCardData = null;
+        activeCardGO   = null;
     }
 
     private void ResolveCard(Card card, EnemyHealth enemy, PlayerHealth player)
@@ -285,7 +358,57 @@ public class TargetingSystem : MonoBehaviour
                     break;
                 }
 
-                // add more here later if you want (GainStamina, DrawCards, etc.)
+                case EffectType.GainStamina:
+                {
+                    if (PlayerStamina.Instance != null)
+                    {
+                        PlayerStamina.Instance.currentStamina = Mathf.Min(
+                            PlayerStamina.Instance.maxStamina,
+                            PlayerStamina.Instance.currentStamina + eff.amount
+                        );
+                        Debug.Log($"[TargetingSystem] {card.cardName} restored {eff.amount} stamina.");
+                    }
+                    break;
+                }
+
+                case EffectType.DrawCards:
+                {
+                    var deckMgr = Object.FindFirstObjectByType<DeckManager>();
+                    var handMgr = Object.FindFirstObjectByType<HandManager>();
+                    if (deckMgr != null && handMgr != null)
+                    {
+                        var drawnCards = deckMgr.Draw(eff.amount);
+                        foreach (var c in drawnCards)
+                        {
+                            handMgr.AddCardToHand(c);
+                        }
+                        Debug.Log($"[TargetingSystem] {card.cardName} drew {drawnCards.Count} card(s).");
+                    }
+                    break;
+                }
+
+                case EffectType.PreventAttack:
+                {
+                    // This would need a status effect system on the player
+                    Debug.Log($"[TargetingSystem] {card.cardName} attempted to prevent attack (not fully implemented).");
+                    break;
+                }
+
+                case EffectType.RemoveDebuffs:
+                {
+                    // This would need a debuff tracking system
+                    Debug.Log($"[TargetingSystem] {card.cardName} attempted to remove debuffs (not fully implemented).");
+                    break;
+                }
+
+                case EffectType.ReflectDamage:
+                {
+                    // This would need a status effect system
+                    Debug.Log($"[TargetingSystem] {card.cardName} attempted to apply reflect damage (not fully implemented).");
+                    break;
+                }
+
+                // Add more effect types as needed
             }
         }
     }
