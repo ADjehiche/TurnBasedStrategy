@@ -8,7 +8,7 @@ public class EnemyHealthHUD : MonoBehaviour
 
     void Awake()
     {
-        if (target == null) target = FindObjectOfType<EnemyHealth>(); // simple 1-enemy fallback
+        if (target == null) target = Object.FindObjectOfType<EnemyHealth>(); // simple 1-enemy fallback
     }
 
     void OnEnable()
@@ -17,7 +17,7 @@ public class EnemyHealthHUD : MonoBehaviour
 
         // initial draw (covers case where Start already ran)
         if (target != null && hpText != null)
-            hpText.text = $"Enemy HP {target.currentHP}/{target.maxHP}";
+            hpText.text = $"{target.currentHP}/{target.maxHP}";
     }
 
     void OnDisable()
@@ -28,6 +28,6 @@ public class EnemyHealthHUD : MonoBehaviour
     private void HandleChanged(int current, int max)
     {
         if (hpText != null)
-            hpText.text = $"Enemy HP {current}/{max}";
+            hpText.text = $"{current}/{max}";
     }
 }

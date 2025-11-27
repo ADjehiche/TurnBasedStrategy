@@ -20,6 +20,6 @@ public class StaminaDisplay : MonoBehaviour
     {
         if (staminaText == null || PlayerStamina.Instance == null) return;
         var s = PlayerStamina.Instance;
-        staminaText.text = $"Stamina {s.currentStamina}/{s.maxStamina}";
+        staminaText.text = $"{s.currentStamina}/{s.maxStamina}";
     }
 }

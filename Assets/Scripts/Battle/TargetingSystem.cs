@@ -6,49 +6,41 @@ public class TargetingSystem : MonoBehaviour
 {
     public static TargetingSystem Instance;
 
-    private Card activeCardData = null;      // where the card being played will be stored
+    private Card activeCardData = null;
     private System.Action onComplete;
-
-    private GameObject activeCardGO;         // the GameObject of the card being played
+    private GameObject activeCardGO;
 
     [Header("Audio Settings")]
-    [Tooltip("Enable this when you have a player attack sound ready")]
-    [SerializeField] private bool playPlayerAttackSound = false;
-    [Tooltip("Name of the sound to play when player attacks (e.g., 'PlayerSlash', 'SwordHit')")]
+    [SerializeField] private bool   playPlayerAttackSound = false;
     [SerializeField] private string playerAttackSoundName = "PlayerAttack";
 
-
-    // using the new Input System
     [Header("Input (DefaultInputActions)")]
-    [Tooltip("Assign DefaultInputActions → UI/Click")]
     [SerializeField] private InputActionReference uiClickAction;
-
-    [Tooltip("Assign DefaultInputActions → UI/Cancel")]
     [SerializeField] private InputActionReference uiCancelAction;
-
-    [Tooltip("Optional: Assign DefaultInputActions → UI/RightClick (lets right-click cancel as well)")]
     [SerializeField] private InputActionReference uiRightClickAction;
 
     [Header("Camera")]
-    [SerializeField] private Camera worldCamera; 
+    [SerializeField] private Camera worldCamera;
 
     public bool IsBusy => activeCardGO != null;
 
-    void Awake() => Instance = this;
+    void Awake()
+    {
+        Instance = this;
+    }
 
     public void BeginTargeting(Card cardData, GameObject cardGO, System.Action onDone)
     {
-        // If another card was already locked, cancel it (this resets that card)
+        // cancel previous
         if (IsBusy) CancelTargeting();
 
         activeCardData = cardData;
         activeCardGO   = cardGO;
         onComplete     = onDone;
-        Debug.Log($"Targeting started for card: {activeCardData.cardName} (cost {activeCardData.staminaCost})");
 
-     
+        Debug.Log($"[TargetingSystem] Targeting started for card: {activeCardData.cardName} (cost {activeCardData.staminaCost})");
 
-             // Subscribe + enable actions
+        // subscribe + enable actions
         if (uiClickAction != null && uiClickAction.action != null)
         {
             uiClickAction.action.performed += OnClickPerformed;
@@ -68,19 +60,18 @@ public class TargetingSystem : MonoBehaviour
         }
     }
 
-
-
     public void CancelTargeting()
     {
         if (!IsBusy) return;
 
-        Debug.Log("Targeting cancelled.");
-    
-        onComplete?.Invoke(); // reset the locked card UI
-        onComplete = null;
-        activeCardGO = null;
+        Debug.Log("[TargetingSystem] Targeting cancelled.");
 
-        // Unsubscribe + disable actions
+        onComplete?.Invoke();
+        onComplete     = null;
+        activeCardData = null;
+        activeCardGO   = null;
+
+        // unsubscribe + disable
         if (uiClickAction != null && uiClickAction.action != null)
         {
             uiClickAction.action.performed -= OnClickPerformed;
@@ -98,99 +89,224 @@ public class TargetingSystem : MonoBehaviour
         }
     }
 
-    // called when UI/Click fires
     private void OnClickPerformed(InputAction.CallbackContext ctx)
     {
         if (!IsBusy) return;
 
-        // read pointer position from the Input System
         Vector2 screenPos =
             Pointer.current != null ? Pointer.current.position.ReadValue() :
             (Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero);
 
         var cam = worldCamera != null ? worldCamera : Camera.main;
         TryTargetAtScreenPoint(screenPos, cam);
-        // TryTargetAtScreenPoint will apply damage & call onComplete → reset + cleanup below happens there
     }
 
-    // UI/Cancel or UI/RightClick
     private void OnCancelPerformed(InputAction.CallbackContext ctx)
     {
         if (!IsBusy) return;
         CancelTargeting();
     }
 
-
-
-
     public void TryTargetAtScreenPoint(Vector2 screenPos, Camera cam)
     {
         if (cam == null) cam = Camera.main;
         if (cam == null) return;
 
+        if (activeCardData == null)
+        {
+            Debug.LogError("[TargetingSystem] TryTargetAtScreenPoint with no active card.");
+            CancelTargeting();
+            return;
+        }
+
         Vector3 world = cam.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, 0f));
         Vector2 point = world;
 
         Collider2D hit = Physics2D.OverlapPoint(point);
-        if (!hit) { Debug.Log("No 2D target under cursor."); return; }
+        EnemyHealth enemy   = hit ? hit.GetComponentInParent<EnemyHealth>() : null;
+        PlayerHealth player = hit ? hit.GetComponentInParent<PlayerHealth>() : null;
 
-        var enemy = hit.GetComponentInParent<EnemyHealth>();
-        if (enemy != null)
+        // --- SIMPLE RULES ---
+        // Attack cards (TargetType.SingleEnemy) only valid if we clicked enemy
+        // Heal/block cards (TargetType.Self) only valid if we clicked player
+
+        switch (activeCardData.targetType)
         {
-            //  no card means nothing to apply
-            if (activeCardData == null)
-            {
-                Debug.LogError("Tried to resolve targeting with no active card data.");
-                CancelTargeting();
-                return;
-            }
+            case TargetType.SingleEnemy:
+                if (enemy == null)
+                {
+                    Debug.Log("[TargetingSystem] Clicked, but no enemy for Attack card.");
+                    return; // keep targeting, do nothing
+                }
+                break;
 
-            // Spend stamina from PlayerStamina
-            if (PlayerStamina.Instance != null && !PlayerStamina.Instance.Spend(activeCardData.staminaCost))
-            {
-                Debug.Log("Not enough stamina at confirm-time; cancelling.");
-                CancelTargeting();
-                return;
-            }
+            case TargetType.Self:
+                if (player == null)
+                {
+                    // fallback: use PlayerHealth.Instance if no collider under cursor
+                    if (PlayerHealth.Instance != null)
+                    {
+                        player = PlayerHealth.Instance;
+                    }
+                    else
+                    {
+                        Debug.Log("[TargetingSystem] No player found for Self card.");
+                        return;
+                    }
+                }
+                break;
 
-            // Roll damage from card data
-            // int min = activeCardData.damageMin;
-            // int max = activeCardData.damageMax;
-            // int amount = Mathf.Clamp(Random.Range(min, max + 1), 0, int.MaxValue);
+            case TargetType.None:
+                // global effect – no specific click needed; we can just apply on player by default if needed
+                break;
 
-            // Play player attack sound if enabled (add your audio file first!)
-            if (playPlayerAttackSound && AudioManager.Instance != null)
-            {
-                AudioManager.Instance.Play(playerAttackSoundName);
-            }
-
-            // Apply damage
-            // enemy.TakeDamage(amount);
-
-            // Tell HandManager to remove this card
-            BattleEvents.RaiseCardResolved(activeCardGO);
-
-            // Cleanup
-            onComplete?.Invoke();
-            onComplete = null;
-            activeCardData = null;
-            activeCardGO   = null;
-
-            // cleanup input
-            if (uiClickAction != null && uiClickAction.action != null)
-                uiClickAction.action.performed -= OnClickPerformed;
-            if (uiCancelAction != null && uiCancelAction.action != null)
-                uiCancelAction.action.performed -= OnCancelPerformed;
-            if (uiRightClickAction != null && uiRightClickAction.action != null)
-                uiRightClickAction.action.performed -= OnCancelPerformed;
-
-            if (uiClickAction != null && uiClickAction.action != null) uiClickAction.action.Disable();
-            if (uiCancelAction != null && uiCancelAction.action != null) uiCancelAction.action.Disable();
-            if (uiRightClickAction != null && uiRightClickAction.action != null) uiRightClickAction.action.Disable();
+            default:
+                if (enemy == null && player == null)
+                {
+                    Debug.Log("[TargetingSystem] Clicked, but no valid target.");
+                    return;
+                }
+                break;
         }
-        else
+
+        // Stamina check
+        if (PlayerStamina.Instance != null &&
+            !PlayerStamina.Instance.Spend(activeCardData.staminaCost))
         {
-            Debug.Log("Hit 2D collider, but no EnemyHealth on it.");
+            Debug.Log("[TargetingSystem] Not enough stamina; cancelling.");
+            CancelTargeting();
+            return;
         }
-    }    
+
+        // Apply effects
+        ResolveCard(activeCardData, enemy, player);
+
+        // Audio (optional)
+        if (enemy != null && playPlayerAttackSound && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.Play(playerAttackSoundName);
+        }
+
+        // Remove card from hand
+        BattleEvents.RaiseCardResolved(activeCardGO);
+
+        // cleanup
+        onComplete?.Invoke();
+        onComplete     = null;
+        activeCardData = null;
+        activeCardGO   = null;
+
+        if (uiClickAction != null && uiClickAction.action != null)
+            uiClickAction.action.performed -= OnClickPerformed;
+        if (uiCancelAction != null && uiCancelAction.action != null)
+            uiCancelAction.action.performed -= OnCancelPerformed;
+        if (uiRightClickAction != null && uiRightClickAction.action != null)
+            uiRightClickAction.action.performed -= OnCancelPerformed;
+
+        if (uiClickAction != null && uiClickAction.action != null)  uiClickAction.action.Disable();
+        if (uiCancelAction != null && uiCancelAction.action != null) uiCancelAction.action.Disable();
+        if (uiRightClickAction != null && uiRightClickAction.action != null) uiRightClickAction.action.Disable();
+    }
+
+    private void ResolveCard(Card card, EnemyHealth enemy, PlayerHealth player)
+    {
+        if (card.effects == null || card.effects.Count == 0)
+        {
+            if (enemy != null)
+            {
+                enemy.TakeDamage(3);
+                Debug.Log($"[TargetingSystem] {card.cardName} had no effects; dealt 3 default damage to enemy.");
+            }
+            return;
+        }
+
+        foreach (var eff in card.effects)
+        {
+            switch (eff.effectType)
+            {
+                case EffectType.Damage:
+                {
+                    int amount = eff.useRandomRange
+                        ? Random.Range(eff.minAmount, eff.maxAmount + 1)
+                        : eff.amount;
+
+                    amount = Mathf.Max(0, amount);
+
+                    if (!eff.applyToSelf && enemy != null)
+                    {
+                        enemy.TakeDamage(amount);
+                        Debug.Log($"[TargetingSystem] {card.cardName} dealt {amount} damage to enemy.");
+                    }
+                    else if (eff.applyToSelf && player != null)
+                    {
+                        player.TakeDamage(amount);
+                        Debug.Log($"[TargetingSystem] {card.cardName} dealt {amount} damage to player (self).");
+                    }
+                    break;
+                }
+
+                case EffectType.ApplyBleed:
+                {
+                    if (enemy != null)
+                    {
+                        enemy.AddBleed(eff.amount);
+                        Debug.Log($"[TargetingSystem] {card.cardName} applied {eff.amount} bleed to enemy.");
+                    }
+                    break;
+                }
+
+                case EffectType.ApplyWeak:
+                {
+                    if (enemy != null)
+                    {
+                        enemy.AddPoison(eff.amount);
+                        Debug.Log($"[TargetingSystem] {card.cardName} applied {eff.amount}% weaken/poison to enemy.");
+                    }
+                    break;
+                }
+
+                case EffectType.Heal:
+                {
+                    if (player != null)
+                    {
+                        player.Heal(eff.amount);
+                        Debug.Log($"[TargetingSystem] {card.cardName} healed player for {eff.amount}.");
+                    }
+                    break;
+                }
+
+                case EffectType.ApplyBlock:
+                {
+                    if (player != null)
+                    {
+                        player.GainBlock(eff.amount);
+                        Debug.Log($"[TargetingSystem] {card.cardName} gave player {eff.amount} block.");
+                    }
+                    break;
+                }
+
+                // add more here later if you want (GainStamina, DrawCards, etc.)
+            }
+        }
+    }
+
+    // OPTIONAL: keep this for other systems if you want
+    public void PlayCardOnEnemyNow(Card card, EnemyHealth enemy, GameObject cardGO)
+    {
+        if (card == null || enemy == null)
+        {
+            Debug.LogWarning("[TargetingSystem] PlayCardOnEnemyNow called with nulls.");
+            return;
+        }
+
+        if (PlayerStamina.Instance != null &&
+            !PlayerStamina.Instance.Spend(card.staminaCost))
+        {
+            Debug.Log("[TargetingSystem] Not enough stamina to play card.");
+            return;
+        }
+
+        ResolveCard(card, enemy, null);
+        BattleEvents.RaiseCardResolved(cardGO);
+    }
 }
