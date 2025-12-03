@@ -1,81 +1,48 @@
-// using System.Collections;
-// using System.Collections.Generic;
-// using UnityEditor.Search;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using CardGame;
 
-public class CardMovement : MonoBehaviour, IDragHandler, IPointerDownHandler, IPointerEnterHandler, IPointerExitHandler, IPointerUpHandler
+public class CardMovement : MonoBehaviour,
+    IPointerEnterHandler,
+    IPointerExitHandler,
+    IPointerDownHandler
 {
     private CardInstance cardInstance;
     private RectTransform rectTransform;
 
-    private Canvas canvas;
-
-    private Vector2 originalLocalPointerPosition;
-
-    private Vector3 originalPanelLocalPosition;
-
+    private Vector3 originalLocalPosition;
     private Vector3 originalScale;
-
-    private int currentState = 0;
-
     private Quaternion originalRotation;
 
-    private Vector3 originalLocalPosition;
-
+    // 0 = idle, 1 = hover, 2 = locked/targeting
+    private int currentState = 0;
 
     [SerializeField] private float selectScale = 1.1f;
-    [SerializeField] private Vector2 cardPlay;
-
-    [SerializeField] private Vector3 playPostion;
-
-    // [SerializeField] private GameObject glowEffect;
-    // [SerializeField] private GameObject playArrow;
-
 
     void Awake()
     {
-        cardInstance = GetComponent<CardInstance>();
-        rectTransform = GetComponent<RectTransform>();
-        canvas = GetComponentInParent<Canvas>();
-        originalScale = rectTransform.localScale;
-        originalRotation = rectTransform.localRotation;
+        cardInstance   = GetComponent<CardInstance>();
+        rectTransform  = GetComponent<RectTransform>();
+
+        originalScale         = rectTransform.localScale;
+        originalRotation      = rectTransform.localRotation;
         originalLocalPosition = rectTransform.localPosition;
     }
 
     void Update()
     {
-        switch (currentState)
+        if (currentState == 1)
         {
-            case 1:
-
-
-                HandleHoverState();
-                break;
-
-
-            case 2:
-                HandleDragState(); 
-                break;
-
-
-            case 3:
-                HandlePlayState();
-                break;
-
+            rectTransform.localScale = originalScale * selectScale;
         }
     }
 
-    private void TransistionToState0()
+    private void ResetVisual()
     {
-        //reseting to original state
         currentState = 0;
-        rectTransform.localScale = originalScale;
+        rectTransform.localScale    = originalScale;
         rectTransform.localRotation = originalRotation;
         rectTransform.localPosition = originalLocalPosition;
-        // if (glowEffect) glowEffect.SetActive(false);
-        // if (playArrow) playArrow.SetActive(false);
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -83,124 +50,63 @@ public class CardMovement : MonoBehaviour, IDragHandler, IPointerDownHandler, IP
         if (currentState == 0)
         {
             originalLocalPosition = rectTransform.localPosition;
-            originalRotation = rectTransform.localRotation;
-            originalScale = rectTransform.localScale;
-            currentState = 1; // hover state
+            originalRotation      = rectTransform.localRotation;
+            originalScale         = rectTransform.localScale;
+            currentState          = 1; // hover
         }
-
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
         if (currentState == 1)
         {
-            TransistionToState0();
+            ResetVisual();
         }
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (currentState == 1)
+        // only allow from hover → lock
+        if (currentState != 1) return;
+
+        // grab card data
+        Card cardData = cardInstance != null
+            ? cardInstance.Data
+            : GetComponent<CardDisplay>()?.cardData;
+
+        if (cardData == null)
         {
-            currentState = 2;
-
-            var parentRect = (RectTransform)rectTransform.parent;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                parentRect,
-                eventData.position,
-                eventData.pressEventCamera,
-                out originalLocalPointerPosition
-            );
-
-            originalPanelLocalPosition = rectTransform.localPosition;
+            Debug.LogError("[CardMovement] No Card data found on this card.");
+            ResetVisual();
+            return;
         }
-    }
 
-    public void OnPointerUp(PointerEventData eventData)
-    {
-       
-        if (currentState == 3) return;
-        TransistionToState0();
-    }
-
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        if (currentState == 2)
+        if (TargetingSystem.Instance == null)
         {
-            var parentRect = (RectTransform)rectTransform.parent;
+            Debug.LogError("[CardMovement] No TargetingSystem.Instance found in scene.");
+            ResetVisual();
+            return;
+        }
 
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    parentRect,
-                    eventData.position,
-                    eventData.pressEventCamera,
-                    out Vector2 localPointerPosition))
+        currentState = 2; // locked / targeting
+
+        // VISUAL LOCK:
+        rectTransform.SetAsLastSibling(); // bring to front
+        rectTransform.localRotation = Quaternion.identity;
+        rectTransform.localScale    = originalScale * 1.15f;
+        rectTransform.localPosition = originalLocalPosition + new Vector3(0f, 150f, 0f); 
+        // tweak this offset to taste
+
+        // start targeting – onComplete will be called after play/cancel
+        TargetingSystem.Instance.BeginTargeting(cardData, gameObject, () =>
+        {
+            // if card still exists, snap back visuals
+            if (this != null && rectTransform != null)
             {
-                Vector3 offsetToOriginal = (localPointerPosition - originalLocalPointerPosition);
-                rectTransform.localPosition = originalPanelLocalPosition + offsetToOriginal;
-
-                if (rectTransform.localPosition.y > cardPlay.y)
-                {
-                    // 1) Get the Card data (prefer CardInstance; fallback to CardDisplay)
-                    Card cardData = cardInstance != null
-                        ? cardInstance.Data
-                        : GetComponent<CardDisplay>()?.cardData;
-
-                    if (cardData == null)
-                    {
-                        Debug.LogError("No Card data found on this card (CardInstance or CardDisplay).");
-                        TransistionToState0();
-                        return;
-                    }
-
-                    // 2) Stamina check BEFORE locking the card
-                    if (PlayerStamina.Instance != null && !PlayerStamina.Instance.CanAfford(cardData.staminaCost))
-                    {
-                        Debug.Log("Not enough stamina to play this card.");
-                        TransistionToState0(); // snap back to hand
-                        return;
-                    }
-
-                    // 3) Lock and start targeting with CARD DATA
-                    currentState = 3; // play state
-                    rectTransform.localPosition = playPostion;
-
-                    if (TargetingSystem.Instance != null)
-                    {
-                        TargetingSystem.Instance.BeginTargeting(cardData, gameObject, () =>
-                        {
-                            Debug.Log("Card played and resolved.");
-                            TransistionToState0();
-                            
-                        });
-                    }
-                    else
-                    {
-                        Debug.LogError("TargetingSystem.Instance is null. Add a TargetingSystem object to the scene.");
-                    }
-                }
+                ResetVisual();
             }
-        }
+        });
+
+        Debug.Log($"[CardMovement] Locked card for targeting: {cardData.cardName}");
     }
-
-    private void HandleHoverState()
-    {
-        // if (glowEffect && !glowEffect.activeSelf) glowEffect.SetActive(true);
-        rectTransform.localScale = originalScale * selectScale;
-    }
-    
-    private void HandleDragState()
-    {
-        rectTransform.localRotation = Quaternion.identity;
-    }
-
-    private void HandlePlayState()
-    {
-        rectTransform.localPosition = playPostion;
-        rectTransform.localRotation = Quaternion.identity;
-
-        
-    }
-
-
 }
