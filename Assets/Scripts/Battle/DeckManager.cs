@@ -7,6 +7,7 @@ public class DeckManager : MonoBehaviour
     [Header("Config")]
     [Tooltip("If empty, will load all Cards from Resources/Cards")]
     [SerializeField] private List<Card> startingDeck = new List<Card>();
+    [SerializeField] private int autoDeckSize = 20;
 
     [Header("Runtime")]
     [SerializeField] private List<Card> drawPile = new List<Card>();
@@ -23,15 +24,47 @@ public class DeckManager : MonoBehaviour
         drawPile.Clear();
         discardPile.Clear();
 
-        if (startingDeck == null || startingDeck.Count == 0)
-        {
-            var all = Resources.LoadAll<Card>("Cards");
-            drawPile.AddRange(all);
-        }
-        else
+        // If a starting deck is assigned in the inspector, use that directly.
+        if (startingDeck != null && startingDeck.Count > 0)
         {
             drawPile.AddRange(startingDeck);
+            Debug.Log($"[DeckManager] Using startingDeck from inspector, count = {drawPile.Count}");
+            return;
         }
+
+        // Auto-build from Resources using the 2 Attack / 1 Defense / 1 Utility-or-Tactical pattern.
+        var allCards = new List<Card>();
+        allCards.AddRange(Resources.LoadAll<Card>("Cards"));
+        allCards.AddRange(Resources.LoadAll<Card>("Cards/Attack"));
+        allCards.AddRange(Resources.LoadAll<Card>("Cards/Defense"));
+        allCards.AddRange(Resources.LoadAll<Card>("Cards/Tactical"));
+        allCards.AddRange(Resources.LoadAll<Card>("Cards/Utility"));
+
+        if (allCards.Count == 0)
+        {
+            Debug.LogError("[DeckManager] No cards found in Resources/Cards – cannot build deck.");
+            return;
+        }
+
+        // Split by category
+        var attacks   = allCards.FindAll(c => c.category == CardCategory.Attack);
+        var defenses  = allCards.FindAll(c => c.category == CardCategory.Defense);
+        var utilities = allCards.FindAll(c => c.category == CardCategory.Utility);
+        var tacticals = allCards.FindAll(c => c.category == CardCategory.Tactical);
+
+        if (attacks.Count == 0 || defenses.Count == 0 || (utilities.Count == 0 && tacticals.Count == 0))
+        {
+            Debug.LogError("[DeckManager] Not enough cards in one or more categories to build auto deck.");
+            return;
+        }
+
+        // Add ALL unique cards to the deck (no duplicates)
+        drawPile.AddRange(attacks);
+        drawPile.AddRange(defenses);
+        drawPile.AddRange(utilities);
+        drawPile.AddRange(tacticals);
+
+        Debug.Log($"[DeckManager] Built deck with {drawPile.Count} unique cards (no duplicates).");
     }
 
     public static void Shuffle<T>(List<T> list)

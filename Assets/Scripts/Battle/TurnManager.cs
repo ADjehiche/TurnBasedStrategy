@@ -31,8 +31,8 @@ public class TurnManager : MonoBehaviour
     [SerializeField] private PlayerStamina playerStamina;
 
     [Header("Turn Rules")]
-    private int cardsPerTurn = 3;
-    private bool refillStaminaEachTurn = true;
+    [SerializeField] private int cardsPerTurn = 4;
+    [SerializeField] private bool refillStaminaEachTurn = true;
 
 
 
@@ -107,6 +107,13 @@ public class TurnManager : MonoBehaviour
 
         if (enableDebugLogs)
             Debug.Log($"[TurnManager] StartPlayerTurn -> PlayerTurn");
+
+        // Tick status effects (bleed, weaken, etc.) at the start of player turn
+        var enemy = UnityEngine.Object.FindFirstObjectByType<EnemyHealth>();
+        if (enemy != null)
+        {
+            enemy.TickStatuses();
+        }
 
         // Refill stamina at the start of the turn
         if (refillStaminaEachTurn && playerStamina != null)
