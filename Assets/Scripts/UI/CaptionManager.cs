@@ -89,13 +89,26 @@ public class CaptionManager : MonoBehaviour
         if (captionPanel == null || captionText == null)
         {
             Debug.LogWarning("CaptionManager: Missing UI components!");
+            Debug.LogWarning($"captionPanel null: {captionPanel == null}, captionText null: {captionText == null}");
             yield break;
+        }
+        
+        Debug.Log($"[CaptionManager] Displaying: '{text}' | Type: {type} | Duration: {duration}");
+        
+        // Ensure text GameObject is active
+        if (!captionText.gameObject.activeSelf)
+        {
+            captionText.gameObject.SetActive(true);
+            Debug.Log("[CaptionManager] Activated CaptionText GameObject");
         }
         
         // Set up the caption
         captionText.text = text;
         captionText.color = GetColorForType(type);
         captionPanel.SetActive(true);
+        
+        Debug.Log($"[CaptionManager] Text set to: '{captionText.text}' | Color: {captionText.color} | Panel active: {captionPanel.activeSelf}");
+        Debug.Log($"[CaptionManager] Text component enabled: {captionText.enabled} | GameObject active: {captionText.gameObject.activeSelf}");
         
         // Fade in
         yield return StartCoroutine(AnimateAlpha(0f, 1f, fadeInDuration));

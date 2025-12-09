@@ -47,7 +47,13 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-        gameManager = GameObject.Find(GAMEMANAGER_NAME).GetComponent<GameManager>();
+        
+        // Try to find GameManager (may not exist in tutorial scene)
+        GameObject gmObject = GameObject.Find(GAMEMANAGER_NAME);
+        if (gmObject != null)
+        {
+            gameManager = gmObject.GetComponent<GameManager>();
+        }
         
         // Find animator if not assigned
         if (animator == null)
