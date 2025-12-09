@@ -185,8 +185,12 @@ public class CompanionInteraction : MonoBehaviour
             CaptionManager.Instance.ShowMonologue(companionAgreement, dialogueDuration);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
-            // 7. System message
+            // 7. System message - Fragment joined
             CaptionManager.Instance.ShowSystemMessage("[System] Fragment joined", 2f);
+            yield return new WaitForSeconds(2.5f);
+            
+            // 8. Hint about exploring symbols
+            CaptionManager.Instance.ShowSystemMessage("[System] Fragment may know more about the markings on the walls", 3f);
             yield return new WaitForSeconds(0.5f);
         }
         else
