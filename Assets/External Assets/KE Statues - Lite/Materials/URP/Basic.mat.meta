@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f7b72b58d0253394d95e3e9192f83bd1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 340510
+  packageName: KE Statues - Lite
+  packageVersion: 1.0
+  assetPath: Assets/KE Statues - Lite/Materials/URP/Basic.mat
+  uploadId: 806944

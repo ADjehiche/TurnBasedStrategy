@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f00567f35ff69e04c88d298871586f1b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4890085278179872738
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 340510
+  packageName: KE Statues - Lite
+  packageVersion: 1.0
+  assetPath: Assets/KE Statues - Lite/Scene/DemoBasic/Demo_Basic.lighting
+  uploadId: 806944

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d79911c7ed6090d4a9ed2e0415d6bf0d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 340510
+  packageName: KE Statues - Lite
+  packageVersion: 1.0
+  assetPath: Assets/KE Statues - Lite/Scene/Demo_HDRP/SkyandFogSettingsProfile.asset
+  uploadId: 806944
