@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: abc0a297d6aff7944b505bd2f84d7a98
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 340510
+  packageName: KE Statues - Lite
+  packageVersion: 1.0
+  assetPath: Assets/KE Statues - Lite/Materials/HDRP/Basic.mat
+  uploadId: 806944

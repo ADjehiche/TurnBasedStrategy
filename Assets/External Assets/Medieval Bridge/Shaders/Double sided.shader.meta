@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 963d58b104fa8c34788c7ad99a7c8aae
+timeCreated: 1468868284
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 67509
+  packageName: Medieval bridge 3D
+  packageVersion: 1.0
+  assetPath: Assets/Medieval Bridge/Shaders/Double sided.shader
+  uploadId: 127864

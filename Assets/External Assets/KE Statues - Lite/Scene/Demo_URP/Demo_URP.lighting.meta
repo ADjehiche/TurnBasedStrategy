@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a08d1e0ea0267cf4d88a23db80c05a97
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4890085278179872738
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 340510
+  packageName: KE Statues - Lite
+  packageVersion: 1.0
+  assetPath: Assets/KE Statues - Lite/Scene/Demo_URP/Demo_URP.lighting
+  uploadId: 806944

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ef19c116e9a85d24d9c19d4171f5e90d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 340510
+  packageName: KE Statues - Lite
+  packageVersion: 1.0
+  assetPath: Assets/KE Statues - Lite/Materials/HDRP/Classic/DarkMetal/DarkMetal_Classic_Statue_4.mat
+  uploadId: 806944

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b2beb88ea6826b6498adbd29e21c9b3d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4890085278179872738
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 340510
+  packageName: KE Statues - Lite
+  packageVersion: 1.0
+  assetPath: Assets/KE Statues - Lite/Scene/Demo_HDRP/Demo_Hdrp.lighting
+  uploadId: 806944
