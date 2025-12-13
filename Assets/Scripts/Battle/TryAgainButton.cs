@@ -1,13 +1,21 @@
 using UnityEngine;
-using UnityEngine.SceneManagement; // Needed for scene loading
+using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Handles the Try Again button on the death screen
+/// Reloads to checkpoint instead of full level restart
+/// </summary>
 public class TryAgainButton : MonoBehaviour
 {
-    // This method will be called when the button is clicked
+    // Called by Unity button OnClick event
     public void RestartLevel()
     {
-        GameSession.Reset();
-        SceneManager.LoadScene("TitleScene");
+        Debug.Log("[TryAgainButton] Try Again clicked - loading checkpoint");
         
+        // GameSession.IsRespawning was already set by PlayerHealth.OnPlayerDeath()
+        // This tells LevelOneReturnManager to use the checkpoint
+        
+        // Load Level One (will spawn at checkpoint)
+        SceneManager.LoadScene("LevelOne");
     }
 }

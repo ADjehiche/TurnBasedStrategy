@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -7,50 +5,72 @@ using CardGame;
 
 public class CardDisplay : MonoBehaviour
 {
+    [Header("Data")]
     public Card cardData;
 
-    public Image cardImage;
-    public TMP_Text nameText;
-    public TMP_Text staminaText;
-    public TMP_Text damageText;
+    [Header("UI References")]
+    public Image cardImage;          // big art image
+    public TMP_Text nameText;        // card name
+    public TMP_Text staminaText;     // number in the stamina shield
+    public TMP_Text descriptionText; // bottom description box
 
-    public TMP_Text typeText;
-  
-    void Start()
+    private bool hasRefreshed = false;
+
+    private void OnEnable()
     {
-        UpdateCardDisplay();
-
-
+        // Only refresh if we haven't already and have data
+        if (!hasRefreshed && cardData != null)
+        {
+            Refresh();
+        }
     }
 
-    public void UpdateCardDisplay()
+    private void Start()
     {
-        nameText.text = cardData.cardName;
-        typeText.text = cardData.cardType.ToString();
-        staminaText.text = cardData.staminaCost.ToString();
-        damageText.text = $"{cardData.damageMin} - {cardData.damageMax}";
-
-
+        // Ensure we refresh at least once
+        if (!hasRefreshed)
+        {
+            Refresh();
+        }
     }
-    
+
+    public void SetCard(Card newCard)
+    {
+        cardData = newCard;
+        Refresh();
+    }
+
     public void Refresh()
     {
+        hasRefreshed = true;
+        
         if (cardData == null)
         {
-            Debug.LogWarning($"[{name}] No card data assigned to CardDisplay!");
+            if (staminaText)     staminaText.text     = "";
+            if (descriptionText) descriptionText.text = "";
+            if (nameText)        nameText.text        = "";
+            if (cardImage)       cardImage.sprite     = null;
+            // Only warn if the card has been enabled (not during instantiation)
+            if (gameObject.activeInHierarchy)
+            {
+                Debug.LogWarning($"[{name}] No card data assigned to CardDisplay!");
+            }
             return;
         }
 
-        // Update all the displayed values based on the ScriptableObject data
-        nameText.text = cardData.cardName;
-        staminaText.text = cardData.staminaCost.ToString();
-        damageText.text = $"{cardData.damageMin} - {cardData.damageMax}";
-        typeText.text = cardData.cardType.ToString();
+        // Cost
+        if (staminaText)
+            staminaText.text = cardData.staminaCost.ToString();
 
-        // for later if we add images
-        // if (cardImage != null)
-        //     cardImage.sprite = cardData.cardSprite;
+        // Art
+        if (cardImage)
+            cardImage.sprite = cardData.artwork;
+
+        // Text – exactly like before: just use what you wrote on the card
+        if (descriptionText)
+            descriptionText.text = cardData.description;
+
+        if (nameText)
+            nameText.text = cardData.cardName;
     }
-
-  
 }

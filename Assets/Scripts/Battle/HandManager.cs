@@ -27,11 +27,12 @@ public class HandManager : MonoBehaviour
     {
         Debug.Log($"[HandManager] AddCardToHand called for card: {cardData.name}. Current hand size: {cardsInHand.Count}");
 
-        // 1) Instantiate under the hand transform
+        // 1) Instantiate under the hand transform (inactive to prevent OnEnable)
         GameObject newCard = Instantiate(cardPrefab, handTransform.position, Quaternion.identity, handTransform);
+        newCard.SetActive(false); // Temporarily disable to prevent OnEnable before data is set
         cardsInHand.Add(newCard);
 
-        // 2) to keep things organized, set the card data on the CardInstance component
+        // 2) Set the card data on the CardInstance component BEFORE enabling
         var instance = newCard.GetComponent<CardInstance>();
         if (instance != null)
         {
@@ -45,8 +46,6 @@ public class HandManager : MonoBehaviour
             if (display != null)
             {
                  display.cardData = cardData;
-                 display.Refresh();   
-
             }
             else
             {
@@ -54,7 +53,17 @@ public class HandManager : MonoBehaviour
             }
         }
 
-        // 3) Layout
+        // 3) Now enable the card (OnEnable will see the data)
+        newCard.SetActive(true);
+
+        // Manually refresh the display to ensure it's updated
+        var cardDisplay = newCard.GetComponent<CardDisplay>();
+        if (cardDisplay != null)
+        {
+            cardDisplay.Refresh();
+        }
+
+        // 4) Layout
         UpdateHandVisuals();
     }
 

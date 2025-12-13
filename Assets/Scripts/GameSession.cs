@@ -22,6 +22,12 @@ public static class GameSession
     public static bool HasShownKeyPickup;
     public static bool HasShownDoorOpen;
     public static bool HasShownEnemySpotted;
+    
+    // Checkpoint system (for respawning after death)
+    public static bool HasCheckpoint;
+    public static Vector3 CheckpointPosition;
+    public static Quaternion CheckpointRotation;
+    public static bool IsRespawning; // Flag to indicate we're loading from death
 
     public static void SetReturnPosition(Vector3 pos)
     {
@@ -33,6 +39,14 @@ public static class GameSession
     {
         BattleTriggerCenter = center;
         Debug.Log($"[GameSession] Battle trigger center saved: {center}");
+    }
+    
+    public static void SaveCheckpoint(Vector3 pos, Quaternion rot)
+    {
+        HasCheckpoint = true;
+        CheckpointPosition = pos;
+        CheckpointRotation = rot;
+        Debug.Log($"[GameSession] ✅ Checkpoint saved at {pos}, rotation {rot.eulerAngles}");
     }
 
     public static void Reset()
@@ -50,5 +64,11 @@ public static class GameSession
         HasShownKeyPickup = false;
         HasShownDoorOpen = false;
         HasShownEnemySpotted = false;
+        
+        // Reset checkpoint
+        HasCheckpoint = false;
+        CheckpointPosition = default;
+        CheckpointRotation = default;
+        IsRespawning = false;
     }
 }
