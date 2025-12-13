@@ -100,3 +100,4 @@ Assets/External Assets/RPGHero/**/ScriptAssemblies*
 
 # Ignore Mac system junk
 .DS_Store
+._*
