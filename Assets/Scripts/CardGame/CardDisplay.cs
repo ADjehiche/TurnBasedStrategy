@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using CardGame;
 
+[ExecuteAlways]
 public class CardDisplay : MonoBehaviour
 {
     [Header("Data")]
@@ -16,9 +17,17 @@ public class CardDisplay : MonoBehaviour
 
     private bool hasRefreshed = false;
 
+    private void OnValidate()
+    {
+        // Runs in the editor when you change values in the Inspector (no Play mode needed)
+        if (cardData != null)
+        {
+            Refresh();
+        }
+    }
+
     private void OnEnable()
     {
-        // Only refresh if we haven't already and have data
         if (!hasRefreshed && cardData != null)
         {
             Refresh();
@@ -27,7 +36,6 @@ public class CardDisplay : MonoBehaviour
 
     private void Start()
     {
-        // Ensure we refresh at least once
         if (!hasRefreshed)
         {
             Refresh();
@@ -43,14 +51,14 @@ public class CardDisplay : MonoBehaviour
     public void Refresh()
     {
         hasRefreshed = true;
-        
+
         if (cardData == null)
         {
             if (staminaText)     staminaText.text     = "";
             if (descriptionText) descriptionText.text = "";
             if (nameText)        nameText.text        = "";
             if (cardImage)       cardImage.sprite     = null;
-            // Only warn if the card has been enabled (not during instantiation)
+
             if (gameObject.activeInHierarchy)
             {
                 Debug.LogWarning($"[{name}] No card data assigned to CardDisplay!");
@@ -58,15 +66,12 @@ public class CardDisplay : MonoBehaviour
             return;
         }
 
-        // Cost
         if (staminaText)
             staminaText.text = cardData.staminaCost.ToString();
 
-        // Art
         if (cardImage)
             cardImage.sprite = cardData.artwork;
 
-        // Text – exactly like before: just use what you wrote on the card
         if (descriptionText)
             descriptionText.text = cardData.description;
 
