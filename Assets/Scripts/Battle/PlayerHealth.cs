@@ -1,26 +1,31 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement; // Needed for scene loading
+using UnityEngine.SceneManagement;
 
 public class PlayerHealth : MonoBehaviour
 {
     public static PlayerHealth Instance { get; private set; }
 
-    [Header("Health Settings")]
+    [Header("Health")]
     [SerializeField] private int maxHealth = 20;
     [SerializeField] private int currentHealth;
 
-    [Header("Block Settings")]
+    [Header("Block")]
     [SerializeField] private int currentBlock;
-    [SerializeField] private GameObject blockGroup; // BlockGroup UI (shield + text)
-    [SerializeField] private Text blockText;        // Block number text
+    [SerializeField] private GameObject blockGroup;
+    [SerializeField] private Text blockText;
 
-    [Header("UI References")]
+    [Header("UI")]
     [SerializeField] private Slider healthSlider;
     [SerializeField] private Text healthText;
 
+    [Header("Damage Popup")]
+    [SerializeField] private RectTransform playerDamagePopupAnchor;
+
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
+
+    // ✅ IMPORTANT: your HUD needs this
     public int CurrentBlock => currentBlock;
 
     private void Awake()
@@ -36,8 +41,15 @@ public class PlayerHealth : MonoBehaviour
     private void Start()
     {
         currentHealth = maxHealth;
-        currentBlock  = 0;
+        currentBlock = 0;
         UpdateHealthUI();
+
+        // Fallback: try to find the anchor if it's not assigned
+        if (playerDamagePopupAnchor == null)
+        {
+            var t = GameObject.Find("PlayerDamagePopupAnchor");
+            if (t != null) playerDamagePopupAnchor = t.GetComponent<RectTransform>();
+        }
     }
 
     public void TakeDamage(int amount)
@@ -46,21 +58,38 @@ public class PlayerHealth : MonoBehaviour
 
         int remaining = amount;
 
-        // 1) Block absorbs damage first
+        // Block absorbs first
         if (currentBlock > 0)
         {
             int absorbed = Mathf.Min(currentBlock, remaining);
             currentBlock -= absorbed;
-            remaining    -= absorbed;
+            remaining -= absorbed;
         }
 
-        // 2) Any leftover hits HP
+        // leftover hits HP
         if (remaining > 0)
         {
             currentHealth = Mathf.Max(0, currentHealth - remaining);
         }
 
         Debug.Log($"[PlayerHealth] Player took {amount} damage. HP: {currentHealth}/{maxHealth}, Block: {currentBlock}");
+
+        // 🔥 POPUP + BUMP
+        if (BattleAnimator.Instance != null)
+        {
+            // popup
+            if (playerDamagePopupAnchor != null)
+                BattleAnimator.Instance.ShowDamagePopup(amount, playerDamagePopupAnchor);
+            else
+                Debug.LogWarning("[PlayerHealth] playerDamagePopupAnchor is NULL (assign PlayerDamagePopupAnchor in Inspector).");
+
+            // bump (player is on left, bump right looks better)
+            BattleAnimator.Instance.Bump(transform, Vector3.right);
+        }
+        else
+        {
+            Debug.LogWarning("[PlayerHealth] BattleAnimator.Instance is NULL (make sure BattleAnimator object exists in scene).");
+        }
 
         UpdateHealthUI();
 
@@ -75,12 +104,11 @@ public class PlayerHealth : MonoBehaviour
         if (amount <= 0) return;
 
         currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
-        Debug.Log($"[PlayerHealth] Player healed {amount}. Health: {currentHealth}/{maxHealth}");
+        Debug.Log($"[PlayerHealth] Player healed {amount}. HP: {currentHealth}/{maxHealth}");
 
         UpdateHealthUI();
     }
 
-    // NEW: gain block (from block cards)
     public void GainBlock(int amount)
     {
         if (amount <= 0) return;
@@ -91,20 +119,26 @@ public class PlayerHealth : MonoBehaviour
         UpdateHealthUI();
     }
 
-    // NEW: reset block (e.g. at start of player turn)
     public void ResetBlock()
     {
         currentBlock = 0;
         UpdateHealthUI();
     }
 
+    // ✅ IMPORTANT: LevelOneManager needs this
+    public void ResetHealth()
+    {
+        currentHealth = maxHealth;
+        currentBlock = 0;
+        UpdateHealthUI();
+    }
+
     private void UpdateHealthUI()
     {
-        // Health bar + text (existing behaviour)
         if (healthSlider != null)
         {
             healthSlider.maxValue = maxHealth;
-            healthSlider.value    = currentHealth;
+            healthSlider.value = currentHealth;
         }
 
         if (healthText != null)
@@ -112,7 +146,6 @@ public class PlayerHealth : MonoBehaviour
             healthText.text = $"{currentHealth}/{maxHealth}";
         }
 
-        // Block shield UI (optional)
         if (blockGroup != null)
             blockGroup.SetActive(currentBlock > 0);
 
@@ -123,26 +156,15 @@ public class PlayerHealth : MonoBehaviour
     private void OnPlayerDeath()
     {
         Debug.Log("[PlayerHealth] Player defeated! Loading death screen...");
-        
+
         BattleState.SetOver(true);
-        
-        // Mark that we're respawning from death (for when Try Again is pressed)
         GameSession.IsRespawning = true;
-        
-        // Load death screen (Try Again button will reload to checkpoint)
+
         SceneManager.LoadScene("DeathScene");
 
-        // Disable turn manager
         if (TurnManager.Instance != null)
         {
             TurnManager.Instance.enabled = false;
         }
-    }
-
-    public void ResetHealth()
-    {
-        currentHealth = maxHealth;
-        currentBlock  = 0;
-        UpdateHealthUI();
     }
 }

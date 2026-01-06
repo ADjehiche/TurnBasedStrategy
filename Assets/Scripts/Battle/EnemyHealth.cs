@@ -1,34 +1,33 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class EnemyHealth : MonoBehaviour
 {
+    [Header("Health")]
     public int maxHP = 20;
-    public int currentHP = 20;
-
-    public int CurrentHP => currentHP;
-    public int MaxHP => maxHP;
+    public int currentHP;
 
     [Header("Status Effects")]
     public int bleedStacks;
     public int weakenPercent;
-    public int weakenTurns; // usually 0 or 1 turn so 0 end of effect so it can disappear
+    public int weakenTurns;
 
-    [SerializeField] private EnemyStatusDisplay statusDisplay; 
+    [Header("UI")]
+    [SerializeField] private RectTransform enemyDamagePopupAnchor;
+    [SerializeField] private EnemyStatusDisplay statusDisplay;
 
-    public event System.Action<int, int> OnHealthChanged; // (current, max)
-    
+    public int CurrentHP => currentHP;
+    public int MaxHP => maxHP;
+
+    public event System.Action<int, int> OnHealthChanged;
+
     private SkeletonAudioController audioController;
 
     void Awake()
     {
-        // Make sure this object has the "Enemy" tag for proper cleanup
         if (gameObject.tag != "Enemy")
-        {
-            Debug.LogWarning("EnemyHealth object should have the 'Enemy' tag for proper cleanup after battle");
             tag = "Enemy";
-        }
-        
-        // Get audio controller if available
+
         audioController = GetComponent<SkeletonAudioController>();
     }
 
@@ -42,27 +41,49 @@ public class EnemyHealth : MonoBehaviour
             statusDisplay.SetBleedTurns(bleedStacks);
             statusDisplay.SetWeakenPercent(weakenPercent);
         }
+
+        // Fallback: try to find the anchor if it's not assigned
+        if (enemyDamagePopupAnchor == null)
+        {
+            var t = GameObject.Find("EnemyDamagePopupAnchor");
+            if (t != null) enemyDamagePopupAnchor = t.GetComponent<RectTransform>();
+        }
     }
 
     public void TakeDamage(int amount)
     {
-        currentHP = Mathf.Max(currentHP - amount, 0);
-        Debug.Log($"Enemy took {amount} damage. HP now {currentHP}");
+        if (amount <= 0) return;
+
+        currentHP = Mathf.Max(0, currentHP - amount);
+        Debug.Log($"Enemy took {amount} damage. HP: {currentHP}");
 
         OnHealthChanged?.Invoke(currentHP, maxHP);
 
+        // 🔥 POPUP + BUMP
+        if (BattleAnimator.Instance != null)
+        {
+            // popup
+            if (enemyDamagePopupAnchor != null)
+                BattleAnimator.Instance.ShowDamagePopup(amount, enemyDamagePopupAnchor);
+            else
+                Debug.LogWarning("[EnemyHealth] enemyDamagePopupAnchor is NULL (assign EnemyDamagePopupAnchor in Inspector).");
+
+            // bump (enemy gets pushed a bit to the RIGHT or LEFT depending on your setup)
+            // If enemy is on right side, bump left looks better:
+            BattleAnimator.Instance.Bump(transform, Vector3.left);
+        }
+        else
+        {
+            Debug.LogWarning("[EnemyHealth] BattleAnimator.Instance is NULL (make sure BattleAnimator object exists in scene).");
+        }
+
         if (currentHP <= 0)
         {
-            Debug.Log("Enemy died");
-            
-            // Play death sound if audio controller is available
             if (audioController != null)
-            {
                 audioController.PlayDeathSound();
-            }
-            
+
             BattleState.SetOver(true);
-            Destroy(gameObject, 0.5f); // Small delay to let death sound play
+            Destroy(gameObject, 0.5f);
         }
     }
 
@@ -71,46 +92,35 @@ public class EnemyHealth : MonoBehaviour
         if (amount <= 0) return;
 
         bleedStacks += amount;
-        if (statusDisplay != null)
-            statusDisplay.SetBleedTurns(bleedStacks);
+        statusDisplay?.SetBleedTurns(bleedStacks);
     }
 
     public void AddPoison(int percent)
     {
         if (percent <= 0) return;
 
-        // Poison in this design applies a 1-turn weaken effect
         weakenPercent = percent;
-        weakenTurns   = 1;  // always 1 turn for now
+        weakenTurns = 1;
 
-        if (statusDisplay != null)
-            statusDisplay.SetWeakenPercent(weakenPercent);
+        statusDisplay?.SetWeakenPercent(weakenPercent);
     }
 
     public void TickStatuses()
     {
-        // Bleed: -1 HP per turn for each remaining stack (stack = turn)
         if (bleedStacks > 0)
         {
             TakeDamage(1);
             bleedStacks--;
-
-            if (statusDisplay != null)
-                statusDisplay.SetBleedTurns(bleedStacks);
+            statusDisplay?.SetBleedTurns(bleedStacks);
         }
 
-        // Weaken: lasts a fixed number of turns (usually 1). When it expires,
-        // clear the percent and hide the icon.
         if (weakenTurns > 0)
         {
             weakenTurns--;
-
             if (weakenTurns <= 0)
             {
                 weakenPercent = 0;
-
-                if (statusDisplay != null)
-                    statusDisplay.SetWeakenPercent(0);
+                statusDisplay?.SetWeakenPercent(0);
             }
         }
     }
@@ -118,8 +128,6 @@ public class EnemyHealth : MonoBehaviour
     public int GetWeakenedDamage(int baseDamage)
     {
         if (weakenPercent <= 0) return baseDamage;
-
-        float factor = 1f - (weakenPercent / 100f);
-        return Mathf.RoundToInt(baseDamage * factor);
+        return Mathf.RoundToInt(baseDamage * (1f - weakenPercent / 100f));
     }
 }
