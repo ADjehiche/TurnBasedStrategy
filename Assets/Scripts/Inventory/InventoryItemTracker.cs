@@ -11,6 +11,14 @@ public class InventoryItemTracker : MonoBehaviour
     
     private InventoryHolder playerInventory;
     
+    /// <summary>
+    /// Disable the automatic removal behavior (used when switching equipped items)
+    /// </summary>
+    public void DisableRemovalOnDestroy()
+    {
+        removeFromInventoryOnDestroy = false;
+    }
+    
     void Start()
     {
         // Find the player's inventory holder

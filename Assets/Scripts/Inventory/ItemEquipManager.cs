@@ -297,7 +297,19 @@ public class ItemEquipManager : MonoBehaviour
         {
             if (debugMode)
             {
-                Debug.Log($"ItemEquipManager: Clearing equipped item");
+                Debug.Log($"ItemEquipManager: Clearing equipped item (switching slots)");
+            }
+            
+            // Disable the InventoryItemTracker's removal behavior before destroying
+            // to prevent it from removing the item from inventory when we're just switching slots
+            InventoryItemTracker tracker = currentlyEquippedItem.GetComponent<InventoryItemTracker>();
+            if (tracker != null)
+            {
+                tracker.DisableRemovalOnDestroy();
+                if (debugMode)
+                {
+                    Debug.Log($"ItemEquipManager: Disabled tracker removal to prevent inventory removal on slot switch");
+                }
             }
             
             Destroy(currentlyEquippedItem);

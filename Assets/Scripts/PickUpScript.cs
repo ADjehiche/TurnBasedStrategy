@@ -41,33 +41,41 @@ public class PickUpScript : MonoBehaviour
         fireAction = playerInput.actions[FIRE_ACTION_NAME];
 
         // Setup callbacks for the actions
-        pickUpAction.performed += ctx => OnPickUpPerformed();
-        fireAction.performed += ctx => OnFirePerformed();
+        // Pickup action DISABLED - using inventory system instead
+        // pickUpAction.performed += ctx => OnPickUpPerformed();
+        
+        // Fire/throw action DISABLED - ItemEquipManager handles throwing now
+        // fireAction.performed += ctx => OnFirePerformed();
+        
+        Debug.Log("PickUpScript: Old pickup and throw actions DISABLED. Using inventory system only.");
     }
 
     void OnEnable()
     {
+        // Old pickup and throw actions disabled - using inventory system only
         // pickUpAction?.Enable();
-        fireAction?.Enable();
+        // fireAction?.Enable();
     }
 
     void OnDisable()
     {
-        pickUpAction?.Disable();
-        fireAction?.Disable();
+        // Old pickup and throw actions disabled - using inventory system only
+        // pickUpAction?.Disable();
+        // fireAction?.Disable();
     }
     
     void OnDestroy()
     {
         // Unsubscribe from input action callbacks to prevent errors
-        if (pickUpAction != null)
-        {
-            pickUpAction.performed -= ctx => OnPickUpPerformed();
-        }
-        if (fireAction != null)
-        {
-            fireAction.performed -= ctx => OnFirePerformed();
-        }
+        // Old actions were never subscribed, so no need to unsubscribe
+        // if (pickUpAction != null)
+        // {
+        //     pickUpAction.performed -= ctx => OnPickUpPerformed();
+        // }
+        // if (fireAction != null)
+        // {
+        //     fireAction.performed -= ctx => OnFirePerformed();
+        // }
     }
 
     void Start()
