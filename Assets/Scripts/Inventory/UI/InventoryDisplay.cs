@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 
 public abstract class InventoryDisplay : MonoBehaviour
 {
-    [SerializeField] MouseItemData mouseInventoryItem;
+    [SerializeField] private MouseItemData mouseInventoryItem;
     protected InventorySystem inventorySystem;
     protected Dictionary<InventorySlot_UI, InventorySlot> slotDictionary;
 
@@ -33,11 +33,17 @@ public abstract class InventoryDisplay : MonoBehaviour
 
     public void SlotClicked(InventorySlot_UI clickedUISlot)
     {
-        if(clickedUISlot.AssignedInventorySlot.ItemData!=null && mouseInventoryItem.InventorySlot.ItemData==null)
+        if(clickedUISlot.AssignedInventorySlot.ItemData!=null && mouseInventoryItem.AssignedInventorySlot.ItemData==null)
         {
             mouseInventoryItem.UpdateMouseSlot(clickedUISlot.AssignedInventorySlot);
             clickedUISlot.ClearSlot();
             return;
+        }
+        if(clickedUISlot.AssignedInventorySlot.ItemData == null && mouseInventoryItem.AssignedInventorySlot.ItemData != null)
+        {
+            clickedUISlot.AssignedInventorySlot.AssignItem(mouseInventoryItem.AssignedInventorySlot);
+            clickedUISlot.UpdateUISlot();
+            mouseInventoryItem.ClearSlot(); 
         }
     }
 
