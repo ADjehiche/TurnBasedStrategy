@@ -10,6 +10,12 @@ public class PickUpScript : MonoBehaviour
     public Transform holdPos;
     public float throwForce = 500f;
     public float pickUpRange = 5f;
+    
+    [Header("Inventory Integration")]
+    [SerializeField] private InventoryHolder inventoryHolder; // Reference to player's inventory
+    [SerializeField] private ItemEquipManager equipManager; // Reference to equip manager
+    [SerializeField] private bool addToInventoryOnPickup = true; // Toggle inventory integration
+    
     private GameObject heldObj;
     private Rigidbody heldObjRb;
     private int LayerNumber;
@@ -41,7 +47,7 @@ public class PickUpScript : MonoBehaviour
 
     void OnEnable()
     {
-        pickUpAction?.Enable();
+        // pickUpAction?.Enable();
         fireAction?.Enable();
     }
 
@@ -67,6 +73,27 @@ public class PickUpScript : MonoBehaviour
     void Start()
     {
         LayerNumber = LayerMask.NameToLayer(HOLD_LAYER_NAME);
+        
+        // Auto-find inventory holder if not assigned
+        if (inventoryHolder == null)
+        {
+            inventoryHolder = player.GetComponent<InventoryHolder>();
+            if (inventoryHolder == null)
+            {
+                Debug.LogWarning("PickUpScript: No InventoryHolder found. Inventory integration disabled.");
+                addToInventoryOnPickup = false;
+            }
+        }
+        
+        // Auto-find equip manager if not assigned
+        if (equipManager == null)
+        {
+            equipManager = player.GetComponentInChildren<ItemEquipManager>();
+            if (equipManager == null && addToInventoryOnPickup)
+            {
+                Debug.LogWarning("PickUpScript: No ItemEquipManager found. Items will be added to inventory but not auto-equipped.");
+            }
+        }
     }
     void Update()
     {
@@ -98,6 +125,8 @@ public class PickUpScript : MonoBehaviour
 
     private void OnFirePerformed()
     {
+        // Only throw if using old pickup system (holding object directly in hand)
+        // If using inventory system, ItemEquipManager handles throwing
         if (heldObj != null)
         {
             StopClipping();
@@ -108,6 +137,40 @@ public class PickUpScript : MonoBehaviour
     {
         if (pickUpObj.GetComponent<Rigidbody>())
         {
+            // Check if this object has an ItemPickUp component with inventory data
+            ItemPickUp itemPickup = pickUpObj.GetComponent<ItemPickUp>();
+            
+            // If inventory integration is enabled and item has inventory data
+            if (addToInventoryOnPickup && itemPickup != null && itemPickup.ItemData != null && inventoryHolder != null)
+            {
+                // Try to add to inventory
+                if (inventoryHolder.InventorySystem.AddToInventory(itemPickup.ItemData, 1))
+                {
+                    Debug.Log($"PickUpScript: Added {itemPickup.ItemData.itemName} to inventory");
+                    
+                    // Destroy the world object since it's now in inventory
+                    Destroy(pickUpObj);
+                    
+                    // Optional: Auto-equip to hand if equip manager exists
+                    if (equipManager != null)
+                    {
+                        // The ItemEquipManager will automatically show it if the current slot gets the item
+                        // Or you can manually trigger a refresh
+                        equipManager.RefreshEquippedItem();
+                    }
+                    
+                    return;
+                }
+                else
+                {
+                    Debug.LogWarning("PickUpScript: Inventory full! Could not pick up item.");
+                    return;
+                }
+            }
+            
+            // Fallback to old pickup behavior (hold in hand directly without inventory)
+            // This is for objects that don't have ItemPickUp component
+            
             // Check if this is the key and trigger caption
             if (pickUpObj.name == "Key")
             {

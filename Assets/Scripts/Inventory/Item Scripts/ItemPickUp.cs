@@ -25,4 +25,9 @@ public class ItemPickUp : MonoBehaviour
         Destroy(this.gameObject);
        }
     }
+    
+    void Update()
+    {
+        transform.Rotate(new Vector3(1,1,1));
+    }
 }

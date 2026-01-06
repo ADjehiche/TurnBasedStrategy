@@ -6,6 +6,9 @@ public class StaticInventoryDisplay : InventoryDisplay
 {
     [SerializeField] private InventoryHolder inventoryHolder;
     [SerializeField] private InventorySlot_UI[] slots;
+    [SerializeField] private ItemEquipManager equipManager; // Reference to equip manager for slot selection
+    
+    private int currentlySelectedSlotIndex = 0;
     protected override void Start()
     {
         base.Start();
@@ -17,6 +20,47 @@ public class StaticInventoryDisplay : InventoryDisplay
             Debug.LogWarning("InventoryHolder is null");
         }
         AssignSlot(inventorySystem);
+        
+        // Auto-find equip manager if not assigned
+        if (equipManager == null)
+        {
+            equipManager = FindFirstObjectByType<ItemEquipManager>();
+        }
+        
+        // Set initial selection highlight
+        UpdateSlotSelection(0);
+    }
+    
+    void Update()
+    {
+        // Sync with ItemEquipManager's selected slot
+        if (equipManager != null)
+        {
+            int selectedSlot = equipManager.GetCurrentlySelectedSlotIndex();
+            if (selectedSlot != currentlySelectedSlotIndex)
+            {
+                UpdateSlotSelection(selectedSlot);
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Update which slot is visually selected
+    /// </summary>
+    private void UpdateSlotSelection(int newSlotIndex)
+    {
+        // Deselect old slot
+        if (currentlySelectedSlotIndex >= 0 && currentlySelectedSlotIndex < slots.Length)
+        {
+            slots[currentlySelectedSlotIndex].SetSelected(false);
+        }
+        
+        // Select new slot
+        currentlySelectedSlotIndex = newSlotIndex;
+        if (currentlySelectedSlotIndex >= 0 && currentlySelectedSlotIndex < slots.Length)
+        {
+            slots[currentlySelectedSlotIndex].SetSelected(true);
+        }
     }
     public override void AssignSlot(InventorySystem invToDisplay)
     {
