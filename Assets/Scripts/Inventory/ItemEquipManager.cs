@@ -95,7 +95,7 @@ public class ItemEquipManager : MonoBehaviour
             inventorySystem.OnInventorySlotChanged -= OnInventorySlotChanged;
         }
         
-        // Clean up input actions
+
         if (hotbarActions != null)
         {
             foreach (var action in hotbarActions)
@@ -107,7 +107,6 @@ public class ItemEquipManager : MonoBehaviour
             }
         }
         
-        // Unsubscribe from fire action
         if (fireAction != null)
         {
             fireAction.performed -= ctx => OnFirePerformed();
@@ -119,15 +118,7 @@ public class ItemEquipManager : MonoBehaviour
     /// </summary>
     private void SetupHotbarInput()
     {
-        // We'll use Unity's new Input System
-        // Listen for number keys 1-9 to select hotbar slots
-        
-        // For now, we'll use Update() to check for key presses
-        // Later we can bind these to proper Input Actions if needed
-        if (debugMode)
-        {
-            Debug.Log("ItemEquipManager: Hotbar input setup complete (using keyboard 1-9)");
-        }
+
     }
     
     void Update()
@@ -300,8 +291,6 @@ public class ItemEquipManager : MonoBehaviour
                 Debug.Log($"ItemEquipManager: Clearing equipped item (switching slots)");
             }
             
-            // Disable the InventoryItemTracker's removal behavior before destroying
-            // to prevent it from removing the item from inventory when we're just switching slots
             InventoryItemTracker tracker = currentlyEquippedItem.GetComponent<InventoryItemTracker>();
             if (tracker != null)
             {
