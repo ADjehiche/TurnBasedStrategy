@@ -20,6 +20,9 @@ public class PickUpScript : MonoBehaviour
     private Rigidbody heldObjRb;
     private int LayerNumber;
     
+    // Public property to check if an object is currently held
+    public bool IsHoldingObject => heldObj != null;
+    
     private PlayerInput playerInput;
     private InputAction pickUpAction;
     private InputAction fireAction;

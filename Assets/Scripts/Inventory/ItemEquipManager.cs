@@ -381,17 +381,7 @@ public class ItemEquipManager : MonoBehaviour
     /// </summary>
     private void OnFirePerformed()
     {
-        // Only handle throwing if we have an item equipped from inventory
-        // PickUpScript handles throwing for old pickup system
-        if (currentlyEquippedItem != null && currentlySelectedSlot != null && currentlySelectedSlot.ItemData != null)
-        {
-            ThrowEquippedItem();
-        }
-        else if (debugMode && currentlyEquippedItem != null)
-        {
-            Debug.Log("ItemEquipManager: Item equipped but no data in slot - cannot throw");
-        }
-        // If no item equipped, let PickUpScript handle it (old system)
+        //nothing
     }
     
     /// <summary>
