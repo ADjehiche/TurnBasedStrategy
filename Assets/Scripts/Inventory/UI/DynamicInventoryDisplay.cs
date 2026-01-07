@@ -49,7 +49,7 @@ public class DynamicInventoryDisplay : InventoryDisplay
         }
 
     }
-    private void OnDisble()
+    private void OnDisable()
     {
         if (inventorySystem != null)
         {
