@@ -18,9 +18,9 @@ public class ItemPickUp : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        var inventory = other.transform.GetComponent<InventoryHolder>();
+        var inventory = other.transform.GetComponent<PlayerInventoryHolder>();
         if (!inventory) return;
-       if(inventory.InventorySystem.AddToInventory(ItemData, 1))
+       if(inventory.AddToInventory(ItemData, 1))
        {
         Destroy(this.gameObject);
        }
@@ -28,6 +28,6 @@ public class ItemPickUp : MonoBehaviour
     
     void Update()
     {
-        transform.Rotate(new Vector3(1,1,1));
+        transform.Rotate(new Vector3(1,1,1) * 0.5f);
     }
 }
