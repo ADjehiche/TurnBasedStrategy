@@ -323,12 +323,20 @@ public class ItemEquipManager : MonoBehaviour
     private void OnInventorySlotChanged(InventorySlot updatedSlot)
     {
         // Check if the changed slot is the currently selected one
-        if (updatedSlot == currentlySelectedSlot)
+        // Compare both by reference AND by checking if it's in the currently selected index
+        if (updatedSlot == currentlySelectedSlot || 
+            (inventorySystem != null && 
+             currentlySelectedSlotIndex >= 0 && 
+             currentlySelectedSlotIndex < inventorySystem.InventorySize &&
+             inventorySystem.InventorySlots[currentlySelectedSlotIndex] == updatedSlot))
         {
             if (debugMode)
             {
-                Debug.Log($"ItemEquipManager: Currently selected slot changed - updating equipped item");
+                Debug.Log($"ItemEquipManager: Currently selected slot (index {currentlySelectedSlotIndex}) changed - updating equipped item");
             }
+            
+            // Refresh the reference to the current slot in case it changed
+            currentlySelectedSlot = inventorySystem.InventorySlots[currentlySelectedSlotIndex];
             
             UpdateEquippedItem();
         }

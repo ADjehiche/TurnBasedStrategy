@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Events;
 
 
 public class PlayerInventoryHolder : InventoryHolder
@@ -11,6 +12,8 @@ public class PlayerInventoryHolder : InventoryHolder
     [SerializeField] protected InventorySystem secondaryInventorySystem;
 
     public InventorySystem SecondaryInventorySystem => secondaryInventorySystem;
+    public static UnityAction<InventorySystem> OnPlayerBackpackDisplayRequested;
+
     
     protected override void Awake()
     {
@@ -23,8 +26,9 @@ public class PlayerInventoryHolder : InventoryHolder
     {
         if (Keyboard.current.bKey.wasPressedThisFrame)
         {
-            Cursor.lockState = Cursor.lockState == CursorLockMode.Locked ? CursorLockMode.None : CursorLockMode.Locked;
-            OnDynamicInventoryDisplayRequested?.Invoke(secondaryInventorySystem);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            OnPlayerBackpackDisplayRequested?.Invoke(secondaryInventorySystem);
         }
     }
     public bool AddToInventory(InventoryItemData data, int amount)

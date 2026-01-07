@@ -6,45 +6,57 @@ using UnityEngine.InputSystem;
 public class InventoryUIController : MonoBehaviour
 {
 
-    public DynamicInventoryDisplay inventoryPanel;
+    public DynamicInventoryDisplay chestPanel;
+    public DynamicInventoryDisplay playerBackPackPanel;
+
     
     // Public property to check if inventory is currently open
-    public bool IsInventoryOpen => inventoryPanel != null && inventoryPanel.gameObject.activeInHierarchy;
+    public bool IsInventoryOpen => 
+        (chestPanel != null && chestPanel.gameObject.activeInHierarchy) ||
+        (playerBackPackPanel != null && playerBackPackPanel.gameObject.activeInHierarchy);
 
     void Awake()
     {
-        inventoryPanel.gameObject.SetActive(false);
+        chestPanel.gameObject.SetActive(false);
+        playerBackPackPanel.gameObject.SetActive(false);
     }
 
     private void OnEnable()
     {
         InventoryHolder.OnDynamicInventoryDisplayRequested += DisplayInventory;
+        PlayerInventoryHolder.OnPlayerBackpackDisplayRequested += DisplayPlayerBackpack;
     }
 
     private void OnDisable()
     {
         InventoryHolder.OnDynamicInventoryDisplayRequested -= DisplayInventory;
+        PlayerInventoryHolder.OnPlayerBackpackDisplayRequested -= DisplayPlayerBackpack;
     }
 
     void Update()
     {
-        if (Keyboard.current.bKey.wasPressedThisFrame)
-        {
-            Cursor.lockState = CursorLockMode.None;
-            Cursor.visible = true;
-            DisplayInventory(new InventorySystem(30));
-        }
-        if (inventoryPanel.gameObject.activeInHierarchy && Keyboard.current.escapeKey.wasPressedThisFrame) 
+        if (chestPanel.gameObject.activeInHierarchy && Keyboard.current.escapeKey.wasPressedThisFrame) 
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-            inventoryPanel.gameObject.SetActive(false);
+            chestPanel.gameObject.SetActive(false);
+        }
+        if (playerBackPackPanel.gameObject.activeInHierarchy && Keyboard.current.escapeKey.wasPressedThisFrame) 
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+            playerBackPackPanel.gameObject.SetActive(false);
         }
     }
 
     void DisplayInventory(InventorySystem invToDisplay)
-    {
-        inventoryPanel.gameObject.SetActive(true);
-        inventoryPanel.RefreshDynamicInventory(invToDisplay);
+    {   
+        chestPanel.gameObject.SetActive(true);
+        chestPanel.RefreshDynamicInventory(invToDisplay);
+    }
+    void DisplayPlayerBackpack(InventorySystem invToDisplay)
+    {   
+        playerBackPackPanel.gameObject.SetActive(true);
+        playerBackPackPanel.RefreshDynamicInventory(invToDisplay);
     }
 }
