@@ -26,8 +26,25 @@ private void Awake()
         ClearSlot();
 
         button = GetComponent<Button>();
-        button?.onClick.AddListener(OnUISlotClicked);
+        if (button != null)
+        {
+            button.onClick.AddListener(OnUISlotClicked);
+            Debug.Log($"[InventorySlot_UI] Button found and listener added for {gameObject.name}");
+        }
+        else
+        {
+            Debug.LogWarning($"[InventorySlot_UI] No Button component found on {gameObject.name}!");
+        }
+        
         ParentDisplay = transform.parent.GetComponent<InventoryDisplay>();
+        if (ParentDisplay == null)
+        {
+            Debug.LogWarning($"[InventorySlot_UI] No ParentDisplay found for {gameObject.name}! Parent: {transform.parent?.name}");
+        }
+        else
+        {
+            Debug.Log($"[InventorySlot_UI] ParentDisplay found: {ParentDisplay.GetType().Name}");
+        }
         
         // Hide selection highlight by default
         SetSelected(false);
@@ -69,6 +86,7 @@ private void Awake()
 
     private void OnUISlotClicked()
     {
+        Debug.Log($"[InventorySlot_UI] Slot clicked! Has item: {assignedInventorySlot?.ItemData != null}, ParentDisplay: {ParentDisplay != null}");
         ParentDisplay?.SlotClicked(this);
     }
     

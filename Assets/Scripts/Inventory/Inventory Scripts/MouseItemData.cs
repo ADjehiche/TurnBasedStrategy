@@ -21,6 +21,9 @@ public class MouseItemData : MonoBehaviour
         ItemCount.text = "";
         rectTransform = GetComponent<RectTransform>();
         canvas = GetComponentInParent<Canvas>();
+        
+        // Initialize the inventory slot for holding dragged items
+        AssignedInventorySlot = new InventorySlot();
     }
 
     private void Update()

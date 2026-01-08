@@ -28,6 +28,6 @@ public class ItemPickUp : MonoBehaviour
     
     void Update()
     {
-        transform.Rotate(new Vector3(1,1,1) * 0.5f);
+        
     }
 }

@@ -33,9 +33,13 @@ public abstract class InventoryDisplay : MonoBehaviour
 
     public void SlotClicked(InventorySlot_UI clickedUISlot)
     {
+        UnityEngine.Debug.Log($"[InventoryDisplay] SlotClicked called! Slot has item: {clickedUISlot.AssignedInventorySlot.ItemData != null}");
+        UnityEngine.Debug.Log($"[InventoryDisplay] MouseItemData has item: {mouseInventoryItem?.AssignedInventorySlot?.ItemData != null}");
+        
         // Picking up an item from a slot
         if(clickedUISlot.AssignedInventorySlot.ItemData!=null && mouseInventoryItem.AssignedInventorySlot.ItemData==null)
         {
+            UnityEngine.Debug.Log($"[InventoryDisplay] Picking up item: {clickedUISlot.AssignedInventorySlot.ItemData.itemName}");
             mouseInventoryItem.UpdateMouseSlot(clickedUISlot.AssignedInventorySlot);
             clickedUISlot.ClearSlot();
             
@@ -46,6 +50,7 @@ public abstract class InventoryDisplay : MonoBehaviour
         // Placing an item into an empty slot
         if(clickedUISlot.AssignedInventorySlot.ItemData == null && mouseInventoryItem.AssignedInventorySlot.ItemData != null)
         {
+            UnityEngine.Debug.Log($"[InventoryDisplay] Placing item: {mouseInventoryItem.AssignedInventorySlot.ItemData.itemName}");
             clickedUISlot.AssignedInventorySlot.AssignItem(mouseInventoryItem.AssignedInventorySlot);
             clickedUISlot.UpdateUISlot();
             mouseInventoryItem.ClearSlot();
