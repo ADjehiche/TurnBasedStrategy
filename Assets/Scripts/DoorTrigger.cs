@@ -269,4 +269,15 @@ public class DoorTrigger : MonoBehaviour
             Debug.LogWarning("DoorTrigger: LevelOneCaptionController not found in scene");
         }
     }
+    
+    /// <summary>
+    /// Public method to open the door immediately (used for symbol-activated doors)
+    /// </summary>
+    public void OpenDoorImmediately()
+    {
+        if (!isOpening && door != null)
+        {
+            StartCoroutine(OpenDoorCoroutine());
+        }
+    }
 }

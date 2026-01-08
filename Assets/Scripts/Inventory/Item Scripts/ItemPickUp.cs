@@ -22,6 +22,13 @@ public class ItemPickUp : MonoBehaviour
         if (!inventory) return;
        if(inventory.AddToInventory(ItemData, 1))
        {
+        // Track if this is the original key being collected
+        if (gameObject.name == "Key")
+        {
+            GameSession.OriginalKeyCollected = true;
+            Debug.Log("[ItemPickUp] Original key collected - marked in GameSession");
+        }
+        
         Destroy(this.gameObject);
        }
     }
