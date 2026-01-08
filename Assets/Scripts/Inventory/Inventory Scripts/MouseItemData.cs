@@ -24,6 +24,13 @@ public class MouseItemData : MonoBehaviour
         
         // Initialize the inventory slot for holding dragged items
         AssignedInventorySlot = new InventorySlot();
+        
+        // IMPORTANT: Disable raycast on the mouse item so it doesn't block clicks on slots
+        ItemSprite.raycastTarget = false;
+        if (ItemCount != null)
+        {
+            ItemCount.raycastTarget = false;
+        }
     }
 
     private void Update()
