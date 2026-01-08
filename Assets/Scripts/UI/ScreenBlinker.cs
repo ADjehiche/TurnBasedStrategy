@@ -66,7 +66,7 @@ public class ScreenBlinker : MonoBehaviour
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
             
-            canvasObj.AddComponent<GraphicRaycaster>();
+            // No GraphicRaycaster needed - this canvas doesn't receive input
             
             canvasObj.transform.SetParent(transform);
         }
@@ -77,6 +77,7 @@ public class ScreenBlinker : MonoBehaviour
         
         blinkOverlay = overlayObj.AddComponent<Image>();
         blinkOverlay.color = blinkColor;
+        blinkOverlay.raycastTarget = false; // Don't block clicks when invisible
         
         // Make it fullscreen
         RectTransform rt = blinkOverlay.rectTransform;
