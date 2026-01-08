@@ -10,10 +10,6 @@ public class BattleBootstrap : MonoBehaviour
 
     void Start()
     {   
-        // Unlock cursor for battle UI interaction
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-        
         BattleState.Reset();
         if (deckManager == null) deckManager = FindObjectOfType<DeckManager>();
         if (handManager == null) handManager = FindObjectOfType<HandManager>();

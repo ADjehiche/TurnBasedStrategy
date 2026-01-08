@@ -11,7 +11,7 @@ public class LevelOneCaptionController : MonoBehaviour
     [SerializeField] private string keyPickupMonologue = "[You] A way out.";
     [SerializeField] private string doorOpenCelebration = "[You] Free. For now.";
     [SerializeField] private string skeletonDefeated = "[System] Guardian defeated";
-    [SerializeField] private string skeletonKeyPickup = "[You] This key... I wonder if it opens another cell";
+    [SerializeField] private string skeletonKeyPickup = "[You] This key... it glows.";
     
     [Header("Timing")]
     [SerializeField] private float startDelay = 2f;
@@ -44,16 +44,10 @@ public class LevelOneCaptionController : MonoBehaviour
             
             yield return new WaitForSeconds(2.5f);
             
-            // Pan camera while thinking AND add blinking effect
+            // Pan camera while thinking
             if (CameraPanner.Instance != null)
             {
                 StartCoroutine(CameraPanner.Instance.PanLookAround(3f, 45f));
-            }
-            
-            // Add blinking effect (2 blinks) during the camera pan
-            if (ScreenBlinker.Instance != null)
-            {
-                StartCoroutine(ScreenBlinker.Instance.BlinkMultiple(2, 0.3f, 0.3f));
             }
             
             // Second thought: Amnesia

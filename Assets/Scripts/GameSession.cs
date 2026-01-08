@@ -13,11 +13,6 @@ public static class GameSession
     // World state preservation
     public static bool DoorOpened;           // Track if first door was opened
     public static bool OriginalKeyCollected; // Track if original key was picked up
-    public static bool Symbol1Activated; // Track if first cultist symbol was activated
-    public static bool Symbol2Activated; // Track if second cultist symbol was activated
-    
-    // Helper property to check if both symbols are activated
-    public static bool BothSymbolsActivated => Symbol1Activated && Symbol2Activated;
     
     // Companion state
     public static bool CompanionActive;      // Track if companion is following player
@@ -62,8 +57,6 @@ public static class GameSession
         BattleTriggerCenter = default;
         DoorOpened = false;
         OriginalKeyCollected = false;
-        Symbol1Activated = false;
-        Symbol2Activated = false;
         CompanionActive = false;
         
         // Reset caption states
