@@ -22,6 +22,9 @@ public class PlayerController : MonoBehaviour
     private const String GAMEMANAGER_NAME = "GameManager";
     private const String BATTLE_TRIGGER_TAG = "battleTrigger";
     
+    // References
+    private InventoryUIController inventoryUIController;
+    
     // Animation states
     private bool isMoving = false;
     private Vector3 targetCameraPosition;
@@ -47,7 +50,11 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
         gameManager = GameObject.Find(GAMEMANAGER_NAME).GetComponent<GameManager>();
+        
+        // Find inventory UI controller
+        inventoryUIController = FindFirstObjectByType<InventoryUIController>();
         
         // Find animator if not assigned
         if (animator == null)
@@ -82,6 +89,13 @@ public class PlayerController : MonoBehaviour
         if (PlayerMovementLock.Instance != null && PlayerMovementLock.Instance.IsLocked())
         {
             // Don't process movement when locked
+            rb.velocity = new Vector3(0, rb.velocity.y, 0); // Keep y velocity for gravity
+            return;
+        }
+        
+        // Don't allow movement when inventory is open
+        if (inventoryUIController != null && inventoryUIController.IsInventoryOpen)
+        {
             rb.velocity = new Vector3(0, rb.velocity.y, 0); // Keep y velocity for gravity
             return;
         }
@@ -218,6 +232,25 @@ public class PlayerController : MonoBehaviour
         if (PlayerMovementLock.Instance != null && PlayerMovementLock.Instance.IsLocked())
         {
             return;
+        }
+        
+        // Don't lock cursor or rotate camera if inventory is open
+        if (inventoryUIController != null && inventoryUIController.IsInventoryOpen)
+        {
+            // Make absolutely sure cursor stays unlocked while inventory is open
+            if (Cursor.lockState == CursorLockMode.Locked)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+            }
+            return;
+        }
+        
+        // Ensure cursor stays locked during gameplay (only when inventory is closed)
+        if (Cursor.lockState != CursorLockMode.Locked)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
         }
         
         // Handle camera rotation
