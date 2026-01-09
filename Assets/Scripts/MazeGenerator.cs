@@ -69,6 +69,14 @@ public class MazeGenerator : MonoBehaviour
         return new Vector2Int(x, z);
     }
     
+    /// <summary>
+    /// Check if grid coordinates are within maze bounds
+    /// </summary>
+    private bool IsValidGridPosition(int x, int z)
+    {
+        return x >= 0 && x < _mazeWidth && z >= 0 && z < _mazeDepth;
+    }
+    
     void Start()
     {
         _mazeGrid = new MazeCell[_mazeWidth, _mazeDepth];
@@ -318,16 +326,16 @@ public class MazeGenerator : MonoBehaviour
             for (int z = 0; z < _mazeDepth; z++)
             {
                 MazeCell cell = _mazeGrid[x, z];
-                Vector3 cellPos = cell.transform.position;
+                Vector3 cellWorldPos = GridToWorld(x, z, 0f);
                 
-                // Randomly place lights on ACTIVE walls (walls that exist)
+                // Randomly place lights on ACTIVE walls using calculated positions
                 float halfCell = _cellSize / 2f;
                 
                 // Right wall (+X) - only if wall exists
                 if (cell.HasRightWall && Random.value < _lightSpawnChance)
                 {
-                    Vector3 lightPos = cellPos + new Vector3(halfCell - 0.1f, _lightHeight, 0);
-                    Quaternion lightRot = Quaternion.Euler(0, -90, 0); // Face inward (toward cell center)
+                    Vector3 lightPos = cellWorldPos + MazeRotation * new Vector3(halfCell - 0.2f, _lightHeight, 0);
+                    Quaternion lightRot = MazeRotation * Quaternion.Euler(0, -90, 0); // Face inward
                     Instantiate(_lightPrefab, lightPos, lightRot, cell.transform);
                     lightsSpawned++;
                 }
@@ -335,8 +343,8 @@ public class MazeGenerator : MonoBehaviour
                 // Left wall (-X) - only if wall exists
                 if (cell.HasLeftWall && Random.value < _lightSpawnChance)
                 {
-                    Vector3 lightPos = cellPos + new Vector3(-halfCell + 0.1f, _lightHeight, 0);
-                    Quaternion lightRot = Quaternion.Euler(0, 90, 0); // Face inward
+                    Vector3 lightPos = cellWorldPos + MazeRotation * new Vector3(-halfCell + 0.2f, _lightHeight, 0);
+                    Quaternion lightRot = MazeRotation * Quaternion.Euler(0, 90, 0); // Face inward
                     Instantiate(_lightPrefab, lightPos, lightRot, cell.transform);
                     lightsSpawned++;
                 }
@@ -344,8 +352,8 @@ public class MazeGenerator : MonoBehaviour
                 // Front wall (+Z) - only if wall exists
                 if (cell.HasFrontWall && Random.value < _lightSpawnChance)
                 {
-                    Vector3 lightPos = cellPos + new Vector3(0, _lightHeight, halfCell - 0.1f);
-                    Quaternion lightRot = Quaternion.Euler(0, 180, 0); // Face inward
+                    Vector3 lightPos = cellWorldPos + MazeRotation * new Vector3(0, _lightHeight, halfCell - 0.2f);
+                    Quaternion lightRot = MazeRotation * Quaternion.Euler(0, 180, 0); // Face inward
                     Instantiate(_lightPrefab, lightPos, lightRot, cell.transform);
                     lightsSpawned++;
                 }
@@ -353,8 +361,8 @@ public class MazeGenerator : MonoBehaviour
                 // Back wall (-Z) - only if wall exists
                 if (cell.HasBackWall && Random.value < _lightSpawnChance)
                 {
-                    Vector3 lightPos = cellPos + new Vector3(0, _lightHeight, -halfCell + 0.1f);
-                    Quaternion lightRot = Quaternion.Euler(0, 0, 0); // Face inward
+                    Vector3 lightPos = cellWorldPos + MazeRotation * new Vector3(0, _lightHeight, -halfCell + 0.2f);
+                    Quaternion lightRot = MazeRotation * Quaternion.Euler(0, 0, 0); // Face inward
                     Instantiate(_lightPrefab, lightPos, lightRot, cell.transform);
                     lightsSpawned++;
                 }
@@ -379,14 +387,23 @@ public class MazeGenerator : MonoBehaviour
         
         // Pick the furthest dead end (first in sorted list)
         Vector2Int blobCell = _deadEndCells[0];
-        Vector3 spawnPos = GridToWorld(blobCell.x, blobCell.y + 1f, 0.5f);
+        
+        // Validate bounds
+        if (!IsValidGridPosition(blobCell.x, blobCell.y))
+        {
+            Debug.LogError($"[MazeGenerator] Blob spawn position ({blobCell.x}, {blobCell.y}) is outside maze bounds ({_mazeWidth}, {_mazeDepth})!");
+            return;
+        }
+        
+        // blobCell.x = grid X, blobCell.y = grid Z coordinate
+        Vector3 spawnPos = GridToWorld(blobCell.x, blobCell.y, 0.5f);
         
         Instantiate(_blobPrefab, spawnPos, MazeRotation);
         
         // Remove this cell from available spots
         _deadEndCells.RemoveAt(0);
         
-        Debug.Log($"[MazeGenerator] Blob spawned at dead end ({blobCell.x}, {blobCell.y})");
+        Debug.Log($"[MazeGenerator] Blob spawned at dead end grid({blobCell.x}, {blobCell.y}) world({spawnPos})");
     }
     
     /// <summary>
@@ -405,6 +422,17 @@ public class MazeGenerator : MonoBehaviour
             // Pick a random dead end from remaining ones
             int randomIndex = Random.Range(0, _deadEndCells.Count);
             Vector2Int chestCell = _deadEndCells[randomIndex];
+            
+            // Validate bounds
+            if (!IsValidGridPosition(chestCell.x, chestCell.y))
+            {
+                Debug.LogError($"[MazeGenerator] Chest spawn position ({chestCell.x}, {chestCell.y}) is outside maze bounds ({_mazeWidth}, {_mazeDepth})!");
+                _deadEndCells.RemoveAt(randomIndex);
+                i--; // Try again
+                continue;
+            }
+            
+            // chestCell.x = grid X, chestCell.y = grid Z coordinate  
             Vector3 spawnPos = GridToWorld(chestCell.x, chestCell.y, 0.1f);
             
             Instantiate(_chestPrefab, spawnPos, MazeRotation);
@@ -412,7 +440,7 @@ public class MazeGenerator : MonoBehaviour
             // Remove this cell from available spots
             _deadEndCells.RemoveAt(randomIndex);
             
-            Debug.Log($"[MazeGenerator] Chest {i + 1} spawned at dead end ({chestCell.x}, {chestCell.y})");
+            Debug.Log($"[MazeGenerator] Chest {i + 1} spawned at dead end grid({chestCell.x}, {chestCell.y}) world({spawnPos})");
         }
     }
     
