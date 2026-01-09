@@ -379,7 +379,7 @@ public class MazeGenerator : MonoBehaviour
         
         // Pick the furthest dead end (first in sorted list)
         Vector2Int blobCell = _deadEndCells[0];
-        Vector3 spawnPos = GridToWorld(blobCell.x, blobCell.y, 0.5f);
+        Vector3 spawnPos = GridToWorld(blobCell.x, blobCell.y + 1f, 0.5f);
         
         Instantiate(_blobPrefab, spawnPos, MazeRotation);
         
