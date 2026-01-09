@@ -405,7 +405,7 @@ public class MazeGenerator : MonoBehaviour
             // Pick a random dead end from remaining ones
             int randomIndex = Random.Range(0, _deadEndCells.Count);
             Vector2Int chestCell = _deadEndCells[randomIndex];
-            Vector3 spawnPos = GridToWorld(chestCell.x, chestCell.y, 0f);
+            Vector3 spawnPos = GridToWorld(chestCell.x, chestCell.y, 0.1f);
             
             Instantiate(_chestPrefab, spawnPos, MazeRotation);
             
