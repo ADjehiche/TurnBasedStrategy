@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
 
 public class GameSettingsManager : MonoBehaviour
 {
@@ -36,8 +37,31 @@ public class GameSettingsManager : MonoBehaviour
         _textScale = PlayerPrefs.GetFloat(K_TextScale, defaultTextScale);
         _colorSensitivity = PlayerPrefs.GetFloat(K_ColorSensitivity, defaultColorSensitivity);
 
+        ApplyAll();
+    }
+
+    void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        ApplyAll();
+    }
+
+    void ApplyAll()
+    {
         ApplyVolume(_volume);
+
         TextScaleUtility.ApplyGlobalTextScale(_textScale);
+
+        ApplyColorSensitivity(_colorSensitivity);
     }
 
     public void SetVolume01(float v)
@@ -62,6 +86,8 @@ public class GameSettingsManager : MonoBehaviour
         _colorSensitivity = Mathf.Clamp01(v);
         PlayerPrefs.SetFloat(K_ColorSensitivity, _colorSensitivity);
         PlayerPrefs.Save();
+
+        ApplyColorSensitivity(_colorSensitivity);
     }
 
     void ApplyVolume(float value01)
@@ -76,4 +102,11 @@ public class GameSettingsManager : MonoBehaviour
             AudioListener.volume = value01;
         }
     }
+
+    void ApplyColorSensitivity(float value01)
+    {
+        // Built-in pipeline + Post Processing Stack v2
+        PostProcessSensitivityApplier.Apply(value01);
+    }
+
 }
