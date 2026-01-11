@@ -52,8 +52,9 @@ public class InventorySystem
     public bool ContainsItem(InventoryItemData itemToAdd, out List<InventorySlot> invSlot)
     {
         invSlot = InventorySlots.Where(slot => slot.ItemData == itemToAdd).ToList();
-        return invSlot.Count > 1;
+        return invSlot.Count > 0;
     }
+
     public bool HasFreeSlot(out InventorySlot freeSlot)
     {
         freeSlot = InventorySlots.FirstOrDefault(slot => slot.ItemData == null);

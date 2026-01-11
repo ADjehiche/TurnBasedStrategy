@@ -40,14 +40,6 @@ public class InventoryItemTracker : MonoBehaviour
     
     void OnDestroy()
     {
-        // Only remove from inventory if enabled and we have valid references
-        if (!removeFromInventoryOnDestroy || itemData == null || playerInventory == null)
-        {
-            return;
-        }
-        
-        // Find the inventory slot containing this item and remove one
-        RemoveItemFromInventory();
     }
     
     /// <summary>

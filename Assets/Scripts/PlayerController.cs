@@ -228,6 +228,12 @@ public class PlayerController : MonoBehaviour
 
     void LateUpdate()
     {
+        // --- FIX START ---
+        // If the game is paused (Time is stopped), DO NOT process camera or cursor logic.
+        // This allows the MenuController to have full control over the cursor.
+        if (Time.timeScale == 0f) return;
+        // --- FIX END ---
+
         // Don't rotate camera when movement is locked
         if (PlayerMovementLock.Instance != null && PlayerMovementLock.Instance.IsLocked())
         {
@@ -237,7 +243,6 @@ public class PlayerController : MonoBehaviour
         // Don't lock cursor or rotate camera if inventory is open
         if (inventoryUIController != null && inventoryUIController.IsInventoryOpen)
         {
-            // Make absolutely sure cursor stays unlocked while inventory is open
             if (Cursor.lockState == CursorLockMode.Locked)
             {
                 Cursor.lockState = CursorLockMode.None;
@@ -246,7 +251,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
         
-        // Ensure cursor stays locked during gameplay (only when inventory is closed)
+        // Ensure cursor stays locked during gameplay
         if (Cursor.lockState != CursorLockMode.Locked)
         {
             Cursor.lockState = CursorLockMode.Locked;
