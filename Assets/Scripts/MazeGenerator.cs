@@ -20,6 +20,8 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private bool _showPreviewInEditor = true;
     [SerializeField] private Color _previewColor = new Color(0, 1, 0, 0.3f); // Green transparent
     [SerializeField] private Color _entranceColor = new Color(1, 1, 0, 0.5f); // Yellow for entrance
+    [SerializeField] private bool _showTriggerPreview = true;
+    [SerializeField] private Color _triggerColor = new Color(0, 0, 1, 0.2f); // Blue transparent for trigger area
     
     [Header("Entrance Settings")]
     [SerializeField] private bool _createFixedEntrance = true;
@@ -36,6 +38,11 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] [Range(0f, 1f)] private float _lightSpawnChance = 0.3f; // 30% chance per wall
     [SerializeField] private float _lightHeight = 2f; // Height to place lights on walls
     [SerializeField] private int _numberOfChests = 2;
+    
+    [Header("Auto-Generated Trigger")]
+    [SerializeField] private bool _createAutoTrigger = true;
+    [SerializeField] private float _triggerPadding = 1f; // Extra space around maze edges for trigger
+    [SerializeField] private float _triggerHeight = 4f; // Height of the trigger box
     
     public enum EntranceSide { Left, Right, Front, Back }
     
@@ -112,6 +119,12 @@ public class MazeGenerator : MonoBehaviour
         SpawnLightsOnWalls();
         SpawnBlobInHiddenLocation();
         SpawnChests();
+        
+        // Create maze detection trigger automatically
+        if (_createAutoTrigger)
+        {
+            CreateMazeDetectionTrigger();
+        }
     }
     
     /// <summary>
@@ -398,7 +411,20 @@ public class MazeGenerator : MonoBehaviour
         // blobCell.x = grid X, blobCell.y = grid Z coordinate
         Vector3 spawnPos = GridToWorld(blobCell.x, blobCell.y, 0.5f);
         
-        Instantiate(_blobPrefab, spawnPos, MazeRotation);
+        GameObject spawnedBlob = Instantiate(_blobPrefab, spawnPos, MazeRotation);
+        
+        // Notify the maze guidance controller about the spawned blob (if it exists)
+        GameObject guidanceControllerObj = GameObject.Find("MazeGuidanceController");
+        if (guidanceControllerObj != null)
+        {
+            var guidanceController = guidanceControllerObj.GetComponent<MonoBehaviour>();
+            if (guidanceController != null)
+            {
+                // Use reflection to call the method to avoid hard dependency
+                var method = guidanceController.GetType().GetMethod("OnBlueFragmentSpawned");
+                method?.Invoke(guidanceController, new object[] { spawnedBlob });
+            }
+        }
         
         // Remove this cell from available spots
         _deadEndCells.RemoveAt(0);
@@ -511,6 +537,30 @@ public class MazeGenerator : MonoBehaviour
             Gizmos.DrawLine(entrancePos, entrancePos + arrowDir * _cellSize);
         }
         
+        // Draw trigger area preview
+        if (_showTriggerPreview && _createAutoTrigger)
+        {
+            Gizmos.color = _triggerColor;
+            Vector3 triggerSize = new Vector3(
+                mazeWidthWorld + _triggerPadding,
+                _triggerHeight,
+                mazeDepthWorld + _triggerPadding
+            );
+            Vector3 triggerCenter = toWorld(new Vector3(
+                (mazeWidthWorld - _cellSize) * 0.5f,
+                1f,
+                (mazeDepthWorld - _cellSize) * 0.5f
+            ));
+            
+            Gizmos.DrawWireCube(triggerCenter, triggerSize);
+            
+            // Draw solid preview at lower opacity
+            Color solidColor = _triggerColor;
+            solidColor.a = 0.1f;
+            Gizmos.color = solidColor;
+            Gizmos.DrawCube(triggerCenter, triggerSize);
+        }
+        
         // Draw origin marker
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(origin, 0.3f);
@@ -520,5 +570,55 @@ public class MazeGenerator : MonoBehaviour
         Vector3 forwardArrow = origin + rotation * Vector3.forward * 2f;
         Gizmos.DrawLine(origin, forwardArrow);
         Gizmos.DrawSphere(forwardArrow, 0.2f);
+    }
+    
+    /// <summary>
+    /// Automatically creates a maze detection trigger that perfectly covers the maze area
+    /// </summary>
+    private void CreateMazeDetectionTrigger()
+    {
+        // Create a child GameObject for the trigger
+        GameObject triggerObject = new GameObject("MazeDetectionTrigger");
+        triggerObject.transform.SetParent(transform);
+        
+        // Position the trigger at the center of the maze
+        float mazePhysicalWidth = _mazeWidth * _cellSize;
+        float mazePhysicalDepth = _mazeDepth * _cellSize;
+        
+        // Center position relative to maze origin
+        Vector3 centerOffset = new Vector3(
+            (mazePhysicalWidth - _cellSize) * 0.5f, // Account for cell size offset
+            1f, // Height above ground
+            (mazePhysicalDepth - _cellSize) * 0.5f
+        );
+        
+        triggerObject.transform.localPosition = centerOffset;
+        triggerObject.transform.localRotation = Quaternion.identity;
+        
+        // Add the trigger components
+        BoxCollider triggerCollider = triggerObject.AddComponent<BoxCollider>();
+        triggerCollider.isTrigger = true;
+        
+        // Size the trigger to cover the entire maze with configurable padding
+        triggerCollider.size = new Vector3(
+            mazePhysicalWidth + _triggerPadding,
+            _triggerHeight, // Configurable height to catch player at different Y positions
+            mazePhysicalDepth + _triggerPadding
+        );
+        
+        // Add the ActualWorkingMazeDetector script
+        // Use reflection to add the component in case of compilation order issues
+        System.Type detectorType = System.Type.GetType("ActualWorkingMazeDetector");
+        if (detectorType != null)
+        {
+            triggerObject.AddComponent(detectorType);
+            Debug.Log("[MazeGenerator] Added ActualWorkingMazeDetector component");
+        }
+        else
+        {
+            Debug.LogWarning("[MazeGenerator] ActualWorkingMazeDetector type not found - you may need to add it manually");
+        }
+        
+        Debug.Log($"[MazeGenerator] Created maze detection trigger with size ({triggerCollider.size}) covering maze area ({mazePhysicalWidth}x{mazePhysicalDepth})");
     }
 }

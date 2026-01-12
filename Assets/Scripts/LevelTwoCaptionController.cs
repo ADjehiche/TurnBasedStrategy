@@ -228,4 +228,22 @@ public class LevelTwoCaptionController : MonoBehaviour
     {
         TriggerHallwayDiscovery();
     }
+    
+    /// <summary>
+    /// Show dialogue with speaker name and duration (for MazeGuidanceController)
+    /// </summary>
+    public IEnumerator ShowDialogue(string speaker, string message, float duration)
+    {
+        if (CaptionManager.Instance != null)
+        {
+            string formattedMessage = $"[{speaker}] {message}";
+            CaptionManager.Instance.ShowMonologue(formattedMessage, duration);
+            yield return new WaitForSeconds(duration);
+        }
+        else
+        {
+            Debug.LogWarning("[LevelTwoCaptionController] CaptionManager not found!");
+            yield return new WaitForSeconds(duration);
+        }
+    }
 }
