@@ -15,17 +15,29 @@ public class GameSettingsManager : MonoBehaviour
     [Range(0.5f, 2.0f)] public float defaultTextScale = 1.0f;
     [Range(0f, 1f)] public float defaultColorSensitivity = 0f;
 
+    [Header("Difficulty")]
+    public Difficulty defaultDifficulty = Difficulty.Normal;
+
+    // Keep your naming: Easy / Normal / Hard
+    public enum Difficulty { Easy = 0, Normal = 1, Hard = 2 }
+
     const string K_Volume = "settings.volume";
     const string K_TextScale = "settings.textScale";
     const string K_ColorSensitivity = "settings.colorSensitivity";
+    const string K_Difficulty = "settings.difficulty";
+    const string K_DifficultyChosen = "settings.difficultyChosen"; // <-- FIX
 
     float _volume;
     float _textScale;
     float _colorSensitivity;
+    Difficulty _difficulty;
 
     public float Volume => _volume;
     public float TextScale => _textScale;
     public float ColorSensitivity => _colorSensitivity;
+    public Difficulty CurrentDifficulty => _difficulty;
+
+    public bool HasChosenDifficulty => PlayerPrefs.GetInt(K_DifficultyChosen, 0) == 1;
 
     void Awake()
     {
@@ -37,30 +49,21 @@ public class GameSettingsManager : MonoBehaviour
         _textScale = PlayerPrefs.GetFloat(K_TextScale, defaultTextScale);
         _colorSensitivity = PlayerPrefs.GetFloat(K_ColorSensitivity, defaultColorSensitivity);
 
+        int diffInt = PlayerPrefs.GetInt(K_Difficulty, (int)defaultDifficulty);
+        _difficulty = (Difficulty)Mathf.Clamp(diffInt, 0, 2);
+
         ApplyAll();
     }
 
-    void OnEnable()
-    {
-        SceneManager.sceneLoaded += OnSceneLoaded;
-    }
+    void OnEnable() => SceneManager.sceneLoaded += OnSceneLoaded;
+    void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
 
-    void OnDisable()
-    {
-        SceneManager.sceneLoaded -= OnSceneLoaded;
-    }
-
-    void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-    {
-        ApplyAll();
-    }
+    void OnSceneLoaded(Scene scene, LoadSceneMode mode) => ApplyAll();
 
     void ApplyAll()
     {
         ApplyVolume(_volume);
-
         TextScaleUtility.ApplyGlobalTextScale(_textScale);
-
         ApplyColorSensitivity(_colorSensitivity);
     }
 
@@ -77,7 +80,6 @@ public class GameSettingsManager : MonoBehaviour
         _textScale = Mathf.Clamp(scale, 0.5f, 2.0f);
         PlayerPrefs.SetFloat(K_TextScale, _textScale);
         PlayerPrefs.Save();
-
         TextScaleUtility.ApplyGlobalTextScale(_textScale);
     }
 
@@ -86,8 +88,33 @@ public class GameSettingsManager : MonoBehaviour
         _colorSensitivity = Mathf.Clamp01(v);
         PlayerPrefs.SetFloat(K_ColorSensitivity, _colorSensitivity);
         PlayerPrefs.Save();
-
         ApplyColorSensitivity(_colorSensitivity);
+    }
+
+    public void SetDifficulty(Difficulty difficulty)
+    {
+        _difficulty = difficulty;
+        PlayerPrefs.SetInt(K_Difficulty, (int)_difficulty);
+        PlayerPrefs.Save();
+    }
+
+    public void SetDifficultyFromInt(int value)
+    {
+        value = Mathf.Clamp(value, 0, 2);
+        SetDifficulty((Difficulty)value);
+    }
+
+    public void ChooseDifficulty(Difficulty difficulty)
+    {
+        SetDifficulty(difficulty);
+        PlayerPrefs.SetInt(K_DifficultyChosen, 1);
+        PlayerPrefs.Save();
+    }
+
+    public void ChooseDifficultyFromInt(int value)
+    {
+        value = Mathf.Clamp(value, 0, 2);
+        ChooseDifficulty((Difficulty)value);
     }
 
     void ApplyVolume(float value01)
@@ -105,8 +132,6 @@ public class GameSettingsManager : MonoBehaviour
 
     void ApplyColorSensitivity(float value01)
     {
-        // Built-in pipeline + Post Processing Stack v2
         PostProcessSensitivityApplier.Apply(value01);
     }
-
 }

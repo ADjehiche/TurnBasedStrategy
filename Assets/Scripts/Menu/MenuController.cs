@@ -120,17 +120,26 @@ public class MenuController : MonoBehaviour
 
     public void Continue()
     {
-        var data = SaveSystem.LoadGame();
-        if (data == null)
+        if (!SaveSystem.HasSave())
         {
-            Debug.LogWarning("Continue failed: no save found.");
+            // Show difficulty picker only when user tries to continue but no save exists
+            var picker = FindFirstObjectByType<DifficultySelectUI>(FindObjectsInactive.Include);
+            if (picker != null)
+                picker.ContinueNoSavePickDifficulty();
+
+            RefreshContinueButton();
             return;
         }
+
+        var data = SaveSystem.LoadGame();
+        if (data == null) return;
 
         Time.timeScale = 1f;
         SceneManager.sceneLoaded += OnSceneLoadedApplySave;
         SceneManager.LoadScene(data.sceneName);
     }
+
+
 
     void OnSceneLoadedApplySave(Scene scene, LoadSceneMode mode)
     {
