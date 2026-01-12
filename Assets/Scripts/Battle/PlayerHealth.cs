@@ -28,6 +28,9 @@ public class PlayerHealth : MonoBehaviour
     // ✅ IMPORTANT: your HUD needs this
     public int CurrentBlock => currentBlock;
 
+    // ✅ For switched damage popups
+    public RectTransform GetDamagePopupAnchor() => playerDamagePopupAnchor;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -52,7 +55,7 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    public void TakeDamage(int amount)
+    public void TakeDamage(int amount, EnemyHealth attacker = null)
     {
         if (amount <= 0) return;
 
@@ -74,21 +77,38 @@ public class PlayerHealth : MonoBehaviour
 
         Debug.Log($"[PlayerHealth] Player took {amount} damage. HP: {currentHealth}/{maxHealth}, Block: {currentBlock}");
 
-        // 🔥 POPUP + BUMP
+        // 🔥 SWITCHED POPUP - Shows damage at ENEMY's position (the attacker)
         if (BattleAnimator.Instance != null)
         {
-            // popup
-            if (playerDamagePopupAnchor != null)
-                BattleAnimator.Instance.ShowDamagePopup(amount, playerDamagePopupAnchor);
+            if (attacker != null)
+            {
+                // Show popup at ENEMY's anchor (who is attacking the player)
+                RectTransform enemyAnchor = attacker.GetDamagePopupAnchor();
+                if (enemyAnchor != null)
+                {
+                    BattleAnimator.Instance.ShowDamagePopup(amount, enemyAnchor);
+                }
+                else
+                {
+                    Debug.LogWarning("[PlayerHealth] Enemy attacker's damage popup anchor is NULL.");
+                }
+            }
             else
-                Debug.LogWarning("[PlayerHealth] playerDamagePopupAnchor is NULL (assign PlayerDamagePopupAnchor in Inspector).");
-
-            // bump (player is on left, bump right looks better)
-            BattleAnimator.Instance.Bump(transform, Vector3.right);
+            {
+                // Fallback: If no attacker specified, use player's own anchor (backward compatibility)
+                if (playerDamagePopupAnchor != null)
+                {
+                    BattleAnimator.Instance.ShowDamagePopup(amount, playerDamagePopupAnchor);
+                }
+                else
+                {
+                    Debug.LogWarning("[PlayerHealth] playerDamagePopupAnchor is NULL (assign PlayerDamagePopupAnchor in Inspector).");
+                }
+            }
         }
         else
         {
-            Debug.LogWarning("[PlayerHealth] BattleAnimator.Instance is NULL (make sure BattleAnimator object exists in scene).");
+            Debug.LogWarning("[PlayerHealth] BattleAnimator.Instance is NULL.");
         }
 
         UpdateHealthUI();

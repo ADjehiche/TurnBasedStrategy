@@ -108,11 +108,19 @@ public class TurnManager : MonoBehaviour
         if (enableDebugLogs)
             Debug.Log($"[TurnManager] StartPlayerTurn -> PlayerTurn");
 
-        // Tick status effects (bleed, weaken, etc.) at the start of player turn
-        var enemy = UnityEngine.Object.FindFirstObjectByType<EnemyHealth>();
-        if (enemy != null)
+        // Tick status effects (bleed, weaken, etc.) for ALL enemies at the start of player turn
+        if (EnemyManager.Instance != null)
         {
-            enemy.TickStatuses();
+            EnemyManager.Instance.TickAllEnemyStatuses();
+        }
+        else
+        {
+            // Fallback for single enemy (backwards compatibility)
+            var enemy = UnityEngine.Object.FindFirstObjectByType<EnemyHealth>();
+            if (enemy != null)
+            {
+                enemy.TickStatuses();
+            }
         }
 
         // Refill stamina at the start of the turn
@@ -196,39 +204,50 @@ public class TurnManager : MonoBehaviour
             Debug.Log("[TurnManager] Processing enemy turn...");
         }
 
-        // Wait for enemy actions
+        // Wait before enemies act
         yield return new WaitForSeconds(2f);
-        
-        // Play skeleton scream before attack
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.Play("SkeletonScream");
-        }
-        
-        // Small delay after scream, then play slash sound (during attack animation)
-        yield return new WaitForSeconds(0.5f);
-        
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.Play("SkeletonSlash");
-        }
-        
-        // Brief moment for slash to register, then apply damage
-        yield return new WaitForSeconds(0.2f);
-        
-        // Enemy attacks player
-        int damage = UnityEngine.Random.Range(1, 6); // Random value between 1–5 (upper bound exclusive)
 
-        if (PlayerHealth.Instance != null)
+        // Use EnemyManager to execute all enemy turns
+        if (EnemyManager.Instance != null)
         {
-            PlayerHealth.Instance.TakeDamage(damage);
-
-            if (enableDebugLogs)
-                Debug.Log($"[TurnManager] Enemy attacked player for {damage} damage!");
+            yield return EnemyManager.Instance.ExecuteAllEnemyTurns();
         }
         else
         {
-            Debug.LogWarning("[TurnManager] Enemy tried to attack, but no PlayerHealth instance found!");
+            // Fallback for single enemy (backwards compatibility)
+            Debug.LogWarning("[TurnManager] No EnemyManager found, using legacy single-enemy attack");
+            
+            // Play skeleton scream before attack
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.Play("SkeletonScream");
+            }
+            
+            // Small delay after scream, then play slash sound (during attack animation)
+            yield return new WaitForSeconds(0.5f);
+            
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.Play("SkeletonSlash");
+            }
+            
+            // Brief moment for slash to register, then apply damage
+            yield return new WaitForSeconds(0.2f);
+            
+            // Enemy attacks player
+            int damage = UnityEngine.Random.Range(1, 6);
+
+            if (PlayerHealth.Instance != null)
+            {
+                PlayerHealth.Instance.TakeDamage(damage);
+
+                if (enableDebugLogs)
+                    Debug.Log($"[TurnManager] Enemy attacked player for {damage} damage!");
+            }
+            else
+            {
+                Debug.LogWarning("[TurnManager] Enemy tried to attack, but no PlayerHealth instance found!");
+            }
         }
         
         // Return to player turn
@@ -239,7 +258,7 @@ public class TurnManager : MonoBehaviour
     [ContextMenu("Check For Duplicate TurnManagers")]
     private void CheckForDuplicates()
     {
-        TurnManager[] allManagers = FindObjectsOfType<TurnManager>();
+        TurnManager[] allManagers = FindObjectsByType<TurnManager>(FindObjectsSortMode.None);
         if (allManagers.Length > 1)
         {
             Debug.LogError($"[TurnManager] FOUND {allManagers.Length} TurnManager instances!");

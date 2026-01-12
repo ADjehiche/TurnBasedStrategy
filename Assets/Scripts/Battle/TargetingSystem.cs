@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
+using System.Collections;
 using System.Collections.Generic;
 using CardGame;
 
@@ -40,9 +41,10 @@ public class TargetingSystem : MonoBehaviour
         activeCardGO   = cardGO;
         onComplete     = onDone;
 
-        Debug.Log($"[TargetingSystem] Targeting started for card: {activeCardData.cardName} (cost {activeCardData.staminaCost})");
+        Debug.Log($"[TargetingSystem] 🎯 Targeting started for card: {activeCardData.cardName} (cost {activeCardData.staminaCost})");
+        Debug.Log($"[TargetingSystem] 👆 Waiting for CLICK 2 on target...");
 
-        // subscribe + enable actions
+        // Enable input actions for target selection (CLICK 2)
         if (uiClickAction != null && uiClickAction.action != null)
         {
             uiClickAction.action.performed += OnClickPerformed;
@@ -53,6 +55,7 @@ public class TargetingSystem : MonoBehaviour
         {
             uiCancelAction.action.performed += OnCancelPerformed;
             uiCancelAction.action.Enable();
+            
         }
 
         if (uiRightClickAction != null && uiRightClickAction.action != null)
@@ -98,6 +101,8 @@ public class TargetingSystem : MonoBehaviour
         Vector2 screenPos =
             Pointer.current != null ? Pointer.current.position.ReadValue() :
             (Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero);
+
+        Debug.Log($"[TargetingSystem] 🎯 CLICK 2 detected at screen position: {screenPos}");
 
         var cam = worldCamera != null ? worldCamera : Camera.main;
         TryTargetAtScreenPoint(screenPos, cam);
@@ -231,10 +236,17 @@ public class TargetingSystem : MonoBehaviour
                 }
                 break;
 
+            case TargetType.None:
+            case TargetType.AllEnemies:
+            case TargetType.AllAllies:
+                // These cards don't require a specific target click, but we need ANY click to confirm
+                // Just accept the click and proceed
+                Debug.Log($"[TargetingSystem] Non-targeted card {activeCardData.cardName} - click accepted to play card.");
+                break;
+
             default:
-                Debug.LogWarning($"[TargetingSystem] TargetType {activeCardData.targetType} not handled yet.");
-                CancelTargeting();
-                return;
+                Debug.LogWarning($"[TargetingSystem] TargetType {activeCardData.targetType} not fully implemented yet - playing anyway.");
+                break;
         }
 
         // Stamina check
@@ -281,7 +293,7 @@ public class TargetingSystem : MonoBehaviour
         activeCardGO   = null;
     }
 
-    private void ResolveCard(Card card, EnemyHealth enemy, PlayerHealth player)
+    public void ResolveCard(Card card, EnemyHealth enemy, PlayerHealth player)
     {
         if (card.effects == null || card.effects.Count == 0)
         {
@@ -307,6 +319,16 @@ public class TargetingSystem : MonoBehaviour
 
                     if (!eff.applyToSelf && enemy != null)
                     {
+                        // Get player transform for bump animation
+                        Transform playerTransform = PlayerHealth.Instance != null 
+                            ? PlayerHealth.Instance.transform 
+                            : null;
+                        
+                        if (playerTransform != null)
+                        {
+                            BattleAnimator.Instance.Bump(playerTransform, Vector3.right);
+                        }
+                        
                         enemy.TakeDamage(amount);
                         Debug.Log($"[TargetingSystem] {card.cardName} dealt {amount} damage to enemy.");
                     }
