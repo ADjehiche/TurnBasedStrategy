@@ -108,6 +108,18 @@ public class TurnManager : MonoBehaviour
         if (enableDebugLogs)
             Debug.Log($"[TurnManager] StartPlayerTurn -> PlayerTurn");
 
+        // Tick player buff status effects (reflect, dodge, invisibility, etc.) at start of turn
+        if (PlayerStatusEffects.Instance != null)
+        {
+            PlayerStatusEffects.Instance.TickStatuses();
+        }
+
+        // Tick player debuff status effects (bleed, weakness) at start of turn
+        if (PlayerHealth.Instance != null)
+        {
+            PlayerHealth.Instance.TickStatuses();
+        }
+
         // Tick status effects (bleed, weaken, etc.) for ALL enemies at the start of player turn
         if (EnemyManager.Instance != null)
         {
@@ -183,15 +195,40 @@ public class TurnManager : MonoBehaviour
     
     private void DrawCardsForPlayerTurn()
     {
-
-        // Debug.Log($"[TurnManager] DrawCardsForPlayerTurn called! Drawing {cardsPerTurn} cards. DrawPile has: {deckManager.drawPile.Count} cards");
-
         if (deckManager == null || handManager == null) return;
 
-        var cards = deckManager.Draw(cardsPerTurn); // DeckManager.Draw() auto-reshuffles from discard when empty
+        // NEW: Use CardCollection's rule-based drawing if available
+        if (CardCollection.Instance != null)
+        {
+            var hand = CardCollection.Instance.DrawHandWithRules(deckManager.DrawPile, cardsPerTurn);
+            
+            if (hand.Count == 0)
+            {
+                Debug.LogWarning("[TurnManager] No cards could be drawn with rules!");
+                return;
+            }
+
+            // Remove drawn cards from draw pile
+            foreach (var card in hand)
+            {
+                deckManager.DrawPile.Remove(card);
+            }
+
+            // Add to hand display
+            foreach (var card in hand)
+            {
+                handManager.AddCardToHand(card);
+            }
+
+            Debug.Log($"[TurnManager] Drew {hand.Count} cards with composition rules");
+            return;
+        }
+
+        // Fallback: Original draw logic
+        var cards = deckManager.Draw(cardsPerTurn);
         if (cards == null || cards.Count == 0) return;
 
-        Debug.Log($"[TurnManager] Actually drew {cards.Count} cards");
+        Debug.Log($"[TurnManager] Drew {cards.Count} cards (fallback method)");
 
         foreach (var c in cards)
             handManager.AddCardToHand(c);

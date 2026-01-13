@@ -91,7 +91,15 @@ public class EnemyHealth : MonoBehaviour
             if (audioController != null)
                 audioController.PlayDeathSound();
 
-            BattleState.SetOver(true);
+            // Don't end battle here - let EnemyManager check if ALL enemies are dead
+            Debug.Log($"[EnemyHealth] {gameObject.name} defeated!");
+            
+            // Notify EnemyManager to check battle end condition
+            if (EnemyManager.Instance != null)
+            {
+                StartCoroutine(EnemyManager.Instance.CheckBattleEndAfterDelay());
+            }
+            
             Destroy(gameObject, 0.5f);
         }
     }

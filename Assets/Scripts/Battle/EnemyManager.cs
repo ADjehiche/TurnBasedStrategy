@@ -135,6 +135,13 @@ public class EnemyManager : MonoBehaviour
     /// </summary>
     public IEnumerator ExecuteAllEnemyTurns()
     {
+        // Check if enemies are disarmed
+        if (PlayerStatusEffects.Instance != null && PlayerStatusEffects.Instance.EnemiesDisarmed)
+        {
+            Debug.Log("[EnemyManager] Enemies are DISARMED! Cannot attack this turn.");
+            yield break;
+        }
+
         List<EnemyHealth> living = GetLivingEnemies();
         
         if (living.Count == 0)
@@ -163,6 +170,13 @@ public class EnemyManager : MonoBehaviour
     {
         if (enemy == null || enemy.CurrentHP <= 0)
             yield break;
+
+        // Check if player is invisible (cannot be targeted)
+        if (PlayerStatusEffects.Instance != null && PlayerStatusEffects.Instance.IsInvisible)
+        {
+            Debug.Log($"[EnemyManager] {enemy.gameObject.name} cannot attack - Player is INVISIBLE!");
+            yield break;
+        }
 
         Debug.Log($"[EnemyManager] {enemy.gameObject.name} is attacking...");
 
@@ -218,5 +232,14 @@ public class EnemyManager : MonoBehaviour
             Debug.Log("[EnemyManager] All enemies defeated! Battle won!");
             BattleState.SetOver(true);
         }
+    }
+
+    /// <summary>
+    /// Called with delay after an enemy dies to check if battle should end
+    /// </summary>
+    public IEnumerator CheckBattleEndAfterDelay()
+    {
+        yield return new WaitForSeconds(0.6f); // Wait for death animation
+        CheckBattleEnd();
     }
 }

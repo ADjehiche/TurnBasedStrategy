@@ -8,26 +8,29 @@ public static class StarterCardGenerator
 {
     private const string BasePath = "Assets/Resources/Cards";
 
-    [MenuItem("Tools/Card Game/Generate Starter Cards")]
-    public static void GenerateStarterCards()
+
+    [MenuItem("Tools/Card Game/Generate All Cards")]
+    public static void GenerateAllCards()
     {
         // Ensure folder structure
         EnsureFolder(BasePath);
         EnsureFolder(Path.Combine(BasePath, "Attack"));
         EnsureFolder(Path.Combine(BasePath, "Defense"));
         EnsureFolder(Path.Combine(BasePath, "Utility"));
-        EnsureFolder(Path.Combine(BasePath, "Tactical"));
+        EnsureFolder(Path.Combine(BasePath, "MergeOnly"));
 
-        CreateOrUpdateAttackCards();
-        CreateOrUpdateDefenseCards();
-        CreateOrUpdateUtilityCards();
-        CreateOrUpdateTacticalCards();
+        // Generate all cards
+        CreateStarterAttackCards();      // 1-11: starter attacks
+        CreateStarterDefenseCards();     // 12-17: starter defense
+        CreateStarterUtilityCards();     // 18-23: ALL utility (includes Battle Focus & Disarm)
+        CreateMergeOnlyCards();          // 24-32: merge-only cards
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log("Starter cards generated/updated.");
+        Debug.Log("✅ All 32 cards generated! (23 starting pool + 9 merge-only)");
     }
+
 
     // ---------- helpers ----------
 
@@ -93,11 +96,12 @@ public static class StarterCardGenerator
         e.maxAmount = 0;
     }
 
+    // Finish setup for Common Starter cards (all eligible for starting pool)
     private static void FinishStarterCommon(Card c, params string[] tags)
     {
         c.rarity = CardRarity.Common;
         c.maxCopiesInDeck = 4;
-        c.canAppearAsReward = true;
+        c.canAppearAsReward = false;
         c.canAppearInStartingDecks = true;
         c.exhaustOnPlay = false;
         c.isStarterCard = true;
@@ -116,116 +120,213 @@ public static class StarterCardGenerator
         EditorUtility.SetDirty(c);
     }
 
-    // ---------- ATTACK CARDS ----------
+    // No longer needed - reward cards merged into starter pool
+    // Kept for potential future use
+    private static void FinishRewardCard(Card c, CardRarity rarity, int maxCopies, bool exhaust, params string[] tags)
+    {
+        c.rarity = rarity;
+        c.maxCopiesInDeck = maxCopies;
+        c.canAppearAsReward = false;
+        c.canAppearInStartingDecks = true;
+        c.exhaustOnPlay = exhaust;
+        c.isStarterCard = true;
+        c.unlockedByDefault = true;
+        c.unlockLevelRequired = 0;
 
-    private static void CreateOrUpdateAttackCards()
+        if (c.tags == null)
+            c.tags = new System.Collections.Generic.List<string>();
+        c.tags.Clear();
+        foreach (var t in tags)
+        {
+            if (!string.IsNullOrWhiteSpace(t))
+                c.tags.Add(t);
+        }
+
+        EditorUtility.SetDirty(c);
+    }
+
+    // Finish setup for Merge-Only cards (cannot be found)
+    private static void FinishMergeOnly(Card c, CardRarity rarity, int maxCopies, bool exhaust, params string[] tags)
+    {
+        c.rarity = rarity;
+        c.maxCopiesInDeck = maxCopies;
+        c.canAppearAsReward = false;
+        c.canAppearInStartingDecks = false;
+        c.exhaustOnPlay = exhaust;
+        c.isStarterCard = false;
+        c.unlockedByDefault = false;
+        c.unlockLevelRequired = 0;
+
+        if (c.tags == null)
+            c.tags = new System.Collections.Generic.List<string>();
+        c.tags.Clear();
+        foreach (var t in tags)
+        {
+            if (!string.IsNullOrWhiteSpace(t))
+                c.tags.Add(t);
+        }
+
+        EditorUtility.SetDirty(c);
+    }
+
+    // ---------- STARTER ATTACK CARDS (1-11) ----------
+
+    private static void CreateStarterAttackCards()
     {
         string folder = Path.Combine(BasePath, "Attack");
 
-        // Slash
+        // 1) Quick Slash (renamed from Stash)
         {
-            var c = GetOrCreate(folder, "Slash");
-            BaseSetup(c, "Slash", "Deal 2 damage.", CardCategory.Attack, 1, TargetType.SingleEnemy);
+            var c = GetOrCreate(folder, "Quick Slash");
+            BaseSetup(c, "Quick Slash", "Deal 2 damage.", CardCategory.Attack, 1, TargetType.SingleEnemy);
             ClearEffects(c, 1);
             SetEffect(c, 0, EffectType.Damage, 2, 0, DamageSchool.Physical);
             FinishStarterCommon(c, "attack", "melee");
         }
 
-        // Stab
+        // 2) Stab
         {
             var c = GetOrCreate(folder, "Stab");
-            BaseSetup(c, "Stab", "Deal 1 damage. Apply 2 Bleed.", CardCategory.Attack, 1, TargetType.SingleEnemy);
+            BaseSetup(c, "Stab", "Deal 1 damage. Apply Bleed 2.", CardCategory.Attack, 1, TargetType.SingleEnemy);
             ClearEffects(c, 2);
             SetEffect(c, 0, EffectType.Damage, 1, 0, DamageSchool.Physical);
             SetEffect(c, 1, EffectType.ApplyBleed, 2, 2, DamageSchool.Bleed);
-            FinishStarterCommon(c, "attack", "bleed", "melee");
+            FinishStarterCommon(c, "attack", "melee", "bleed");
         }
 
-        // Punch
+        // 3) Brawler's Jab
         {
-            var c = GetOrCreate(folder, "Punch");
-            BaseSetup(c, "Punch", "Deal 1 damage.", CardCategory.Attack, 0, TargetType.SingleEnemy);
+            var c = GetOrCreate(folder, "Brawler's Jab");
+            BaseSetup(c, "Brawler's Jab", "Deal 1 damage.", CardCategory.Attack, 0, TargetType.SingleEnemy);
             ClearEffects(c, 1);
             SetEffect(c, 0, EffectType.Damage, 1, 0, DamageSchool.Physical);
             FinishStarterCommon(c, "attack", "melee", "free");
         }
 
-        // Kick
+        // 4) Open-Hand Slap
         {
-            var c = GetOrCreate(folder, "Kick");
-            BaseSetup(c, "Kick", "Deal 2 damage.", CardCategory.Attack, 1, TargetType.SingleEnemy);
-            ClearEffects(c, 1);
-            SetEffect(c, 0, EffectType.Damage, 2, 0, DamageSchool.Physical);
-            FinishStarterCommon(c, "attack", "melee");
-        }
-
-        // Throw Arrow
-        {
-            var c = GetOrCreate(folder, "Throw Arrow");
-            BaseSetup(c, "Throw Arrow", "Deal 1 damage. Apply 1 Bleed.", CardCategory.Attack, 1, TargetType.SingleEnemy);
+            var c = GetOrCreate(folder, "Open-Hand Slap");
+            BaseSetup(c, "Open-Hand Slap", "Deal 1 damage. Apply Weak 10% for 1 turn.", CardCategory.Attack, 0, TargetType.SingleEnemy);
             ClearEffects(c, 2);
             SetEffect(c, 0, EffectType.Damage, 1, 0, DamageSchool.Physical);
-            SetEffect(c, 1, EffectType.ApplyBleed, 1, 2, DamageSchool.Bleed);
+            SetEffect(c, 1, EffectType.ApplyWeak, 10, 1, DamageSchool.None);
+            FinishStarterCommon(c, "attack", "melee", "free", "debuff", "weak");
+        }
+
+        // 5) Low Sweep
+        {
+            var c = GetOrCreate(folder, "Low Sweep");
+            BaseSetup(c, "Low Sweep", "Deal 2 damage. Apply Weak 15% for 1 turn.", CardCategory.Attack, 1, TargetType.SingleEnemy);
+            ClearEffects(c, 2);
+            SetEffect(c, 0, EffectType.Damage, 2, 0, DamageSchool.Physical);
+            SetEffect(c, 1, EffectType.ApplyWeak, 15, 1, DamageSchool.None);
+            FinishStarterCommon(c, "attack", "melee", "debuff", "weak");
+        }
+
+        // 6) Improvised Bolt
+        {
+            var c = GetOrCreate(folder, "Improvised Bolt");
+            BaseSetup(c, "Improvised Bolt", "Deal 2 damage. Apply Bleed 1.", CardCategory.Attack, 1, TargetType.SingleEnemy);
+            ClearEffects(c, 2);
+            SetEffect(c, 0, EffectType.Damage, 2, 0, DamageSchool.Physical);
+            SetEffect(c, 1, EffectType.ApplyBleed, 1, 1, DamageSchool.Bleed);
             FinishStarterCommon(c, "attack", "ranged", "bleed");
         }
 
-        // Crossbow Bolt
+        // 7) Crossbow Bolt
         {
             var c = GetOrCreate(folder, "Crossbow Bolt");
-            BaseSetup(c, "Crossbow Bolt", "Deal 3 damage. Apply 2 Bleed.", CardCategory.Attack, 2, TargetType.SingleEnemy);
-            ClearEffects(c, 2);
-            SetEffect(c, 0, EffectType.Damage, 3, 0, DamageSchool.Physical);
-            SetEffect(c, 1, EffectType.ApplyBleed, 2, 2, DamageSchool.Bleed);
-            FinishStarterCommon(c, "attack", "ranged", "bleed");
+            BaseSetup(c, "Crossbow Bolt", "Deal 4 damage.", CardCategory.Attack, 2, TargetType.SingleEnemy);
+            ClearEffects(c, 1);
+            SetEffect(c, 0, EffectType.Damage, 4, 0, DamageSchool.Physical);
+            FinishStarterCommon(c, "attack", "ranged");
         }
 
-        // Lunging Attack
+        // 8) Lunging Thrust
         {
-            var c = GetOrCreate(folder, "Lunging Attack");
-            BaseSetup(c, "Lunging Attack", "Deal 5 damage.", CardCategory.Attack, 2, TargetType.SingleEnemy);
+            var c = GetOrCreate(folder, "Lunging Thrust");
+            BaseSetup(c, "Lunging Thrust", "Deal 5 damage.", CardCategory.Attack, 2, TargetType.SingleEnemy);
             ClearEffects(c, 1);
             SetEffect(c, 0, EffectType.Damage, 5, 0, DamageSchool.Physical);
             FinishStarterCommon(c, "attack", "melee", "heavy");
         }
 
-        // Slash and Stab
-        {
-            var c = GetOrCreate(folder, "Slash and Stab");
-            BaseSetup(c, "Slash and Stab", "Deal 3 damage. Apply 3 Bleed.", CardCategory.Attack, 2, TargetType.SingleEnemy);
-            ClearEffects(c, 2);
-            SetEffect(c, 0, EffectType.Damage, 3, 0, DamageSchool.Physical);
-            SetEffect(c, 1, EffectType.ApplyBleed, 3, 2, DamageSchool.Bleed);
-            FinishStarterCommon(c, "attack", "bleed", "combo");
-        }
-
-        // Poison Arrow
+        // 9) Poison Arrow
         {
             var c = GetOrCreate(folder, "Poison Arrow");
-            BaseSetup(c, "Poison Arrow", "Deal 2 damage. Apply 2 Bleed. Apply Weak (15%) for 2 turns.", CardCategory.Attack, 2, TargetType.SingleEnemy);
+            BaseSetup(c, "Poison Arrow", "Deal 2 damage. Apply Bleed 3. Apply Weak 10% for 2 turns.", CardCategory.Attack, 2, TargetType.SingleEnemy);
             ClearEffects(c, 3);
             SetEffect(c, 0, EffectType.Damage, 2, 0, DamageSchool.Physical);
-            SetEffect(c, 1, EffectType.ApplyBleed, 2, 3, DamageSchool.Bleed);
-            SetEffect(c, 2, EffectType.ApplyWeak, 15, 2, DamageSchool.None);
-            FinishStarterCommon(c, "attack", "ranged", "bleed", "debuff");
+            SetEffect(c, 1, EffectType.ApplyBleed, 3, 3, DamageSchool.Bleed);
+            SetEffect(c, 2, EffectType.ApplyWeak, 10, 2, DamageSchool.None);
+            FinishStarterCommon(c, "attack", "ranged", "bleed", "debuff", "weak");
+        }
+
+        // 10) Rend
+        {
+            var c = GetOrCreate(folder, "Rend");
+            BaseSetup(c, "Rend", "Deal 1 damage. Apply Bleed 3.", CardCategory.Attack, 1, TargetType.SingleEnemy);
+            ClearEffects(c, 2);
+            SetEffect(c, 0, EffectType.Damage, 1, 0, DamageSchool.Physical);
+            SetEffect(c, 1, EffectType.ApplyBleed, 3, 3, DamageSchool.Bleed);
+            FinishStarterCommon(c, "attack", "melee", "bleed");
+        }
+
+        // 11) Aimed Shot
+        {
+            var c = GetOrCreate(folder, "Aimed Shot");
+            BaseSetup(c, "Aimed Shot", "Deal 2 damage.", CardCategory.Attack, 1, TargetType.SingleEnemy);
+            ClearEffects(c, 1);
+            SetEffect(c, 0, EffectType.Damage, 2, 0, DamageSchool.Physical);
+            FinishStarterCommon(c, "attack", "ranged");
         }
     }
 
-    // ---------- DEFENSE CARDS ----------
+    // ---------- STARTER DEFENSE CARDS (12-17) ----------
 
-    private static void CreateOrUpdateDefenseCards()
+    private static void CreateStarterDefenseCards()
     {
         string folder = Path.Combine(BasePath, "Defense");
 
-        // Block
+        // 12) Block
         {
             var c = GetOrCreate(folder, "Block");
-            BaseSetup(c, "Block", "Gain 3 Block.", CardCategory.Defense, 0, TargetType.Self);
+            BaseSetup(c, "Block", "Gain 4 Block.", CardCategory.Defense, 0, TargetType.Self);
             ClearEffects(c, 1);
-            SetEffect(c, 0, EffectType.ApplyBlock, 3, 0, DamageSchool.None);
+            SetEffect(c, 0, EffectType.ApplyBlock, 4, 0, DamageSchool.None);
             FinishStarterCommon(c, "defense", "block", "free");
         }
 
-        // Invisibility
+        // 13) Parry
+        {
+            var c = GetOrCreate(folder, "Parry");
+            BaseSetup(c, "Parry", "Gain 3 Block. Reflect 2 damage for 1 turn.", CardCategory.Defense, 1, TargetType.Self);
+            ClearEffects(c, 2);
+            SetEffect(c, 0, EffectType.ApplyBlock, 3, 0, DamageSchool.None);
+            SetEffect(c, 1, EffectType.ReflectDamage, 2, 1, DamageSchool.Physical);
+            FinishStarterCommon(c, "defense", "block", "reflect");
+        }
+
+        // 14) Dodge
+        {
+            var c = GetOrCreate(folder, "Dodge");
+            BaseSetup(c, "Dodge", "Gain 2 Block. Dodge the next incoming attack this turn.", CardCategory.Defense, 1, TargetType.Self);
+            ClearEffects(c, 2);
+            SetEffect(c, 0, EffectType.ApplyBlock, 2, 0, DamageSchool.None);
+            SetEffect(c, 1, EffectType.DodgeNextAttack, 0, 1, DamageSchool.None);
+            FinishStarterCommon(c, "defense", "block", "evasion");
+        }
+
+        // 15) Shield Block
+        {
+            var c = GetOrCreate(folder, "Shield Block");
+            BaseSetup(c, "Shield Block", "Gain 10 Block.", CardCategory.Defense, 2, TargetType.Self);
+            ClearEffects(c, 1);
+            SetEffect(c, 0, EffectType.ApplyBlock, 10, 0, DamageSchool.None);
+            FinishStarterCommon(c, "defense", "block");
+        }
+
+        // 16) Invisibility
         {
             var c = GetOrCreate(folder, "Invisibility");
             BaseSetup(c, "Invisibility", "Become untargetable for 1 turn. Lose 2 HP.", CardCategory.Defense, 2, TargetType.Self);
@@ -235,43 +336,45 @@ public static class StarterCardGenerator
             FinishStarterCommon(c, "defense", "evasion", "self-damage");
         }
 
-        // Shield Block
+        // 17) Brace
         {
-            var c = GetOrCreate(folder, "Shield Block");
-            BaseSetup(c, "Shield Block", "Gain 10 Block.", CardCategory.Defense, 2, TargetType.Self);
-            ClearEffects(c, 1);
-            SetEffect(c, 0, EffectType.ApplyBlock, 10, 0, DamageSchool.None);
-            FinishStarterCommon(c, "defense", "block");
-        }
-
-        // Parry
-        {
-            var c = GetOrCreate(folder, "Parry");
-            BaseSetup(c, "Parry", "Gain 3 Block. Reflect 1 damage for 1 turn.", CardCategory.Defense, 1, TargetType.Self);
+            var c = GetOrCreate(folder, "Brace");
+            BaseSetup(c, "Brace", "Gain 6 Block. Gain 1 stamina next turn.", CardCategory.Defense, 1, TargetType.Self);
             ClearEffects(c, 2);
-            SetEffect(c, 0, EffectType.ApplyBlock, 3, 0, DamageSchool.None);
-            SetEffect(c, 1, EffectType.ReflectDamage, 1, 1, DamageSchool.Physical);
-            FinishStarterCommon(c, "defense", "block", "reflect");
-        }
-
-        // Dodge
-        {
-            var c = GetOrCreate(folder, "Dodge");
-            BaseSetup(c, "Dodge", "Gain 2 Block. Become untargetable for 1 turn.", CardCategory.Defense, 1, TargetType.Self);
-            ClearEffects(c, 2);
-            SetEffect(c, 0, EffectType.ApplyBlock, 2, 0, DamageSchool.None);
-            SetEffect(c, 1, EffectType.PreventAttack, 0, 1, DamageSchool.None);
-            FinishStarterCommon(c, "defense", "block", "evasion");
+            SetEffect(c, 0, EffectType.ApplyBlock, 6, 0, DamageSchool.None);
+            SetEffect(c, 1, EffectType.GainNextTurnStamina, 1, 1, DamageSchool.None);
+            FinishStarterCommon(c, "defense", "block", "tempo");
         }
     }
 
-    // ---------- UTILITY CARDS ----------
+    // ---------- STARTER UTILITY CARDS (18-23) ----------
+    // ALL utility cards are available in starting pool
 
-    private static void CreateOrUpdateUtilityCards()
+    private static void CreateStarterUtilityCards()
     {
         string folder = Path.Combine(BasePath, "Utility");
 
-        // Heal
+        // 18) Quick Draw
+        {
+            var c = GetOrCreate(folder, "Quick Draw");
+            BaseSetup(c, "Quick Draw", "Draw 2 cards.", CardCategory.Utility, 1, TargetType.Self);
+            ClearEffects(c, 1);
+            SetEffect(c, 0, EffectType.DrawCards, 2, 0, DamageSchool.None);
+            FinishStarterCommon(c, "utility", "draw");
+        }
+
+        // 19) Energize
+        {
+            var c = GetOrCreate(folder, "Energize");
+            BaseSetup(c, "Energize", "Gain 2 stamina. Exhaust.", CardCategory.Utility, 0, TargetType.Self);
+            ClearEffects(c, 1);
+            SetEffect(c, 0, EffectType.GainStamina, 2, 0, DamageSchool.None);
+            c.exhaustOnPlay = true; // Override for this card
+            FinishStarterCommon(c, "utility", "stamina", "free", "exhaust");
+            c.maxCopiesInDeck = 2; // Override max copies
+        }
+
+        // 20) Heal
         {
             var c = GetOrCreate(folder, "Heal");
             BaseSetup(c, "Heal", "Restore 5 HP.", CardCategory.Utility, 2, TargetType.Self);
@@ -280,65 +383,137 @@ public static class StarterCardGenerator
             FinishStarterCommon(c, "utility", "heal");
         }
 
-        // Energize
+        // 21) Cleanse
         {
-            var c = GetOrCreate(folder, "Energize");
-            BaseSetup(c, "Energize", "Restore 3 stamina.", CardCategory.Utility, 0, TargetType.Self);
-            ClearEffects(c, 1);
-            SetEffect(c, 0, EffectType.GainStamina, 3, 0, DamageSchool.None);
-            FinishStarterCommon(c, "utility", "stamina", "free");
-        }
-
-        // Remove Debuff
-        {
-            var c = GetOrCreate(folder, "Remove Debuff");
-            BaseSetup(c, "Remove Debuff", "Remove all debuffs.", CardCategory.Utility, 1, TargetType.Self);
-            ClearEffects(c, 1);
+            var c = GetOrCreate(folder, "Cleanse");
+            BaseSetup(c, "Cleanse", "Remove all debuffs. Gain 2 Block.", CardCategory.Utility, 1, TargetType.Self);
+            ClearEffects(c, 2);
             SetEffect(c, 0, EffectType.RemoveDebuffs, 0, 0, DamageSchool.None);
-            FinishStarterCommon(c, "utility", "cleanse");
+            SetEffect(c, 1, EffectType.ApplyBlock, 2, 0, DamageSchool.None);
+            FinishStarterCommon(c, "utility", "cleanse", "block");
         }
 
-        // Draw Card
+        // 22) Battle Focus
         {
-            var c = GetOrCreate(folder, "Draw Card");
-            BaseSetup(c, "Draw Card", "Draw 1 card.", CardCategory.Utility, 1, TargetType.Self);
+            var c = GetOrCreate(folder, "Battle Focus");
+            BaseSetup(c, "Battle Focus", "Gain +2 damage for 1 turn.", CardCategory.Utility, 1, TargetType.Self);
             ClearEffects(c, 1);
-            SetEffect(c, 0, EffectType.DrawCards, 1, 0, DamageSchool.None);
-            FinishStarterCommon(c, "utility", "draw");
+            SetEffect(c, 0, EffectType.DamageBuff, 2, 1, DamageSchool.None);
+            FinishStarterCommon(c, "utility", "buff", "damage");
+            c.rarity = CardRarity.Uncommon; // Override rarity
+            c.maxCopiesInDeck = 2; // Override max copies
+        }
+
+        // 23) Disarm
+        {
+            var c = GetOrCreate(folder, "Disarm");
+            BaseSetup(c, "Disarm", "Enemies cannot attack for 1 turn. Exhaust.", CardCategory.Utility, 2, TargetType.AllEnemies);
+            ClearEffects(c, 1);
+            SetEffect(c, 0, EffectType.PreventAttack, 0, 1, DamageSchool.None);
+            c.exhaustOnPlay = true; // Override for this card
+            FinishStarterCommon(c, "utility", "control", "exhaust");
+            c.rarity = CardRarity.Rare; // Override rarity
+            c.maxCopiesInDeck = 1; // Override max copies
         }
     }
 
-    // ---------- TACTICAL CARDS ----------
+    // ---------- MERGE-ONLY CARDS (24-32) ----------
 
-    private static void CreateOrUpdateTacticalCards()
+    private static void CreateMergeOnlyCards()
     {
-        string folder = Path.Combine(BasePath, "Tactical");
+        string attackFolder = Path.Combine(BasePath, "Attack");
+        string defenseFolder = Path.Combine(BasePath, "Defense");
+        string mergeFolder = Path.Combine(BasePath, "MergeOnly");
 
-        // Inspire
+        // 24) Hemorrhage (Quick Slash + Stab)
         {
-            var c = GetOrCreate(folder, "Inspire");
-            BaseSetup(c, "Inspire", "Increase allies' damage by 2 for 2 turns.", CardCategory.Tactical, 2, TargetType.AllAllies);
-            ClearEffects(c, 1);
-            SetEffect(c, 0, EffectType.DamageBuff, 2, 2, DamageSchool.None);
-            FinishStarterCommon(c, "tactical", "buff");
+            var c = GetOrCreate(mergeFolder, "Hemorrhage");
+            BaseSetup(c, "Hemorrhage", "Deal 2 damage. Apply Bleed 4.", CardCategory.Attack, 2, TargetType.SingleEnemy);
+            ClearEffects(c, 2);
+            SetEffect(c, 0, EffectType.Damage, 2, 0, DamageSchool.Physical);
+            SetEffect(c, 1, EffectType.ApplyBleed, 4, 4, DamageSchool.Bleed);
+            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "attack", "bleed", "finisher");
         }
 
-        // Disarm
+        // 25) Vanguard Strike (Low Sweep + Quick Slash)
         {
-            var c = GetOrCreate(folder, "Disarm");
-            BaseSetup(c, "Disarm", "Enemies cannot attack for 1 turn.", CardCategory.Tactical, 2, TargetType.AllEnemies);
+            var c = GetOrCreate(mergeFolder, "Vanguard Strike");
+            BaseSetup(c, "Vanguard Strike", "Deal 3 damage. Gain 4 Block.", CardCategory.Attack, 2, TargetType.SingleEnemy);
+            ClearEffects(c, 2);
+            SetEffect(c, 0, EffectType.Damage, 3, 0, DamageSchool.Physical);
+            SetEffect(c, 1, EffectType.ApplyBlock, 4, 0, DamageSchool.None, applyToSelf: true);
+            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "attack", "defense", "block");
+        }
+
+        // 26) Whirlwind (Quick Slash + Quick Slash)
+        {
+            var c = GetOrCreate(mergeFolder, "Whirlwind");
+            BaseSetup(c, "Whirlwind", "Deal 2 damage to all enemies.", CardCategory.Attack, 2, TargetType.AllEnemies);
             ClearEffects(c, 1);
+            SetEffect(c, 0, EffectType.Damage, 2, 0, DamageSchool.Physical);
+            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "attack", "aoe");
+        }
+
+        // 27) Skewer (Crossbow Bolt + Poison Arrow)
+        {
+            var c = GetOrCreate(mergeFolder, "Skewer");
+            BaseSetup(c, "Skewer", "Deal 6 damage. Apply Bleed 3. Apply Weak 15% for 2 turns.", CardCategory.Attack, 3, TargetType.SingleEnemy);
+            ClearEffects(c, 3);
+            SetEffect(c, 0, EffectType.Damage, 6, 0, DamageSchool.Physical);
+            SetEffect(c, 1, EffectType.ApplyBleed, 3, 3, DamageSchool.Bleed);
+            SetEffect(c, 2, EffectType.ApplyWeak, 15, 2, DamageSchool.None);
+            FinishMergeOnly(c, CardRarity.Rare, 1, false, "attack", "ranged", "bleed", "debuff");
+        }
+
+        // 28) Weighted Tip (Improvised Bolt + Brawler's Jab)
+        {
+            var c = GetOrCreate(mergeFolder, "Weighted Tip");
+            BaseSetup(c, "Weighted Tip", "Deal 3 damage. Apply Bleed 2. Gain 1 stamina.", CardCategory.Attack, 2, TargetType.SingleEnemy);
+            ClearEffects(c, 3);
+            SetEffect(c, 0, EffectType.Damage, 3, 0, DamageSchool.Physical);
+            SetEffect(c, 1, EffectType.ApplyBleed, 2, 2, DamageSchool.Bleed);
+            SetEffect(c, 2, EffectType.GainStamina, 1, 0, DamageSchool.None, applyToSelf: true);
+            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "attack", "bleed", "tempo");
+        }
+
+        // 29) Deep Cuts (Stab + Rend)
+        {
+            var c = GetOrCreate(mergeFolder, "Deep Cuts");
+            BaseSetup(c, "Deep Cuts", "Deal 1 damage. Apply Bleed 4.", CardCategory.Attack, 2, TargetType.SingleEnemy);
+            ClearEffects(c, 2);
+            SetEffect(c, 0, EffectType.Damage, 1, 0, DamageSchool.Physical);
+            SetEffect(c, 1, EffectType.ApplyBleed, 4, 4, DamageSchool.Bleed);
+            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "attack", "bleed");
+        }
+
+        // 30) Counter Sweep (Low Sweep + Parry)
+        {
+            var c = GetOrCreate(mergeFolder, "Counter Sweep");
+            BaseSetup(c, "Counter Sweep", "Gain 4 Block. Deal 2 damage. Apply Weak 15% for 1 turn.", CardCategory.Defense, 2, TargetType.SingleEnemy);
+            ClearEffects(c, 3);
+            SetEffect(c, 0, EffectType.ApplyBlock, 4, 0, DamageSchool.None, applyToSelf: true);
+            SetEffect(c, 1, EffectType.Damage, 2, 0, DamageSchool.Physical);
+            SetEffect(c, 2, EffectType.ApplyWeak, 15, 1, DamageSchool.None);
+            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "defense", "counter", "block", "debuff");
+        }
+
+        // 31) Evasive Maneuver (Dodge + Quick Draw)
+        {
+            var c = GetOrCreate(mergeFolder, "Evasive Maneuver");
+            BaseSetup(c, "Evasive Maneuver", "Become untargetable for 1 turn. Draw 2 cards.", CardCategory.Defense, 2, TargetType.Self);
+            ClearEffects(c, 2);
             SetEffect(c, 0, EffectType.PreventAttack, 0, 1, DamageSchool.None);
-            FinishStarterCommon(c, "tactical", "debuff");
+            SetEffect(c, 1, EffectType.DrawCards, 2, 0, DamageSchool.None);
+            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "defense", "evasion", "draw");
         }
 
-        // Scout
+        // 32) Execution (Battle Focus + Lunging Thrust)
         {
-            var c = GetOrCreate(folder, "Scout");
-            BaseSetup(c, "Scout", "Reveal enemy intents for 2 turns.", CardCategory.Tactical, 1, TargetType.Self);
+            var c = GetOrCreate(mergeFolder, "Execution");
+            BaseSetup(c, "Execution", "Deal 8 damage. Exhaust.", CardCategory.Attack, 3, TargetType.SingleEnemy);
             ClearEffects(c, 1);
-            SetEffect(c, 0, EffectType.RevealIntent, 0, 2, DamageSchool.None);
-            FinishStarterCommon(c, "tactical", "utility");
+            SetEffect(c, 0, EffectType.Damage, 8, 0, DamageSchool.Physical);
+            FinishMergeOnly(c, CardRarity.Rare, 1, true, "attack", "finisher", "heavy", "exhaust");
         }
     }
 }
