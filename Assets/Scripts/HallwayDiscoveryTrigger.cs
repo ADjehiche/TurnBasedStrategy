@@ -49,18 +49,28 @@ public class HallwayDiscoveryTrigger : MonoBehaviour
             }
 
             // Trigger Level Two objective - tunnel entered
+            Debug.Log("[HallwayDiscoveryTrigger] ===== OBJECTIVE TRIGGER DEBUG START =====");
             Debug.Log("[HallwayDiscoveryTrigger] Attempting to find SimpleLevelTwoObjectives in scene...");
-            var objectiveManager = FindFirstObjectByType<SimpleLevelTwoObjectives>();
+            
+            SimpleLevelTwoObjectives objectiveManager = FindFirstObjectByType<SimpleLevelTwoObjectives>();
+            
+            Debug.Log($"[HallwayDiscoveryTrigger] FindFirstObjectByType result: {(objectiveManager != null ? "FOUND" : "NULL")}");
+            
             if (objectiveManager != null)
             {
-                Debug.Log("[HallwayDiscoveryTrigger] Found SimpleLevelTwoObjectives, calling OnTunnelEntered()");
+                Debug.Log("[HallwayDiscoveryTrigger] Calling objectiveManager.OnTunnelEntered() NOW...");
                 objectiveManager.OnTunnelEntered();
-                Debug.Log("[HallwayDiscoveryTrigger] Tunnel entered objective triggered");
+                Debug.Log("[HallwayDiscoveryTrigger] OnTunnelEntered() call completed");
             }
             else
             {
                 Debug.LogError("[HallwayDiscoveryTrigger] SimpleLevelTwoObjectives NOT found in scene! Objective will not progress.");
+                
+                // Extra debug: List all SimpleLevelTwoObjectives in scene (including inactive)
+                var allObjectives = FindObjectsByType<SimpleLevelTwoObjectives>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                Debug.LogError($"[HallwayDiscoveryTrigger] Total SimpleLevelTwoObjectives in scene (including inactive): {allObjectives.Length}");
             }
+            Debug.Log("[HallwayDiscoveryTrigger] ===== OBJECTIVE TRIGGER DEBUG END =====");
 
             if (destroyAfterTrigger)
             {

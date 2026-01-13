@@ -78,7 +78,7 @@ public class MouseItemData : MonoBehaviour
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
             {
-                Vector3 spawnPos = player.transform.position + player.transform.forward * 1.5f + Vector3.up * 0.5f;
+                Vector3 spawnPos = player.transform.position + player.transform.forward * 1f + Vector3.up * 0.5f;
                 GameObject droppedItem = Instantiate(itemData.itemPrefab, spawnPos, Quaternion.identity);
                 
                 // Enable physics
