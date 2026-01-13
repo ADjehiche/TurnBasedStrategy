@@ -36,29 +36,6 @@ public abstract class InventoryDisplay : MonoBehaviour
         UnityEngine.Debug.Log($"[InventoryDisplay] SlotClicked called! Slot has item: {clickedUISlot.AssignedInventorySlot.ItemData != null}");
         UnityEngine.Debug.Log($"[InventoryDisplay] MouseItemData has item: {mouseInventoryItem?.AssignedInventorySlot?.ItemData != null}");
 
-        // Use potion if clicked and not holding anything with mouse
-        if (clickedUISlot.AssignedInventorySlot.ItemData != null &&
-            mouseInventoryItem.AssignedInventorySlot.ItemData == null)
-        {
-            var item = clickedUISlot.AssignedInventorySlot.ItemData;
-            if (item.potionEffectType != PotionEffectType.None)
-            {
-                // Use the potion
-                var handler = GameObject.FindObjectOfType<PotionUseHandler>();
-                if (handler != null)
-                {
-                    handler.UsePotion(item);
-                    // Remove one from stack or clear slot
-                    clickedUISlot.AssignedInventorySlot.RemoveFromStack(1);
-                    if (clickedUISlot.AssignedInventorySlot.StackSize <= 0)
-                        clickedUISlot.ClearSlot();
-                    clickedUISlot.UpdateUISlot();
-                    inventorySystem?.OnInventorySlotChanged?.Invoke(clickedUISlot.AssignedInventorySlot);
-                    return;
-                }
-            }
-        }
-
         // Picking up an item from a slot
         if(clickedUISlot.AssignedInventorySlot.ItemData!=null && mouseInventoryItem.AssignedInventorySlot.ItemData==null)
         {
@@ -79,6 +56,43 @@ public abstract class InventoryDisplay : MonoBehaviour
             mouseInventoryItem.ClearSlot();
             
             // Notify that the slot changed
+            inventorySystem?.OnInventorySlotChanged?.Invoke(clickedUISlot.AssignedInventorySlot);
+        }
+        // Swapping items (both have items)
+        if(clickedUISlot.AssignedInventorySlot.ItemData != null && mouseInventoryItem.AssignedInventorySlot.ItemData != null)
+        {
+            // If same item type and stackable, try to stack
+            if (clickedUISlot.AssignedInventorySlot.ItemData == mouseInventoryItem.AssignedInventorySlot.ItemData &&
+                clickedUISlot.AssignedInventorySlot.ItemData.isStackable)
+            {
+                // Try to add to stack
+                int remaining = clickedUISlot.AssignedInventorySlot.ItemData.maxStack - clickedUISlot.AssignedInventorySlot.StackSize;
+                if (remaining > 0)
+                {
+                    int toAdd = Mathf.Min(remaining, mouseInventoryItem.AssignedInventorySlot.StackSize);
+                    clickedUISlot.AssignedInventorySlot.AddToStack(toAdd);
+                    mouseInventoryItem.AssignedInventorySlot.RemoveFromStack(toAdd);
+                    
+                    if (mouseInventoryItem.AssignedInventorySlot.StackSize <= 0)
+                        mouseInventoryItem.ClearSlot();
+                    else
+                        mouseInventoryItem.UpdateMouseSlot(mouseInventoryItem.AssignedInventorySlot);
+                    
+                    clickedUISlot.UpdateUISlot();
+                    inventorySystem?.OnInventorySlotChanged?.Invoke(clickedUISlot.AssignedInventorySlot);
+                    return;
+                }
+            }
+            
+            // Swap items
+            UnityEngine.Debug.Log($"[InventoryDisplay] Swapping items");
+            InventorySlot tempSlot = new InventorySlot();
+            tempSlot.AssignItem(clickedUISlot.AssignedInventorySlot);
+            
+            clickedUISlot.AssignedInventorySlot.AssignItem(mouseInventoryItem.AssignedInventorySlot);
+            mouseInventoryItem.UpdateMouseSlot(tempSlot);
+            
+            clickedUISlot.UpdateUISlot();
             inventorySystem?.OnInventorySlotChanged?.Invoke(clickedUISlot.AssignedInventorySlot);
         }
     }

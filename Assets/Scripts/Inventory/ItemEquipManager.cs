@@ -306,6 +306,12 @@ public class ItemEquipManager : MonoBehaviour
         currentlyEquippedItem.transform.localPosition = Vector3.zero;
         currentlyEquippedItem.transform.localRotation = Quaternion.identity;
         
+        // Rotate potions 90 degrees on X axis so they look upright
+        if (itemData.potionEffectType != PotionEffectType.None)
+        {
+            currentlyEquippedItem.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        }
+        
         // Disable physics on equipped item (it's just for display)
         Rigidbody rb = currentlyEquippedItem.GetComponent<Rigidbody>();
         if (rb != null)
