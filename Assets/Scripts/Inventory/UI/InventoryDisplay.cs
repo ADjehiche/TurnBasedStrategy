@@ -35,7 +35,30 @@ public abstract class InventoryDisplay : MonoBehaviour
     {
         UnityEngine.Debug.Log($"[InventoryDisplay] SlotClicked called! Slot has item: {clickedUISlot.AssignedInventorySlot.ItemData != null}");
         UnityEngine.Debug.Log($"[InventoryDisplay] MouseItemData has item: {mouseInventoryItem?.AssignedInventorySlot?.ItemData != null}");
-        
+
+        // Use potion if clicked and not holding anything with mouse
+        if (clickedUISlot.AssignedInventorySlot.ItemData != null &&
+            mouseInventoryItem.AssignedInventorySlot.ItemData == null)
+        {
+            var item = clickedUISlot.AssignedInventorySlot.ItemData;
+            if (item.potionEffectType != PotionEffectType.None)
+            {
+                // Use the potion
+                var handler = GameObject.FindObjectOfType<PotionUseHandler>();
+                if (handler != null)
+                {
+                    handler.UsePotion(item);
+                    // Remove one from stack or clear slot
+                    clickedUISlot.AssignedInventorySlot.RemoveFromStack(1);
+                    if (clickedUISlot.AssignedInventorySlot.StackSize <= 0)
+                        clickedUISlot.ClearSlot();
+                    clickedUISlot.UpdateUISlot();
+                    inventorySystem?.OnInventorySlotChanged?.Invoke(clickedUISlot.AssignedInventorySlot);
+                    return;
+                }
+            }
+        }
+
         // Picking up an item from a slot
         if(clickedUISlot.AssignedInventorySlot.ItemData!=null && mouseInventoryItem.AssignedInventorySlot.ItemData==null)
         {

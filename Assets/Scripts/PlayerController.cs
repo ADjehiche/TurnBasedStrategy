@@ -4,8 +4,33 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+
 public class PlayerController : MonoBehaviour
 {
+
+    // --- POTION EFFECT SUPPORT ---
+    private Coroutine speedBoostCoroutine;
+    private float originalSpeed;
+
+    public void ApplySpeedBoost(float multiplier, float duration)
+    {
+        if (speedBoostCoroutine != null)
+        {
+            StopCoroutine(speedBoostCoroutine);
+            speed = originalSpeed; // Reset before applying new boost
+        }
+        speedBoostCoroutine = StartCoroutine(SpeedBoostRoutine(multiplier, duration));
+    }
+
+    private IEnumerator SpeedBoostRoutine(float multiplier, float duration)
+    {
+        originalSpeed = speed;
+        speed = originalSpeed * multiplier;
+        yield return new WaitForSeconds(duration);
+        speed = originalSpeed;
+        speedBoostCoroutine = null;
+    }
+
     public Rigidbody rb;
     public GameObject camHolder;
     public Animator animator; // Reference to the character's animator

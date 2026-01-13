@@ -39,6 +39,10 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private float _lightHeight = 2f; // Height to place lights on walls
     [SerializeField] private int _numberOfChests = 2;
     
+    [Header("Chest Loot")]
+    [SerializeField] private InventoryItemData[] _potionItems; // Potions to spawn in chests
+    [SerializeField] [Range(0f, 1f)] private float _potionSpawnChance = 0.8f; // 80% chance
+    
     [Header("Auto-Generated Trigger")]
     [SerializeField] private bool _createAutoTrigger = true;
     [SerializeField] private float _triggerPadding = 1f; // Extra space around maze edges for trigger
@@ -461,7 +465,19 @@ public class MazeGenerator : MonoBehaviour
             // chestCell.x = grid X, chestCell.y = grid Z coordinate  
             Vector3 spawnPos = GridToWorld(chestCell.x, chestCell.y, 0.1f);
             
-            Instantiate(_chestPrefab, spawnPos, MazeRotation);
+            GameObject chestObj = Instantiate(_chestPrefab, spawnPos, MazeRotation);
+            
+            // Add random potion to chest
+            ChestInventory chestInventory = chestObj.GetComponent<ChestInventory>();
+            if (chestInventory != null && _potionItems != null && _potionItems.Length > 0)
+            {
+                if (Random.value < _potionSpawnChance)
+                {
+                    InventoryItemData randomPotion = _potionItems[Random.Range(0, _potionItems.Length)];
+                    chestInventory.AddItemToChest(randomPotion, 1);
+                    Debug.Log($"[MazeGenerator] Added {randomPotion.itemName} to chest");
+                }
+            }
             
             // Remove this cell from available spots
             _deadEndCells.RemoveAt(randomIndex);

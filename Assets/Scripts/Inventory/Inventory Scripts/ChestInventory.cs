@@ -17,4 +17,9 @@ public class ChestInventory : InventoryHolder,IInteractable
     {
         
     }
+    // Helper to add items to chest inventory (e.g. for potions)
+    public void AddItemToChest(InventoryItemData item, int amount = 1)
+    {
+        PrimaryInventorySystem.AddToInventory(item, amount);
+    }
 }
