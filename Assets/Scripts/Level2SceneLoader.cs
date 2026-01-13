@@ -16,6 +16,15 @@ public class Level2SceneLoader : MonoBehaviour
         if (other.CompareTag("Player") && !hasTriggered)
         {
             hasTriggered = true;
+            
+            // Trigger final dungeon escape objective
+            var objectiveManager = FindFirstObjectByType<SimpleLevelOneObjectives>();
+            if (objectiveManager != null)
+            {
+                objectiveManager.OnDungeonEscaped();
+                Debug.Log("[Level2SceneLoader] Final dungeon escape objective triggered");
+            }
+            
             StartCoroutine(TransitionSequence());
         }
     }

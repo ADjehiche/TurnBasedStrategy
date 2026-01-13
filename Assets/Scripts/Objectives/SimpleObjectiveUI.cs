@@ -51,8 +51,11 @@ public class SimpleObjectiveUI : MonoBehaviour
             }
         }
         
-        // Set default text
-        SetObjectiveText(defaultText);
+        // Set default text directly (avoid calling SetObjectiveText to prevent recursion)
+        if (objectiveText != null)
+        {
+            objectiveText.text = defaultText;
+        }
         
         // Hide panel initially
         if (objectivePanel != null)

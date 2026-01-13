@@ -157,6 +157,14 @@ public class CultistSymbolInteractable : MonoBehaviour
     
     private void TriggerSymbolsCutscene()
     {
+        // Trigger cutscene played objective (final objective)
+        var objectiveManager = FindFirstObjectByType<SimpleLevelOneObjectives>();
+        if (objectiveManager != null)
+        {
+            objectiveManager.OnCutscenePlayed();
+            Debug.Log("[CultistSymbol] Cutscene played - final objective triggered");
+        }
+        
         GameObject cutsceneObj = GameObject.Find("DoorUnlock_Sequence");
         
         if (cutsceneObj != null)

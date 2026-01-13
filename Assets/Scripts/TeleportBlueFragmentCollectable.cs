@@ -95,6 +95,14 @@ public class TeleportBlueFragmentCollectable : MonoBehaviour, IInteractable
         if (debugMode)
             Debug.Log("[TeleportBlueFragmentCollectable] ✅ Blue fragment collected - starting teleport sequence!");
         
+        // Trigger Level Two objective - maze explored
+        var objectiveManager = FindFirstObjectByType<SimpleLevelTwoObjectives>();
+        if (objectiveManager != null)
+        {
+            objectiveManager.OnMazeExplored();
+            Debug.Log("[TeleportBlueFragmentCollectable] Maze explored objective triggered");
+        }
+        
         hasBeenCollected = true;
         interactSuccessful = true;
         
@@ -195,6 +203,14 @@ public class TeleportBlueFragmentCollectable : MonoBehaviour, IInteractable
         
         // Teleport!
         player.transform.position = teleportPosition;
+        
+        // Trigger Level Two objective - returned to archive
+        var objectiveManager = FindFirstObjectByType<SimpleLevelTwoObjectives>();
+        if (objectiveManager != null)
+        {
+            objectiveManager.OnReturnedToArchive();
+            Debug.Log("[TeleportBlueFragmentCollectable] Returned to archive objective triggered");
+        }
         
         // Optional: Show completion message
         if (captionController != null)

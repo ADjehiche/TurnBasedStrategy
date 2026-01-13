@@ -157,11 +157,20 @@ public class LevelTwoCaptionController : MonoBehaviour
             CaptionManager.Instance.ShowMonologue(line, monologueDuration);
         }
 
+        // DEBUG: Check audio setup
+        Debug.Log($"[LevelTwoCaptionController] Audio Debug - voiceSource: {(voiceSource != null ? "Found" : "NULL")}, clip: {(clip != null ? clip.name : "NULL")}");
+
         if (voiceSource != null && clip != null)
         {
             voiceSource.Stop();
             voiceSource.clip = clip;
             voiceSource.Play();
+            Debug.Log($"[LevelTwoCaptionController] Playing audio: {clip.name}");
+        }
+        else
+        {
+            if (voiceSource == null) Debug.LogError("[LevelTwoCaptionController] voiceSource is NULL! Add AudioSource component to this GameObject.");
+            if (clip == null) Debug.LogError("[LevelTwoCaptionController] AudioClip is NULL! Assign audio clips in the inspector.");
         }
 
         yield return new WaitForSeconds(monologueDuration);

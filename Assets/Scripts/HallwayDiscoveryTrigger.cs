@@ -30,12 +30,14 @@ public class HallwayDiscoveryTrigger : MonoBehaviour
     
     void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"[HallwayDiscoveryTrigger] OnTriggerEnter called by: {other.gameObject.name}, tag: {other.tag}, hasTriggered: {hasTriggered}");
         if (hasTriggered) return;
-        
+
         if (other.CompareTag("Player"))
         {
             hasTriggered = true;
-            
+            Debug.Log("[HallwayDiscoveryTrigger] Player trigger detected, proceeding...");
+
             if (captionController != null)
             {
                 captionController.TriggerHallwayDiscovery();
@@ -45,9 +47,24 @@ public class HallwayDiscoveryTrigger : MonoBehaviour
             {
                 Debug.LogWarning("[HallwayDiscoveryTrigger] No LevelTwoCaptionController found!");
             }
-            
+
+            // Trigger Level Two objective - tunnel entered
+            Debug.Log("[HallwayDiscoveryTrigger] Attempting to find SimpleLevelTwoObjectives in scene...");
+            var objectiveManager = FindFirstObjectByType<SimpleLevelTwoObjectives>();
+            if (objectiveManager != null)
+            {
+                Debug.Log("[HallwayDiscoveryTrigger] Found SimpleLevelTwoObjectives, calling OnTunnelEntered()");
+                objectiveManager.OnTunnelEntered();
+                Debug.Log("[HallwayDiscoveryTrigger] Tunnel entered objective triggered");
+            }
+            else
+            {
+                Debug.LogError("[HallwayDiscoveryTrigger] SimpleLevelTwoObjectives NOT found in scene! Objective will not progress.");
+            }
+
             if (destroyAfterTrigger)
             {
+                Debug.Log("[HallwayDiscoveryTrigger] Destroying trigger after activation.");
                 Destroy(gameObject);
             }
         }
