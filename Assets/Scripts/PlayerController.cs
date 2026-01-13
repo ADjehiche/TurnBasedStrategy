@@ -49,29 +49,27 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
+        // apply saved mouse sensitivity (if settings exist)
+        if (GameSettingsManager.Instance != null)
+            sensitivity = GameSettingsManager.Instance.MouseSensitivity;
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
         gameManager = GameObject.Find(GAMEMANAGER_NAME).GetComponent<GameManager>();
-        
-        // Find inventory UI controller
+
         inventoryUIController = FindFirstObjectByType<InventoryUIController>();
-        
-        // Find animator if not assigned
+
         if (animator == null)
-        {
             animator = GetComponentInChildren<Animator>();
-        }
-        
-        // Find head bone automatically
+
         if (headBone == null && animator != null)
-        {
             FindHeadBone();
-        }
-        
-        // Store original camera position
+
         originalCameraPosition = camHolder.transform.localPosition;
         targetCameraPosition = originalCameraPosition;
     }
+
 
     // Update is called once per frame
     void Update()
@@ -259,8 +257,11 @@ public class PlayerController : MonoBehaviour
         }
         
         // Handle camera rotation
-        transform.Rotate(Vector3.up * look.x * sensitivity);
-        lookRotation += -look.y * sensitivity;
+        float dt = Time.deltaTime;
+        float s = Mathf.Max(0.01f, sensitivity);
+
+        transform.Rotate(Vector3.up * look.x * s * dt);
+        lookRotation += -look.y * s * dt;
         lookRotation = Mathf.Clamp(lookRotation, -90, 90);
         camHolder.transform.localEulerAngles = new Vector3(lookRotation, 0, 0);
     }
@@ -284,5 +285,12 @@ public class PlayerController : MonoBehaviour
             gameManager.StartBattle();
         }
     }
+
+    public void ApplyMouseSensitivityFromSettings()
+    {
+        if (GameSettingsManager.Instance != null)
+            sensitivity = GameSettingsManager.Instance.MouseSensitivity;
+    }
+
     
 }
