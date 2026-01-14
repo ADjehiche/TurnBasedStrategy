@@ -30,6 +30,25 @@ public class LevelTwoReturnManager : MonoBehaviour
         
         // Restore red companion if it was active
         RestoreRedCompanion();
+        
+        // Notify objectives system if skeletons were defeated
+        if (GameSession.EnemyDefeated || GameSession.CombatWingVictory)
+        {
+            NotifySkeletonsDefeated();
+        }
+    }
+    
+    /// <summary>
+    /// Notify objectives system that skeletons were defeated
+    /// </summary>
+    private void NotifySkeletonsDefeated()
+    {
+        SimpleLevelTwoObjectives objectives = FindFirstObjectByType<SimpleLevelTwoObjectives>();
+        if (objectives != null)
+        {
+            objectives.OnSkeletonsDefeated();
+            if (debugMode) Debug.Log("[LevelTwoReturnManager] Notified objectives: Skeletons defeated");
+        }
     }
     
     /// <summary>
