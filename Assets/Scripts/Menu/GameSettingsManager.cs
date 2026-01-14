@@ -78,9 +78,7 @@ public class GameSettingsManager : MonoBehaviour
         ApplyVolume(_volume);
         TextScaleUtility.ApplyGlobalTextScale(_textScale);
         ApplyColorSensitivity(_colorSensitivity);
-        ApplyMouseSensitivity(_mouseSensitivity);
     }
-
 
     public void SetVolume01(float v)
     {
@@ -154,16 +152,5 @@ public class GameSettingsManager : MonoBehaviour
         _mouseSensitivity = Mathf.Clamp(value, 1f, 30f);
         PlayerPrefs.SetFloat(K_MouseSensitivity, _mouseSensitivity);
         PlayerPrefs.Save();
-
-        ApplyMouseSensitivity(_mouseSensitivity); 
     }
-
-
-    void ApplyMouseSensitivity(float value)
-    {
-        var pc = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
-        if (pc != null)
-            pc.sensitivity = value;
-    }
-
 }

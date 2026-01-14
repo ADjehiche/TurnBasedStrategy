@@ -62,6 +62,10 @@ public class LevelTwoCaptionController : MonoBehaviour
         {
             voiceSource = GetComponent<AudioSource>();
         }
+        
+        // Load saved state from GameSession
+        hasShownArrival = GameSession.HasShownLevelTwoArrival;
+        hasShownHallwayPrompt = GameSession.HasShownLevelTwoHallway;
 
         if (!hasShownArrival)
         {
@@ -89,6 +93,7 @@ public class LevelTwoCaptionController : MonoBehaviour
         yield return new WaitForSeconds(startDelay);
 
         hasShownArrival = true;
+        GameSession.HasShownLevelTwoArrival = true; // Persist to survive scene reload
 
         // Arrival dialogue (3)
         yield return StartCoroutine(ShowLineWithVoice(archiveArrivalDialogue[0], l2_001_archive));
@@ -120,6 +125,7 @@ public class LevelTwoCaptionController : MonoBehaviour
         if (hasShownHallwayPrompt) return;
 
         hasShownHallwayPrompt = true;
+        GameSession.HasShownLevelTwoHallway = true; // Persist to survive scene reload
         StartCoroutine(HallwayDiscoverySequence());
     }
 

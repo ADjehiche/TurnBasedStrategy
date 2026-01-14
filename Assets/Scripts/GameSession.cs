@@ -10,6 +10,11 @@ public static class GameSession
     public static Vector3 ReturnPosition;
     public static Vector3 BattleTriggerCenter; // Where player spawns after battle
     public static string BattleSceneName = "Battle_Template"; // Which battle scene to load
+    public static string ReturnSceneName = "LevelOne"; // Which scene to return to after battle
+    
+    // Combat Wing state (Level Two skeleton battle)
+    public static bool CombatWingVictory;           // True after winning Combat Wing battle
+    public static Vector3 RedFragmentSpawnPosition; // Where to spawn Red Fragment after victory
 
     // World state preservation
     public static bool DoorOpened;           // Track if first door was opened
@@ -21,7 +26,8 @@ public static class GameSession
     public static bool BothSymbolsActivated => Symbol1Activated && Symbol2Activated;
     
     // Companion state
-    public static bool CompanionActive;      // Track if companion is following player
+    public static bool CompanionActive;      // Track if companion is following player (yellow)
+    public static bool RedCompanionActive;   // Track if red companion is following player
     
     // Objective system persistence (so objectives don't reset after battle)
     public static bool ObjectivesStarted;       // Track if objectives have been started
@@ -40,17 +46,37 @@ public static class GameSession
     public static bool HasExploredMaze;                 // Track maze exploration completion
     public static bool HasReturnedToArchive;            // Track return to archive completion
     
+    // Fragment collection (glyphs for boss door)
+    public static bool HasCollectedRedFragment;         // Red (Rage) fragment from Combat Wing
+    public static bool HasCollectedBlueFragment;        // Blue (Logic) fragment from Maze
+    public static bool HasCollectedPurpleFragment;      // Purple (Personality) fragment from Boss
+    
+    // Helper to count collected fragments (boss door requires Red + Blue)
+    public static int CollectedFragmentCount => 
+        (HasCollectedRedFragment ? 1 : 0) + 
+        (HasCollectedBlueFragment ? 1 : 0);
+    
+    public static bool CanUnlockBossDoor => CollectedFragmentCount >= 2;
+    
     // Caption state persistence (so captions don't repeat after battle)
     public static bool HasShownStartInstruction;
     public static bool HasShownKeyPickup;
     public static bool HasShownDoorOpen;
     public static bool HasShownEnemySpotted;
     
+    // Level Two caption state persistence
+    public static bool HasShownLevelTwoArrival;
+    public static bool HasShownLevelTwoHallway;
+    
     // Checkpoint system (for respawning after death)
     public static bool HasCheckpoint;
     public static Vector3 CheckpointPosition;
     public static Quaternion CheckpointRotation;
     public static bool IsRespawning; // Flag to indicate we're loading from death
+    
+    // Flashback system (for returning after flashback scene)
+    public static string FlashbackReturnScene;
+    public static bool HasPlayedRageFlashback; // True after rage flashback completed - companion should follow
 
     public static void SetReturnPosition(Vector3 pos)
     {
@@ -85,6 +111,9 @@ public static class GameSession
         ReturnPosition = default;
         BattleTriggerCenter = default;
         BattleSceneName = "Battle_Template"; // Reset to default
+        ReturnSceneName = "LevelOne"; // Reset to default
+        CombatWingVictory = false;
+        RedFragmentSpawnPosition = default;
         DoorOpened = false;
         OriginalKeyCollected = false;
         Symbol1Activated = false;
@@ -102,5 +131,10 @@ public static class GameSession
         CheckpointPosition = default;
         CheckpointRotation = default;
         IsRespawning = false;
+        
+        // Reset fragment collection
+        HasCollectedRedFragment = false;
+        HasCollectedBlueFragment = false;
+        HasCollectedPurpleFragment = false;
     }
 }

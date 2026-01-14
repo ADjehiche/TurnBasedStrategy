@@ -54,8 +54,22 @@ public class BattleTrigger : MonoBehaviour
 
         // Store which battle scene to load
         GameSession.SetBattleSceneName(battleSceneName);
+        
+        // Store which scene to return to after battle
+        GameSession.ReturnSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        Debug.Log($"[BattleTrigger] Return scene set to: {GameSession.ReturnSceneName}");
 
         Debug.Log($"[BattleTrigger] Starting battle: {battleSceneName}");
+        
+        // Notify objectives if this is the Combat Wing battle (Battle_2)
+        if (battleSceneName == "Battle_2")
+        {
+            SimpleLevelTwoObjectives objectives = FindFirstObjectByType<SimpleLevelTwoObjectives>();
+            if (objectives != null)
+            {
+                objectives.OnCombatWingEntered();
+            }
+        }
 
         // Start the battle with the specific scene
         gameManager.StartBattle();
