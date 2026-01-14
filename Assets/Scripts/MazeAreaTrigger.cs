@@ -21,6 +21,7 @@ public class MazeAreaTrigger : MonoBehaviour
     [SerializeField] private bool debugMode = false;
     
     private bool playerInside = false;
+    private bool mazeObjectiveTriggered = false; // Separate flag for objective (triggers once, any direction)
     private MazeGuidanceController guidanceController;
     private Vector3 mazeDirectionVector;
     
@@ -67,51 +68,47 @@ public class MazeAreaTrigger : MonoBehaviour
         // Check if it's the player
         if (other.CompareTag("Player"))
         {
-            // Determine direction player is moving relative to maze
+            // OBJECTIVE TRIGGER (fires once, regardless of direction)
+            if (!mazeObjectiveTriggered)
+            {
+                mazeObjectiveTriggered = true;
+                Debug.Log("[MazeAreaTrigger] ===== OBJECTIVE TRIGGER (DIRECTION-INDEPENDENT) =====");
+                
+                SimpleLevelTwoObjectives objectiveManager = FindFirstObjectByType<SimpleLevelTwoObjectives>();
+                if (objectiveManager != null)
+                {
+                    Debug.Log("[MazeAreaTrigger] Calling objectiveManager.OnMazeEntered()");
+                    objectiveManager.OnMazeEntered();
+                }
+                else
+                {
+                    Debug.LogError("[MazeAreaTrigger] SimpleLevelTwoObjectives NOT found!");
+                }
+            }
+            
+            // Direction-based logic (for guidance controller enter/exit tracking)
             Vector3 playerPosition = other.transform.position;
             Vector3 triggerToPlayer = (playerPosition - transform.position).normalized;
-
-            // Check if player is moving towards maze (dot product > 0 means same direction)
             float dot = Vector3.Dot(triggerToPlayer, mazeDirectionVector);
             Debug.Log($"[MazeAreaTrigger] Dot product: {dot}, mazeDirectionVector: {mazeDirectionVector}");
 
-            if (dot > 0 && !playerInside) // Moving towards maze and not already inside
+            if (dot > 0 && !playerInside)
             {
                 playerInside = true;
-                Debug.Log("[MazeAreaTrigger] Player entered maze area (moving towards maze)");
-
-                // Trigger events
+                Debug.Log("[MazeAreaTrigger] Player entered maze area (direction-based)");
                 OnPlayerEntered?.Invoke();
-
-                // Notify guidance controller
+                
                 if (guidanceController != null)
                 {
                     guidanceController.OnPlayerEnteredMazeArea();
                 }
-
-                // Trigger Level Two objective - maze entered
-                Debug.Log("[MazeAreaTrigger] Attempting to find SimpleLevelTwoObjectives in scene...");
-                var objectiveManager = FindFirstObjectByType<SimpleLevelTwoObjectives>();
-                if (objectiveManager != null)
-                {
-                    Debug.Log("[MazeAreaTrigger] Found SimpleLevelTwoObjectives, calling OnMazeEntered()");
-                    objectiveManager.OnMazeEntered();
-                    Debug.Log("[MazeAreaTrigger] Maze entered objective triggered");
-                }
-                else
-                {
-                    Debug.LogError("[MazeAreaTrigger] SimpleLevelTwoObjectives NOT found in scene! Objective will not progress.");
-                }
             }
-            else if (dot < 0 && playerInside) // Moving away from maze and currently inside
+            else if (dot < 0 && playerInside)
             {
                 playerInside = false;
-                Debug.Log("[MazeAreaTrigger] Player exited maze area (moving away from maze)");
-
-                // Trigger events
+                Debug.Log("[MazeAreaTrigger] Player exited maze area (direction-based)");
                 OnPlayerExited?.Invoke();
-
-                // Notify guidance controller
+                
                 if (guidanceController != null)
                 {
                     guidanceController.OnPlayerExitedMazeArea();
