@@ -103,4 +103,17 @@ public static class SaveSystem
             }
         }
     }
+
+    public static bool HasValidSave()
+    {
+        var data = LoadGame();
+        return data != null && !string.IsNullOrWhiteSpace(data.sceneName);
+    }
+
+    public static void DeleteSave()
+    {
+        if (File.Exists(SavePath))
+            File.Delete(SavePath);
+    }
+
 }

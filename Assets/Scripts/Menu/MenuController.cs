@@ -24,13 +24,16 @@ public class MenuController : MonoBehaviour
     public InventoryItemDatabase itemDatabase;
 
     [Header("Player Control")]
-    public MonoBehaviour playerMovementScript; // drag your PlayerController (or whatever controls look/move)
+    public MonoBehaviour playerMovementScript;
 
     [Header("Cursor")]
     public bool lockCursorInGameplay = true;
     public bool hideCursorInGameplay = true;
 
     bool _paused;
+
+    [SerializeField] private DifficultySelectUI difficultyUI;
+
 
     void Start()
     {
@@ -112,33 +115,53 @@ public class MenuController : MonoBehaviour
     }
 
     // ---------- Title buttons ----------
+    // New Game button should call this
     public void NewGame()
+    {
+        var picker = FindFirstObjectByType<DifficultySelectUI>(FindObjectsInactive.Include);
+        if (picker != null)
+            picker.Show();
+        else
+            Debug.LogError("NewGame: DifficultySelectUI not found, cannot ask for difficulty.");
+    }
+
+
+
+    public void Continue()
+    {
+        var data = SaveSystem.LoadGame();
+
+        if (data != null && !string.IsNullOrWhiteSpace(data.sceneName))
+        {
+            // Save exists -> load it
+            Time.timeScale = 1f;
+            SceneManager.sceneLoaded += OnSceneLoadedApplySave;
+            SceneManager.LoadScene(data.sceneName);
+            return;
+        }
+
+        // No (valid) save -> ask difficulty
+        var picker = FindFirstObjectByType<DifficultySelectUI>(FindObjectsInactive.Include);
+        if (picker != null)
+            picker.Show();
+        else
+            Debug.LogError("Continue: DifficultySelectUI not found, cannot ask for difficulty.");
+    }
+
+
+    public void RefreshContinueButton()
+    {
+        if (continueButton == null) return;
+        continueButton.gameObject.SetActive(true);
+    }
+
+
+    // Called by DifficultySelectUI after user picks difficulty
+    public void StartFirstLevel()
     {
         Time.timeScale = 1f;
         SceneManager.LoadScene(firstLevelSceneName);
     }
-
-    public void Continue()
-    {
-        if (!SaveSystem.HasSave())
-        {
-            // Show difficulty picker only when user tries to continue but no save exists
-            var picker = FindFirstObjectByType<DifficultySelectUI>(FindObjectsInactive.Include);
-            if (picker != null)
-                picker.ContinueNoSavePickDifficulty();
-
-            RefreshContinueButton();
-            return;
-        }
-
-        var data = SaveSystem.LoadGame();
-        if (data == null) return;
-
-        Time.timeScale = 1f;
-        SceneManager.sceneLoaded += OnSceneLoadedApplySave;
-        SceneManager.LoadScene(data.sceneName);
-    }
-
 
 
     void OnSceneLoadedApplySave(Scene scene, LoadSceneMode mode)
@@ -163,7 +186,6 @@ public class MenuController : MonoBehaviour
 
         SaveSystem.ApplyLoadedData(data, holder.transform, holder, itemDatabase);
 
-        // Return to gameplay state
         if (playerMovementScript != null) playerMovementScript.enabled = true;
         ApplyCursorGameplay();
     }
@@ -172,6 +194,26 @@ public class MenuController : MonoBehaviour
     {
         Application.Quit();
     }
+
+    private DifficultySelectUI GetDifficultyUI()
+    {
+        if (difficultyUI != null) return difficultyUI;
+
+        // More robust than FindFirstObjectByType for inactive UI / canvases
+        var all = Resources.FindObjectsOfTypeAll<DifficultySelectUI>();
+        foreach (var ui in all)
+        {
+            // Only return ones that are actually in a loaded scene (not prefab asset)
+            if (ui.gameObject.scene.IsValid() && ui.gameObject.scene.isLoaded)
+            {
+                difficultyUI = ui;
+                return difficultyUI;
+            }
+        }
+
+        return null;
+    }
+
 
     // ---------- In-game buttons ----------
     public void Save()
@@ -203,13 +245,6 @@ public class MenuController : MonoBehaviour
         ApplyCursorUI();
         SceneManager.LoadScene(titleSceneName);
     }
-
-    public void RefreshContinueButton()
-    {
-        if (continueButton != null)
-            continueButton.interactable = SaveSystem.HasSave();
-    }
-    
 
     // ---------- Cursor ----------
     void ApplyCursorUI()

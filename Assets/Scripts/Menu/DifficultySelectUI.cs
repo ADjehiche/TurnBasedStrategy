@@ -1,68 +1,45 @@
-// DifficultySelectUI.cs
 using UnityEngine;
 
 public class DifficultySelectUI : MonoBehaviour
 {
     [Header("UI Roots")]
     public GameObject difficultyRoot;
-    public GameObject mainMenuRoot;   
+    public GameObject mainMenuRoot;
 
-    // runtime flag: why are we showing the picker?
-    enum Reason { None, NewGame, ContinueNoSave }
-    Reason _reason = Reason.None;
-
-    void Start()
+    void Awake()
     {
-        HidePicker();
+        // Start hidden
+        if (difficultyRoot) difficultyRoot.SetActive(false);
     }
 
-    void ShowPicker(Reason reason)
+    public void Show()
     {
-        _reason = reason;
         if (difficultyRoot) difficultyRoot.SetActive(true);
         if (mainMenuRoot) mainMenuRoot.SetActive(false);
     }
 
-    void HidePicker()
+    void HideAll()
     {
-        _reason = Reason.None;
+        // Prevent any menu flash while scene is loading
         if (difficultyRoot) difficultyRoot.SetActive(false);
-        if (mainMenuRoot) mainMenuRoot.SetActive(true);
+        if (mainMenuRoot) mainMenuRoot.SetActive(false);
     }
 
-    public void StartNewGameWithDifficulty()
+    // Hook these to your Easy/Normal/Hard buttons
+    public void PickEasy()   => Pick(GameSettingsManager.Difficulty.Easy);
+    public void PickNormal() => Pick(GameSettingsManager.Difficulty.Normal);
+    public void PickHard()   => Pick(GameSettingsManager.Difficulty.Hard);
+
+    void Pick(GameSettingsManager.Difficulty diff)
     {
-        ShowPicker(Reason.NewGame);
-    }
+        GameSettingsManager.Instance?.ChooseDifficultyFromInt((int)diff);
 
-    public void ContinueNoSavePickDifficulty()
-    {
-        ShowPicker(Reason.ContinueNoSave);
-    }
+        HideAll();
 
-    public void PickEasy()   => Pick((int)GameSettingsManager.Difficulty.Easy);
-    public void PickNormal() => Pick((int)GameSettingsManager.Difficulty.Normal);
-    public void PickHard()   => Pick((int)GameSettingsManager.Difficulty.Hard);
-
-    void Pick(int value)
-    {
-        // Save chosen difficulty
-        GameSettingsManager.Instance.ChooseDifficultyFromInt(value);
-
-        // After picking, do the action that triggered the picker
-        if (_reason == Reason.NewGame)
-        {
-            // Find MenuController in title scene and start game
-            var mc = FindFirstObjectByType<MenuController>(FindObjectsInactive.Include);
-            if (mc != null) mc.NewGame();
-        }
-        else if (_reason == Reason.ContinueNoSave)
-        {
-            // No save exists; after picking, just return to menu (or start new game if you prefer)
-            HidePicker();
-            return;
-        }
-
-        HidePicker();
+        var mc = FindFirstObjectByType<MenuController>(FindObjectsInactive.Include);
+        if (mc != null)
+            mc.StartFirstLevel(); // IMPORTANT: start level, NOT NewGame()
+        else
+            Debug.LogWarning("DifficultySelectUI: MenuController not found.");
     }
 }
