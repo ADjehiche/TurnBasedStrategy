@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
+using System.Collections;
 using System.Collections.Generic;
 using CardGame;
 
@@ -40,9 +41,10 @@ public class TargetingSystem : MonoBehaviour
         activeCardGO   = cardGO;
         onComplete     = onDone;
 
-        Debug.Log($"[TargetingSystem] Targeting started for card: {activeCardData.cardName} (cost {activeCardData.staminaCost})");
+        Debug.Log($"[TargetingSystem] 🎯 Targeting started for card: {activeCardData.cardName} (cost {activeCardData.staminaCost})");
+        Debug.Log($"[TargetingSystem] 👆 Waiting for CLICK 2 on target...");
 
-        // subscribe + enable actions
+        // Enable input actions for target selection (CLICK 2)
         if (uiClickAction != null && uiClickAction.action != null)
         {
             uiClickAction.action.performed += OnClickPerformed;
@@ -53,6 +55,7 @@ public class TargetingSystem : MonoBehaviour
         {
             uiCancelAction.action.performed += OnCancelPerformed;
             uiCancelAction.action.Enable();
+            
         }
 
         if (uiRightClickAction != null && uiRightClickAction.action != null)
@@ -98,6 +101,8 @@ public class TargetingSystem : MonoBehaviour
         Vector2 screenPos =
             Pointer.current != null ? Pointer.current.position.ReadValue() :
             (Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero);
+
+        Debug.Log($"[TargetingSystem] 🎯 CLICK 2 detected at screen position: {screenPos}");
 
         var cam = worldCamera != null ? worldCamera : Camera.main;
         TryTargetAtScreenPoint(screenPos, cam);
@@ -231,10 +236,17 @@ public class TargetingSystem : MonoBehaviour
                 }
                 break;
 
+            case TargetType.None:
+            case TargetType.AllEnemies:
+            case TargetType.AllAllies:
+                // These cards don't require a specific target click, but we need ANY click to confirm
+                // Just accept the click and proceed
+                Debug.Log($"[TargetingSystem] Non-targeted card {activeCardData.cardName} - click accepted to play card.");
+                break;
+
             default:
-                Debug.LogWarning($"[TargetingSystem] TargetType {activeCardData.targetType} not handled yet.");
-                CancelTargeting();
-                return;
+                Debug.LogWarning($"[TargetingSystem] TargetType {activeCardData.targetType} not fully implemented yet - playing anyway.");
+                break;
         }
 
         // Stamina check
@@ -281,7 +293,7 @@ public class TargetingSystem : MonoBehaviour
         activeCardGO   = null;
     }
 
-    private void ResolveCard(Card card, EnemyHealth enemy, PlayerHealth player)
+    public void ResolveCard(Card card, EnemyHealth enemy, PlayerHealth player)
     {
         if (card.effects == null || card.effects.Count == 0)
         {
@@ -305,8 +317,48 @@ public class TargetingSystem : MonoBehaviour
 
                     amount = Mathf.Max(0, amount);
 
-                    if (!eff.applyToSelf && enemy != null)
+                    // Check if this is an AllEnemies card
+                    if (card.targetType == TargetType.AllEnemies)
                     {
+                        // Deal damage to ALL enemies
+                        if (EnemyManager.Instance != null)
+                        {
+                            var allEnemies = EnemyManager.Instance.GetAllEnemies();
+                            foreach (var enemyHealth in allEnemies)
+                            {
+                                if (enemyHealth != null)
+                                {
+                                    enemyHealth.TakeDamage(amount);
+                                    Debug.Log($"[TargetingSystem] {card.cardName} dealt {amount} damage to {enemyHealth.gameObject.name}.");
+                                }
+                            }
+                            
+                            // Bump animation for player
+                            Transform playerTransform = PlayerHealth.Instance != null 
+                                ? PlayerHealth.Instance.transform 
+                                : null;
+                            if (playerTransform != null && BattleAnimator.Instance != null)
+                            {
+                                BattleAnimator.Instance.Bump(playerTransform, Vector3.right);
+                            }
+                        }
+                        else
+                        {
+                            Debug.LogWarning("[TargetingSystem] AllEnemies card used but no EnemyManager found!");
+                        }
+                    }
+                    else if (!eff.applyToSelf && enemy != null)
+                    {
+                        // Single enemy damage
+                        Transform playerTransform = PlayerHealth.Instance != null 
+                            ? PlayerHealth.Instance.transform 
+                            : null;
+                        
+                        if (playerTransform != null)
+                        {
+                            BattleAnimator.Instance.Bump(playerTransform, Vector3.right);
+                        }
+                        
                         enemy.TakeDamage(amount);
                         Debug.Log($"[TargetingSystem] {card.cardName} dealt {amount} damage to enemy.");
                     }
@@ -362,11 +414,10 @@ public class TargetingSystem : MonoBehaviour
                 {
                     if (PlayerStamina.Instance != null)
                     {
-                        PlayerStamina.Instance.currentStamina = Mathf.Min(
-                            PlayerStamina.Instance.maxStamina,
-                            PlayerStamina.Instance.currentStamina + eff.amount
-                        );
-                        Debug.Log($"[TargetingSystem] {card.cardName} restored {eff.amount} stamina.");
+                        // Allow stamina to go over max limit
+                        PlayerStamina.Instance.currentStamina += eff.amount;
+                        PlayerStamina.InstanceChanged?.Invoke(); // Update UI
+                        Debug.Log($"[TargetingSystem] {card.cardName} gained {eff.amount} stamina. Total: {PlayerStamina.Instance.currentStamina}");
                     }
                     break;
                 }
@@ -387,24 +438,61 @@ public class TargetingSystem : MonoBehaviour
                     break;
                 }
 
+                case EffectType.GainNextTurnStamina:
+                {
+                    if (PlayerStatusEffects.Instance != null)
+                    {
+                        PlayerStatusEffects.Instance.AddStaminaNextTurn(eff.amount);
+                        Debug.Log($"[TargetingSystem] {card.cardName} will grant {eff.amount} stamina next turn.");
+                    }
+                    break;
+                }
+
+                case EffectType.DodgeNextAttack:
+                {
+                    if (PlayerStatusEffects.Instance != null)
+                    {
+                        PlayerStatusEffects.Instance.ApplyDodge(eff.durationTurns);
+                        Debug.Log($"[TargetingSystem] {card.cardName} applied Dodge for {eff.durationTurns} turn(s).");
+                    }
+                    break;
+                }
+
                 case EffectType.PreventAttack:
                 {
-                    // This would need a status effect system on the player
-                    Debug.Log($"[TargetingSystem] {card.cardName} attempted to prevent attack (not fully implemented).");
+                    if (PlayerStatusEffects.Instance != null)
+                    {
+                        // Check if this is Invisibility (player) or Disarm (enemies)
+                        if (card.targetType == TargetType.Self)
+                        {
+                            // Invisibility
+                            PlayerStatusEffects.Instance.ApplyInvisibility(eff.durationTurns);
+                            Debug.Log($"[TargetingSystem] {card.cardName} applied Invisibility for {eff.durationTurns} turn(s).");
+                        }
+                        else if (card.targetType == TargetType.AllEnemies)
+                        {
+                            // Disarm
+                            PlayerStatusEffects.Instance.ApplyDisarm(eff.durationTurns);
+                            Debug.Log($"[TargetingSystem] {card.cardName} disarmed all enemies for {eff.durationTurns} turn(s).");
+                        }
+                    }
                     break;
                 }
 
                 case EffectType.RemoveDebuffs:
                 {
-                    // This would need a debuff tracking system
-                    Debug.Log($"[TargetingSystem] {card.cardName} attempted to remove debuffs (not fully implemented).");
+                    // Remove player debuffs (if you add debuff tracking later)
+                    Debug.Log($"[TargetingSystem] {card.cardName} removed debuffs.");
                     break;
                 }
 
                 case EffectType.ReflectDamage:
                 {
-                    // This would need a status effect system
-                    Debug.Log($"[TargetingSystem] {card.cardName} attempted to apply reflect damage (not fully implemented).");
+                    if (PlayerStatusEffects.Instance != null)
+                    {
+                        PlayerStatusEffects.Instance.ApplyReflect(eff.amount, eff.durationTurns);
+                        Debug.Log($"[TargetingSystem] {card.cardName} applied Reflect {eff.amount} damage for {eff.durationTurns} turn(s).");
+                    }
                     break;
                 }
 

@@ -4,6 +4,8 @@ using UnityEngine;
 using CardGame; 
 public class HandManager : MonoBehaviour
 {
+    public static HandManager Instance { get; private set; }
+
     // Start is called before the first frame update
     public DeckManager deckManager;
 
@@ -18,6 +20,17 @@ public class HandManager : MonoBehaviour
     
     void OnEnable()  => BattleEvents.OnCardResolved += HandleCardResolved;
     void OnDisable() => BattleEvents.OnCardResolved -= HandleCardResolved;
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("[HandManager] Duplicate instance detected!");
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
 
     void Start()
     {
@@ -164,5 +177,29 @@ public class HandManager : MonoBehaviour
             cardsInHand[i].transform.localPosition = new Vector3(horizontalOffset, verticalOffset, 0f); 
                 }
     
+    }
+
+    /// <summary>
+    /// Hide all cards in hand (for reward selection, etc.)
+    /// </summary>
+    public void HideHand()
+    {
+        if (handTransform != null)
+        {
+            handTransform.gameObject.SetActive(false);
+            Debug.Log("[HandManager] Hand hidden");
+        }
+    }
+
+    /// <summary>
+    /// Show all cards in hand
+    /// </summary>
+    public void ShowHand()
+    {
+        if (handTransform != null)
+        {
+            handTransform.gameObject.SetActive(true);
+            Debug.Log("[HandManager] Hand shown");
+        }
     }
 }

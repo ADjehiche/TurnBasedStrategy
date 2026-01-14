@@ -13,6 +13,10 @@ public class DeckManager : MonoBehaviour
     [SerializeField] private List<Card> drawPile = new List<Card>();
     [SerializeField] private List<Card> discardPile = new List<Card>();
 
+    // Public access for CardCollection to use composition rules
+    public List<Card> DrawPile => drawPile;
+    public List<Card> DiscardPile => discardPile;
+
     void Awake()
     {
         BuildStartingDeck();
@@ -23,6 +27,14 @@ public class DeckManager : MonoBehaviour
     {
         drawPile.Clear();
         discardPile.Clear();
+
+        // NEW: Check if CardCollection exists and use player's owned cards
+        if (CardCollection.Instance != null && CardCollection.Instance.OwnedCards.Count > 0)
+        {
+            drawPile.AddRange(CardCollection.Instance.BuildBattleDeck());
+            Debug.Log($"[DeckManager] Using player's collection: {drawPile.Count} cards");
+            return;
+        }
 
         // If a starting deck is assigned in the inspector, use that directly.
         if (startingDeck != null && startingDeck.Count > 0)

@@ -2,10 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using TMPro;
 
 public class DynamicInventoryDisplay : InventoryDisplay
 {
     [SerializeField] protected InventorySlot_UI slotPrefab;
+    [SerializeField] protected TextMeshProUGUI inventoryTitle;
     protected override void Start()
     {
         base.Start();
@@ -17,6 +19,20 @@ public class DynamicInventoryDisplay : InventoryDisplay
         inventorySystem = invToDisplay;
         if (inventorySystem != null) inventorySystem.OnInventorySlotChanged += UpdateSlot;
         AssignSlot(invToDisplay);
+    }
+
+    public void RefreshDynamicInventory(InventorySystem invToDisplay, string title)
+    {
+        ClearSlots();
+        inventorySystem = invToDisplay;
+        if (inventorySystem != null) inventorySystem.OnInventorySlotChanged += UpdateSlot;
+        AssignSlot(invToDisplay);
+        
+        // Set the title if TextMeshPro component is assigned
+        if (inventoryTitle != null)
+        {
+            inventoryTitle.text = title;
+        }
     }
 
     public override void AssignSlot(InventorySystem invToDisplay)
@@ -54,6 +70,12 @@ public class DynamicInventoryDisplay : InventoryDisplay
         if (inventorySystem != null)
         {
             inventorySystem.OnInventorySlotChanged -= UpdateSlot;
+        }
+        
+        // Hide the title when inventory is closed
+        if (inventoryTitle != null)
+        {
+            inventoryTitle.text = "";
         }
     }
 

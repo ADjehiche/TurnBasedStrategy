@@ -9,6 +9,7 @@ public static class GameSession
     public static bool HasReturnPosition;
     public static Vector3 ReturnPosition;
     public static Vector3 BattleTriggerCenter; // Where player spawns after battle
+    public static string BattleSceneName = "Battle_Template"; // Which battle scene to load
 
     // World state preservation
     public static bool DoorOpened;           // Track if first door was opened
@@ -21,6 +22,23 @@ public static class GameSession
     
     // Companion state
     public static bool CompanionActive;      // Track if companion is following player
+    
+    // Objective system persistence (so objectives don't reset after battle)
+    public static bool ObjectivesStarted;       // Track if objectives have been started
+    public static int CurrentObjectiveIndex;    // Track current objective index
+    public static bool HasFoundKey;             // Track key pickup completion
+    public static bool HasEscapedCell;          // Track cell escape completion
+    public static bool HasDefeatedSkeleton;     // Track skeleton defeat completion
+    public static bool HasExploredDungeon;      // Track dungeon exploration completion
+    public static bool HasEscapedDungeon;       // Track final escape completion
+    
+    // Level Two objective system persistence
+    public static bool LevelTwoObjectivesStarted;       // Track if Level Two objectives have been started
+    public static int CurrentLevelTwoObjectiveIndex;    // Track current Level Two objective index
+    public static bool HasExploredArchive;              // Track archive exploration completion
+    public static bool HasExploredTunnel;               // Track tunnel exploration completion
+    public static bool HasExploredMaze;                 // Track maze exploration completion
+    public static bool HasReturnedToArchive;            // Track return to archive completion
     
     // Caption state persistence (so captions don't repeat after battle)
     public static bool HasShownStartInstruction;
@@ -45,6 +63,12 @@ public static class GameSession
         BattleTriggerCenter = center;
         Debug.Log($"[GameSession] Battle trigger center saved: {center}");
     }
+
+    public static void SetBattleSceneName(string sceneName)
+    {
+        BattleSceneName = sceneName;
+        Debug.Log($"[GameSession] Battle scene set to: {sceneName}");
+    }
     
     public static void SaveCheckpoint(Vector3 pos, Quaternion rot)
     {
@@ -60,6 +84,7 @@ public static class GameSession
         HasReturnPosition = false;
         ReturnPosition = default;
         BattleTriggerCenter = default;
+        BattleSceneName = "Battle_Template"; // Reset to default
         DoorOpened = false;
         OriginalKeyCollected = false;
         Symbol1Activated = false;
