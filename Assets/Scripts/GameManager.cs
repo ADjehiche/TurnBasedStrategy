@@ -32,7 +32,7 @@ public class GameManager : MonoBehaviour
 
     public void StartGame()
     {
-        // Use LoadSceneMode.Single to properly initialize lighting
+        // Load Level One to start the game normally
         SceneManager.LoadScene(LevelOne, LoadSceneMode.Single);
     }
 
@@ -69,7 +69,11 @@ public class GameManager : MonoBehaviour
         // Save return position for after the battle
         GameSession.SetReturnPosition(playerPosition);
 
-        SceneManager.LoadScene(BattleScene, LoadSceneMode.Single);
+        // Load the battle scene specified by the trigger (or default to Battle_Template)
+        string battleScene = GameSession.BattleSceneName;
+        Debug.Log($"[GameManager] Loading battle scene: {battleScene}");
+        
+        SceneManager.LoadScene(battleScene, LoadSceneMode.Single);
         Cursor.lockState = CursorLockMode.None;
     }
     

@@ -108,11 +108,31 @@ public class TurnManager : MonoBehaviour
         if (enableDebugLogs)
             Debug.Log($"[TurnManager] StartPlayerTurn -> PlayerTurn");
 
-        // Tick status effects (bleed, weaken, etc.) at the start of player turn
-        var enemy = UnityEngine.Object.FindFirstObjectByType<EnemyHealth>();
-        if (enemy != null)
+        // Tick player buff status effects (reflect, dodge, invisibility, etc.) at start of turn
+        if (PlayerStatusEffects.Instance != null)
         {
-            enemy.TickStatuses();
+            PlayerStatusEffects.Instance.TickStatuses();
+        }
+
+        // Tick player debuff status effects (bleed, weakness) at start of turn
+        if (PlayerHealth.Instance != null)
+        {
+            PlayerHealth.Instance.TickStatuses();
+        }
+
+        // Tick status effects (bleed, weaken, etc.) for ALL enemies at the start of player turn
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.TickAllEnemyStatuses();
+        }
+        else
+        {
+            // Fallback for single enemy (backwards compatibility)
+            var enemy = UnityEngine.Object.FindFirstObjectByType<EnemyHealth>();
+            if (enemy != null)
+            {
+                enemy.TickStatuses();
+            }
         }
 
         // Refill stamina at the start of the turn
@@ -175,15 +195,49 @@ public class TurnManager : MonoBehaviour
     
     private void DrawCardsForPlayerTurn()
     {
-
-        // Debug.Log($"[TurnManager] DrawCardsForPlayerTurn called! Drawing {cardsPerTurn} cards. DrawPile has: {deckManager.drawPile.Count} cards");
-
         if (deckManager == null || handManager == null) return;
 
-        var cards = deckManager.Draw(cardsPerTurn); // DeckManager.Draw() auto-reshuffles from discard when empty
+        // NEW: Use CardCollection's rule-based drawing if available
+        if (CardCollection.Instance != null)
+        {
+            // Check if draw pile is empty - reshuffle discard pile
+            if (deckManager.DrawPile.Count == 0 && deckManager.DiscardPile.Count > 0)
+            {
+                Debug.Log("[TurnManager] Draw pile empty - shuffling discard pile back");
+                deckManager.DrawPile.AddRange(deckManager.DiscardPile);
+                deckManager.DiscardPile.Clear();
+                DeckManager.Shuffle(deckManager.DrawPile);
+            }
+
+            var hand = CardCollection.Instance.DrawHandWithRules(deckManager.DrawPile, cardsPerTurn);
+            
+            if (hand.Count == 0)
+            {
+                Debug.LogWarning("[TurnManager] No cards could be drawn with rules!");
+                return;
+            }
+
+            // Remove drawn cards from draw pile
+            foreach (var card in hand)
+            {
+                deckManager.DrawPile.Remove(card);
+            }
+
+            // Add to hand display
+            foreach (var card in hand)
+            {
+                handManager.AddCardToHand(card);
+            }
+
+            Debug.Log($"[TurnManager] Drew {hand.Count} cards with composition rules");
+            return;
+        }
+
+        // Fallback: Original draw logic
+        var cards = deckManager.Draw(cardsPerTurn);
         if (cards == null || cards.Count == 0) return;
 
-        Debug.Log($"[TurnManager] Actually drew {cards.Count} cards");
+        Debug.Log($"[TurnManager] Drew {cards.Count} cards (fallback method)");
 
         foreach (var c in cards)
             handManager.AddCardToHand(c);
@@ -196,39 +250,50 @@ public class TurnManager : MonoBehaviour
             Debug.Log("[TurnManager] Processing enemy turn...");
         }
 
-        // Wait for enemy actions
+        // Wait before enemies act
         yield return new WaitForSeconds(2f);
-        
-        // Play skeleton scream before attack
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.Play("SkeletonScream");
-        }
-        
-        // Small delay after scream, then play slash sound (during attack animation)
-        yield return new WaitForSeconds(0.5f);
-        
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.Play("SkeletonSlash");
-        }
-        
-        // Brief moment for slash to register, then apply damage
-        yield return new WaitForSeconds(0.2f);
-        
-        // Enemy attacks player
-        int damage = UnityEngine.Random.Range(1, 6); // Random value between 1–5 (upper bound exclusive)
 
-        if (PlayerHealth.Instance != null)
+        // Use EnemyManager to execute all enemy turns
+        if (EnemyManager.Instance != null)
         {
-            PlayerHealth.Instance.TakeDamage(damage);
-
-            if (enableDebugLogs)
-                Debug.Log($"[TurnManager] Enemy attacked player for {damage} damage!");
+            yield return EnemyManager.Instance.ExecuteAllEnemyTurns();
         }
         else
         {
-            Debug.LogWarning("[TurnManager] Enemy tried to attack, but no PlayerHealth instance found!");
+            // Fallback for single enemy (backwards compatibility)
+            Debug.LogWarning("[TurnManager] No EnemyManager found, using legacy single-enemy attack");
+            
+            // Play skeleton scream before attack
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.Play("SkeletonScream");
+            }
+            
+            // Small delay after scream, then play slash sound (during attack animation)
+            yield return new WaitForSeconds(0.5f);
+            
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.Play("SkeletonSlash");
+            }
+            
+            // Brief moment for slash to register, then apply damage
+            yield return new WaitForSeconds(0.2f);
+            
+            // Enemy attacks player
+            int damage = UnityEngine.Random.Range(1, 6);
+
+            if (PlayerHealth.Instance != null)
+            {
+                PlayerHealth.Instance.TakeDamage(damage);
+
+                if (enableDebugLogs)
+                    Debug.Log($"[TurnManager] Enemy attacked player for {damage} damage!");
+            }
+            else
+            {
+                Debug.LogWarning("[TurnManager] Enemy tried to attack, but no PlayerHealth instance found!");
+            }
         }
         
         // Return to player turn
@@ -239,7 +304,7 @@ public class TurnManager : MonoBehaviour
     [ContextMenu("Check For Duplicate TurnManagers")]
     private void CheckForDuplicates()
     {
-        TurnManager[] allManagers = FindObjectsOfType<TurnManager>();
+        TurnManager[] allManagers = FindObjectsByType<TurnManager>(FindObjectsSortMode.None);
         if (allManagers.Length > 1)
         {
             Debug.LogError($"[TurnManager] FOUND {allManagers.Length} TurnManager instances!");
