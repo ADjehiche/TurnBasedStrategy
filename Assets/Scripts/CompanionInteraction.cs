@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using Unity.VisualScripting;
 
 /// <summary>
 /// Handles player interaction with companion to activate following
@@ -10,11 +11,11 @@ public class CompanionInteraction : MonoBehaviour
 {
     [Header("Interaction Settings")]
     [Tooltip("Key code to interact with companion")]
-    [SerializeField] private KeyCode interactionKey = KeyCode.F;
+    [SerializeField] private KeyCode interactionKey = KeyCode.E;
     
     [Header("Dialogue - Initial Greeting")]
     [SerializeField] private string companionGreeting = "[Fragment] Hello... I've been waiting.";
-    [SerializeField] private string interactionPrompt = "[System] Press F to speak";
+    [SerializeField] private string interactionPrompt = "[System] Press E to speak";
     
     [Header("Dialogue - Conversation")]
     [SerializeField] private string playerQuestion1 = "[You] What are you?";
@@ -31,6 +32,7 @@ public class CompanionInteraction : MonoBehaviour
     [Header("References")]
     [Tooltip("Reference to the CompanionFollower component")]
     [SerializeField] private CompanionFollower companionFollower;
+    [SerializeField] private string blobColour = "Yellow";
     
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true;
@@ -190,7 +192,10 @@ public class CompanionInteraction : MonoBehaviour
             yield return new WaitForSeconds(2.5f);
             
             // 8. Hint about exploring symbols
-            CaptionManager.Instance.ShowSystemMessage("[System] Fragment may know more about the markings on the walls", 3f);
+            if(blobColour == "Yellow")
+            {
+                CaptionManager.Instance.ShowSystemMessage("[System] Fragment may know more about the markings on the walls", 3f);
+            }
             yield return new WaitForSeconds(0.5f);
         }
         else

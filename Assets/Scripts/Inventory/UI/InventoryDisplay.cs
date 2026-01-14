@@ -35,7 +35,7 @@ public abstract class InventoryDisplay : MonoBehaviour
     {
         UnityEngine.Debug.Log($"[InventoryDisplay] SlotClicked called! Slot has item: {clickedUISlot.AssignedInventorySlot.ItemData != null}");
         UnityEngine.Debug.Log($"[InventoryDisplay] MouseItemData has item: {mouseInventoryItem?.AssignedInventorySlot?.ItemData != null}");
-        
+
         // Picking up an item from a slot
         if(clickedUISlot.AssignedInventorySlot.ItemData!=null && mouseInventoryItem.AssignedInventorySlot.ItemData==null)
         {
@@ -56,6 +56,43 @@ public abstract class InventoryDisplay : MonoBehaviour
             mouseInventoryItem.ClearSlot();
             
             // Notify that the slot changed
+            inventorySystem?.OnInventorySlotChanged?.Invoke(clickedUISlot.AssignedInventorySlot);
+        }
+        // Swapping items (both have items)
+        if(clickedUISlot.AssignedInventorySlot.ItemData != null && mouseInventoryItem.AssignedInventorySlot.ItemData != null)
+        {
+            // If same item type and stackable, try to stack
+            if (clickedUISlot.AssignedInventorySlot.ItemData == mouseInventoryItem.AssignedInventorySlot.ItemData &&
+                clickedUISlot.AssignedInventorySlot.ItemData.isStackable)
+            {
+                // Try to add to stack
+                int remaining = clickedUISlot.AssignedInventorySlot.ItemData.maxStack - clickedUISlot.AssignedInventorySlot.StackSize;
+                if (remaining > 0)
+                {
+                    int toAdd = Mathf.Min(remaining, mouseInventoryItem.AssignedInventorySlot.StackSize);
+                    clickedUISlot.AssignedInventorySlot.AddToStack(toAdd);
+                    mouseInventoryItem.AssignedInventorySlot.RemoveFromStack(toAdd);
+                    
+                    if (mouseInventoryItem.AssignedInventorySlot.StackSize <= 0)
+                        mouseInventoryItem.ClearSlot();
+                    else
+                        mouseInventoryItem.UpdateMouseSlot(mouseInventoryItem.AssignedInventorySlot);
+                    
+                    clickedUISlot.UpdateUISlot();
+                    inventorySystem?.OnInventorySlotChanged?.Invoke(clickedUISlot.AssignedInventorySlot);
+                    return;
+                }
+            }
+            
+            // Swap items
+            UnityEngine.Debug.Log($"[InventoryDisplay] Swapping items");
+            InventorySlot tempSlot = new InventorySlot();
+            tempSlot.AssignItem(clickedUISlot.AssignedInventorySlot);
+            
+            clickedUISlot.AssignedInventorySlot.AssignItem(mouseInventoryItem.AssignedInventorySlot);
+            mouseInventoryItem.UpdateMouseSlot(tempSlot);
+            
+            clickedUISlot.UpdateUISlot();
             inventorySystem?.OnInventorySlotChanged?.Invoke(clickedUISlot.AssignedInventorySlot);
         }
     }

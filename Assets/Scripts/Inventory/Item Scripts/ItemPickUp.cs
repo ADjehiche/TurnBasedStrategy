@@ -29,6 +29,25 @@ public class ItemPickUp : MonoBehaviour
             Debug.Log("[ItemPickUp] Original key collected - marked in GameSession");
         }
         
+        // Check if item data is specifically the cell key (not skeleton key)
+        if (ItemData != null && (ItemData.name.ToLower().Contains("cell key") || 
+                                (ItemData.name.ToLower().Contains("key") && !ItemData.name.ToLower().Contains("skeleton"))))
+        {
+            Debug.Log("[ItemPickUp] Cell key picked up - triggering objectives");
+            
+            // Find and trigger the objective system
+            var objectiveManager = FindFirstObjectByType<SimpleLevelOneObjectives>();
+            if (objectiveManager != null)
+            {
+                objectiveManager.StartObjectives(); // Show first objective
+                objectiveManager.OnKeyPickedUp(); // Complete "Find Key", show "Escape Cell"
+            }
+            else
+            {
+                Debug.LogWarning("[ItemPickUp] SimpleLevelOneObjectives not found in scene!");
+            }
+        }
+        
         Destroy(this.gameObject);
        }
     }
