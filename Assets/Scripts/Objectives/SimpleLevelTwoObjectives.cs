@@ -18,6 +18,8 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
     private string[] objectives = {
         "Explore the Archive",
         "Explore Further Inside", 
+        "Defeat the Skeletons",    // NEW: Combat Wing battle
+        "Explore Further Inside",  // Return to exploration after battle
         "Explore the Maze",
         "Return to the Archive"
     };
@@ -25,6 +27,8 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
     // Completion flags
     private bool hasExploredArchive = false;
     private bool hasExploredTunnel = false;
+    private bool hasEnteredCombatWing = false;  // NEW
+    private bool hasDefeatedSkeletons = false;  // NEW
     private bool hasExploredMaze = false;
     private bool hasReturnedToArchive = false;
     
@@ -219,7 +223,8 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
     {
         Debug.Log($"[SimpleLevelTwoObjectives] OnMazeEntered called - hasExploredTunnel: {hasExploredTunnel}, currentObjectiveIndex: {currentObjectiveIndex}");
         
-        if (!hasExploredTunnel && currentObjectiveIndex == 1)
+        // Maze is now objective index 4 (after skeleton defeat)
+        if (!hasExploredTunnel && currentObjectiveIndex == 3)
         {
             Debug.Log("[SimpleLevelTwoObjectives] Conditions met - completing 'Explore Further Inside' objective");
             hasExploredTunnel = true;
@@ -228,7 +233,39 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[SimpleLevelTwoObjectives] Maze entered but conditions not met - hasExploredTunnel: {hasExploredTunnel}, currentObjectiveIndex: {currentObjectiveIndex} (expected 1)");
+            Debug.LogWarning($"[SimpleLevelTwoObjectives] Maze entered but conditions not met - hasExploredTunnel: {hasExploredTunnel}, currentObjectiveIndex: {currentObjectiveIndex} (expected 3)");
+        }
+    }
+    
+    /// <summary>
+    /// Call this when player enters the Combat Wing (skeleton trigger area)
+    /// </summary>
+    public void OnCombatWingEntered()
+    {
+        Debug.Log($"[SimpleLevelTwoObjectives] OnCombatWingEntered called - hasEnteredCombatWing: {hasEnteredCombatWing}, currentObjectiveIndex: {currentObjectiveIndex}");
+        
+        if (!hasEnteredCombatWing && currentObjectiveIndex == 1)
+        {
+            Debug.Log("[SimpleLevelTwoObjectives] Entering Combat Wing - showing 'Defeat the Skeletons' objective");
+            hasEnteredCombatWing = true;
+            SaveObjectiveState();
+            CompleteCurrentObjective(); // Complete "Explore Further Inside", show "Defeat the Skeletons"
+        }
+    }
+    
+    /// <summary>
+    /// Call this when skeletons are defeated (after battle victory)
+    /// </summary>
+    public void OnSkeletonsDefeated()
+    {
+        Debug.Log($"[SimpleLevelTwoObjectives] OnSkeletonsDefeated called - hasDefeatedSkeletons: {hasDefeatedSkeletons}, currentObjectiveIndex: {currentObjectiveIndex}");
+        
+        if (!hasDefeatedSkeletons && currentObjectiveIndex == 2)
+        {
+            Debug.Log("[SimpleLevelTwoObjectives] Skeletons defeated - returning to 'Explore Further Inside'");
+            hasDefeatedSkeletons = true;
+            SaveObjectiveState();
+            CompleteCurrentObjective(); // Complete "Defeat the Skeletons", show "Explore Further Inside"
         }
     }
     
@@ -239,7 +276,8 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
     {
         Debug.Log($"[SimpleLevelTwoObjectives] OnMazeExplored called - hasExploredMaze: {hasExploredMaze}, currentObjectiveIndex: {currentObjectiveIndex}");
         
-        if (!hasExploredMaze && currentObjectiveIndex == 2)
+        // Maze explore is now objective index 4
+        if (!hasExploredMaze && currentObjectiveIndex == 4)
         {
             Debug.Log("[SimpleLevelTwoObjectives] Conditions met - completing 'Explore the Maze' objective");
             hasExploredMaze = true;
@@ -248,7 +286,7 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[SimpleLevelTwoObjectives] Maze explored but conditions not met - hasExploredMaze: {hasExploredMaze}, currentObjectiveIndex: {currentObjectiveIndex} (expected 2)");
+            Debug.LogWarning($"[SimpleLevelTwoObjectives] Maze explored but conditions not met - hasExploredMaze: {hasExploredMaze}, currentObjectiveIndex: {currentObjectiveIndex} (expected 4)");
         }
     }
     
@@ -259,7 +297,8 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
     {
         Debug.Log($"[SimpleLevelTwoObjectives] OnReturnedToArchive called - hasReturnedToArchive: {hasReturnedToArchive}, currentObjectiveIndex: {currentObjectiveIndex}");
         
-        if (!hasReturnedToArchive && currentObjectiveIndex == 3)
+        // Return to archive is now objective index 5
+        if (!hasReturnedToArchive && currentObjectiveIndex == 5)
         {
             Debug.Log("[SimpleLevelTwoObjectives] Conditions met - completing 'Return to the Archive' objective");
             hasReturnedToArchive = true;
@@ -268,7 +307,7 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[SimpleLevelTwoObjectives] Returned to archive but conditions not met - hasReturnedToArchive: {hasReturnedToArchive}, currentObjectiveIndex: {currentObjectiveIndex} (expected 3)");
+            Debug.LogWarning($"[SimpleLevelTwoObjectives] Returned to archive but conditions not met - hasReturnedToArchive: {hasReturnedToArchive}, currentObjectiveIndex: {currentObjectiveIndex} (expected 5)");
         }
     }
     

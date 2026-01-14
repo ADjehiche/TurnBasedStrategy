@@ -263,11 +263,4 @@ public class MenuController : MonoBehaviour
     {
         return SceneManager.GetActiveScene().name == titleSceneName;
     }
-
-    public void ClearSaveForTesting()
-    {
-        SaveSystem.DeleteSave();
-        Debug.Log("Save deleted.");
-        RefreshContinueButton();
-    }
 }
