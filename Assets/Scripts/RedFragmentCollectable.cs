@@ -42,6 +42,11 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
     [SerializeField] private Light glowLight;
     
     private bool hasBeenCollected = false;
+    private bool playerInRange = false;
+    
+    [Header("Interaction Prompt")]
+    [SerializeField] private string interactionPrompt = "[System] Press E to interact";
+    [SerializeField] private float promptDuration = 5f;
     
     public UnityEngine.Events.UnityAction<IInteractable> OnInteractionComplete { get; set; }
     
@@ -69,6 +74,33 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
         if (glowLight != null)
         {
             StartCoroutine(PulseGlow());
+        }
+    }
+    
+    void OnTriggerEnter(Collider other)
+    {
+        if (hasBeenCollected) return;
+        
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = true;
+            
+            // Show interaction prompt
+            if (CaptionManager.Instance != null)
+            {
+                CaptionManager.Instance.ShowSystemMessage(interactionPrompt, promptDuration);
+            }
+            
+            if (debugMode) Debug.Log("[RedFragmentCollectable] Player in range - showing prompt");
+        }
+    }
+    
+    void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            playerInRange = false;
+            if (debugMode) Debug.Log("[RedFragmentCollectable] Player left range");
         }
     }
     
@@ -114,32 +146,50 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
         // Brief delay for effects
         yield return new WaitForSeconds(collectDelay);
         
-        // Hide the collectible visually (but don't destroy yet)
-        MeshRenderer[] renderers = GetComponentsInChildren<MeshRenderer>();
-        foreach (var r in renderers) r.enabled = false;
+        // Mark as collected FIRST (like yellow fragment)
+        GameSession.HasCollectedRedFragment = true;
+        GameSession.HasPlayedRageFlashback = true; // Will be set to true after flashback, but set now for safety
         
-        if (glowLight != null) glowLight.enabled = false;
+        // Start following FIRST (like yellow fragment)
+        BecomeFollower();
         
-        // Disable collider to prevent re-interaction
-        Collider col = GetComponent<Collider>();
-        if (col != null) col.enabled = false;
-        
-        // Trigger flashback
-        if (FlashbackManager.Instance != null)
+        // Show intro dialogue
+        if (CaptionManager.Instance != null)
         {
-            if (useSceneFlashback)
-            {
-                FlashbackManager.Instance.StartRageFlashback(flashbackSceneName, OnFlashbackComplete);
-            }
-            else
-            {
-                FlashbackManager.Instance.StartOverlayFlashback(flashbackDialogue, dialogueLineDuration, OnFlashbackComplete);
-            }
+            CaptionManager.Instance.ShowFlashback("[Red Fragment] I am your rage.", 2.5f);
+        }
+        
+        // Lock player movement during dialogue
+        if (PlayerMovementLock.Instance != null)
+        {
+            PlayerMovementLock.Instance.LockMovement("Red Fragment intro");
+        }
+        
+        // Wait for dialogue to display
+        yield return new WaitForSeconds(3f);
+        
+        // Notify any listening systems (like boss door glyph counter)
+        NotifyGlyphSystems();
+        
+        // Complete interaction
+        OnInteractionComplete?.Invoke(this);
+        
+        // THEN trigger flashback (happens after follower is already active)
+        if (FlashbackManager.Instance != null && useSceneFlashback)
+        {
+            FlashbackManager.Instance.StartRageFlashback(flashbackSceneName, null);
+        }
+        else if (FlashbackManager.Instance != null)
+        {
+            FlashbackManager.Instance.StartOverlayFlashback(flashbackDialogue, dialogueLineDuration, null);
         }
         else
         {
-            Debug.LogError("[RedFragmentCollectable] FlashbackManager not found! Skipping flashback.");
-            OnFlashbackComplete();
+            // No flashback manager - just unlock
+            if (PlayerMovementLock.Instance != null)
+            {
+                PlayerMovementLock.Instance.UnlockMovement("No flashback");
+            }
         }
     }
     
@@ -148,13 +198,13 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
     /// </summary>
     private void OnFlashbackComplete()
     {
-        if (debugMode) Debug.Log("[RedFragmentCollectable] Flashback complete - spawning follower");
+        if (debugMode) Debug.Log("[RedFragmentCollectable] Flashback complete - becoming follower");
         
         // Mark as collected in GameSession
         GameSession.HasCollectedRedFragment = true;
         
-        // Spawn the follower
-        SpawnRedFragmentFollower();
+        // Transform this object into a follower (single prefab approach)
+        BecomeFollower();
         
         // Notify any listening systems (like boss door glyph counter)
         NotifyGlyphSystems();
@@ -162,36 +212,42 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
         // Complete interaction
         OnInteractionComplete?.Invoke(this);
         
-        // Destroy this collectible
-        Destroy(gameObject);
+        // DON'T destroy - we're now a follower!
     }
     
     /// <summary>
-    /// Spawn the red fragment as a follower companion
+    /// Transform this collectible into a following companion
     /// </summary>
-    private void SpawnRedFragmentFollower()
+    private void BecomeFollower()
     {
-        if (redFragmentFollowerPrefab == null)
+        // Re-enable visuals
+        MeshRenderer[] renderers = GetComponentsInChildren<MeshRenderer>(true);
+        foreach (var r in renderers) r.enabled = true;
+        
+        if (glowLight != null) glowLight.enabled = true;
+        
+        // Get or add CompanionFollower component
+        CompanionFollower followerScript = GetComponent<CompanionFollower>();
+        if (followerScript == null)
         {
-            Debug.LogWarning("[RedFragmentCollectable] Red fragment follower prefab not assigned!");
+            Debug.LogWarning("[RedFragmentCollectable] No CompanionFollower on this object - add the component!");
             return;
         }
         
-        Vector3 spawnPos = spawnPosition != null ? spawnPosition.position : transform.position;
+        // Start following the player
+        followerScript.StartFollowing();
         
-        // Spawn slightly to the side of the player (opposite side from blue if present)
-        spawnPos += Vector3.left * 2f + Vector3.up * 0.5f;
+        // Mark red companion as active (for persistence across scenes)
+        GameSession.RedCompanionActive = true;
         
-        GameObject follower = Instantiate(redFragmentFollowerPrefab, spawnPos, Quaternion.identity);
+        // Disable this collectible script (no longer needed)
+        this.enabled = false;
         
-        // Start following if it has the CompanionFollower component
-        CompanionFollower followerScript = follower.GetComponent<CompanionFollower>();
-        if (followerScript != null)
-        {
-            followerScript.StartFollowing();
-        }
+        // Remove collider so player doesn't keep interacting
+        Collider col = GetComponent<Collider>();
+        if (col != null) Destroy(col);
         
-        if (debugMode) Debug.Log("[RedFragmentCollectable] Spawned red fragment follower");
+        if (debugMode) Debug.Log("[RedFragmentCollectable] ✅ Now following player as companion!");
     }
     
     /// <summary>
@@ -199,9 +255,7 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
     /// </summary>
     private void NotifyGlyphSystems()
     {
-        // Find boss door or glyph controller and notify
-        // This will be implemented when boss door system is in place
-        if (debugMode) Debug.Log("[RedFragmentCollectable] Red Fragment registered as glyph for boss door");
+        if (debugMode) Debug.Log($"[RedFragmentCollectable] Fragment count: {GameSession.CollectedFragmentCount}");
         
         // Play objective complete sound
         if (AudioManager.Instance != null)
@@ -209,10 +263,30 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
             AudioManager.Instance.Play("ObjectiveComplete");
         }
         
-        // Show system message
-        if (CaptionManager.Instance != null)
+        // Check if both fragments are collected (boss door can unlock)
+        if (GameSession.CanUnlockBossDoor)
         {
-            CaptionManager.Instance.ShowSystemMessage("[Rage Fragment Acquired]", 2f);
+            if (debugMode) Debug.Log("[RedFragmentCollectable] Both fragments collected - boss door can now unlock!");
+            
+            // Show boss door unlock message
+            if (CaptionManager.Instance != null)
+            {
+                CaptionManager.Instance.ShowSystemMessage("[Boss Door Unsealed]", 3f);
+            }
+            
+            // Play special unlock sound
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.Play("DoorUnlock");
+            }
+        }
+        else
+        {
+            // Show fragment acquired message
+            if (CaptionManager.Instance != null)
+            {
+                CaptionManager.Instance.ShowSystemMessage("[Rage Fragment Acquired]", 2f);
+            }
         }
     }
     

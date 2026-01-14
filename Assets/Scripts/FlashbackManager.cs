@@ -41,7 +41,7 @@ public class FlashbackManager : MonoBehaviour
     
     // State tracking
     private bool isFlashbackActive = false;
-    private string sceneToReturnTo;
+    // sceneToReturnTo now stored in GameSession.FlashbackReturnScene for persistence
     private AudioSource audioSource;
     private Camera mainCamera;
     private Vector3 originalCameraPosition;
@@ -122,9 +122,9 @@ public class FlashbackManager : MonoBehaviour
     private IEnumerator RageFlashbackSequence(string flashbackSceneName, System.Action onComplete)
     {
         isFlashbackActive = true;
-        sceneToReturnTo = SceneManager.GetActiveScene().name;
+        GameSession.FlashbackReturnScene = SceneManager.GetActiveScene().name;
         
-        if (showDebugLogs) Debug.Log($"[FlashbackManager] 🔴 Starting Rage Flashback -> {flashbackSceneName}");
+        if (showDebugLogs) Debug.Log($"[FlashbackManager] 🔴 Starting Rage Flashback -> {flashbackSceneName}, will return to: {GameSession.FlashbackReturnScene}");
         
         // Lock player movement
         if (PlayerMovementLock.Instance != null)
@@ -156,9 +156,9 @@ public class FlashbackManager : MonoBehaviour
         }
         
         // Return to original scene
-        if (showDebugLogs) Debug.Log($"[FlashbackManager] Returning to {sceneToReturnTo}");
+        if (showDebugLogs) Debug.Log($"[FlashbackManager] Returning to {GameSession.FlashbackReturnScene}");
         
-        AsyncOperation returnOp = SceneManager.LoadSceneAsync(sceneToReturnTo, LoadSceneMode.Single);
+        AsyncOperation returnOp = SceneManager.LoadSceneAsync(GameSession.FlashbackReturnScene, LoadSceneMode.Single);
         while (!returnOp.isDone)
         {
             yield return null;
@@ -260,6 +260,52 @@ public class FlashbackManager : MonoBehaviour
     {
         if (showDebugLogs) Debug.Log("[FlashbackManager] Flashback scene signaled completion");
         isFlashbackActive = false;
+        
+        // Direct return to original scene (don't rely on coroutine resumption after scene change)
+        if (!string.IsNullOrEmpty(GameSession.FlashbackReturnScene))
+        {
+            StartCoroutine(ReturnToOriginalScene());
+        }
+        else
+        {
+            Debug.LogError("[FlashbackManager] No return scene saved in GameSession! Cannot return.");
+        }
+    }
+    
+    /// <summary>
+    /// Return to original scene after flashback
+    /// </summary>
+    private IEnumerator ReturnToOriginalScene()
+    {
+        if (showDebugLogs) Debug.Log($"[FlashbackManager] 🔄 Returning to {GameSession.FlashbackReturnScene}...");
+        
+        // Load return scene
+        AsyncOperation returnOp = SceneManager.LoadSceneAsync(GameSession.FlashbackReturnScene, LoadSceneMode.Single);
+        while (!returnOp.isDone)
+        {
+            yield return null;
+        }
+        
+        // Short delay for scene to initialize
+        yield return new WaitForSeconds(0.5f);
+        
+        // Fade out overlay
+        yield return StartCoroutine(FadeOverlay(1f, 0f, fadeOutDuration));
+        
+        // Play end SFX
+        PlayAudioClip(flashbackEndSFX);
+        
+        // Unlock player movement
+        if (PlayerMovementLock.Instance != null)
+        {
+            PlayerMovementLock.Instance.UnlockMovement("Flashback Complete");
+        }
+        
+        // Mark flashback as completed - companion should now follow
+        GameSession.HasPlayedRageFlashback = true;
+        GameSession.HasCollectedRedFragment = true;
+        
+        if (showDebugLogs) Debug.Log("[FlashbackManager] 🔴 Rage Flashback complete! Returned to LevelTwo");
     }
     
     /// <summary>

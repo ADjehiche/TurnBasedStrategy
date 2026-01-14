@@ -118,11 +118,23 @@ public class FlashbackSceneController : MonoBehaviour
             
             if (debugMode) Debug.Log($"[FlashbackSceneController] Line {i + 1}/{dialogueLines.Length}: {line}");
             
-            // Show dialogue via CaptionManager with [Flashback] prefix in RED
+            // Show dialogue via CaptionManager
             if (CaptionManager.Instance != null)
             {
-                string formattedLine = $"[Flashback] {line}";
-                CaptionManager.Instance.ShowFlashback(formattedLine, lineDuration);
+                bool isLastLine = (i == dialogueLines.Length - 1);
+                
+                if (isLastLine)
+                {
+                    // Last line is player's reaction - use [You] in yellow
+                    string formattedLine = $"[You] {line}";
+                    CaptionManager.Instance.ShowMonologue(formattedLine, lineDuration);
+                }
+                else
+                {
+                    // Flashback memory lines - use [Flashback] in red
+                    string formattedLine = $"[Flashback] {line}";
+                    CaptionManager.Instance.ShowFlashback(formattedLine, lineDuration);
+                }
             }
             
             // Play voice line if available

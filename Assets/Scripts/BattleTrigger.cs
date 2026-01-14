@@ -54,6 +54,10 @@ public class BattleTrigger : MonoBehaviour
 
         // Store which battle scene to load
         GameSession.SetBattleSceneName(battleSceneName);
+        
+        // Store which scene to return to after battle
+        GameSession.ReturnSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        Debug.Log($"[BattleTrigger] Return scene set to: {GameSession.ReturnSceneName}");
 
         Debug.Log($"[BattleTrigger] Starting battle: {battleSceneName}");
 
