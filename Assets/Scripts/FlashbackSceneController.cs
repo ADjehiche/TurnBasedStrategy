@@ -118,10 +118,11 @@ public class FlashbackSceneController : MonoBehaviour
             
             if (debugMode) Debug.Log($"[FlashbackSceneController] Line {i + 1}/{dialogueLines.Length}: {line}");
             
-            // Show dialogue via CaptionManager
+            // Show dialogue via CaptionManager with [Flashback] prefix
             if (CaptionManager.Instance != null)
             {
-                CaptionManager.Instance.ShowMonologue(line, lineDuration);
+                string formattedLine = $"[Flashback] {line}";
+                CaptionManager.Instance.ShowMonologue(formattedLine, lineDuration);
             }
             
             // Play voice line if available
@@ -248,7 +249,7 @@ public class FlashbackSceneController : MonoBehaviour
     }
     
     /// <summary>
-    /// Spawn lightning VFX prefabs at designated spawn points
+    /// Spawn lightning VFX prefabs at each light's location
     /// </summary>
     private void SpawnLightningVFX()
     {
@@ -258,47 +259,37 @@ public class FlashbackSceneController : MonoBehaviour
             return;
         }
         
-        for (int i = 0; i < lightningBoltsPerTrigger; i++)
+        // Spawn VFX at each light's position
+        if (lightningLights != null && lightningLights.Length > 0)
         {
-            Vector3 spawnPos;
-            Quaternion spawnRot = Quaternion.identity;
-            
-            // Pick spawn position
-            if (lightningSpawnPoints != null && lightningSpawnPoints.Length > 0)
+            foreach (Light light in lightningLights)
             {
-                // Random spawn point from array
-                int randomIndex = Random.Range(0, lightningSpawnPoints.Length);
-                Transform spawnPoint = lightningSpawnPoints[randomIndex];
+                if (light == null) continue;
                 
-                if (spawnPoint != null)
-                {
-                    spawnPos = spawnPoint.position;
-                    spawnRot = spawnPoint.rotation;
-                }
-                else
-                {
-                    spawnPos = GetDefaultSpawnPosition();
-                }
+                Vector3 spawnPos = light.transform.position;
+                
+                // Z rotation of 90 degrees as specified
+                Quaternion spawnRot = Quaternion.Euler(0f, 0f, 90f);
+                
+                // Spawn the VFX
+                GameObject vfxInstance = Instantiate(lightningVFXPrefab, spawnPos, spawnRot);
+                
+                // Auto-destroy after lifetime
+                Destroy(vfxInstance, vfxLifetime);
+                
+                if (debugMode) Debug.Log($"[FlashbackSceneController] ⚡ Spawned lightning VFX at light position {spawnPos}");
             }
-            else
-            {
-                spawnPos = GetDefaultSpawnPosition();
-            }
+        }
+        else
+        {
+            // Fallback: spawn at default position if no lights
+            Vector3 spawnPos = GetDefaultSpawnPosition();
+            Quaternion spawnRot = Quaternion.Euler(0f, 0f, 90f);
             
-            // Add some random offset for variety
-            spawnPos += new Vector3(
-                Random.Range(-2f, 2f),
-                Random.Range(0f, 3f),
-                Random.Range(-2f, 2f)
-            );
-            
-            // Spawn the VFX
             GameObject vfxInstance = Instantiate(lightningVFXPrefab, spawnPos, spawnRot);
-            
-            // Auto-destroy after lifetime
             Destroy(vfxInstance, vfxLifetime);
             
-            if (debugMode) Debug.Log($"[FlashbackSceneController] ⚡ Spawned lightning VFX at {spawnPos}");
+            if (debugMode) Debug.Log($"[FlashbackSceneController] ⚡ Spawned lightning VFX at default position {spawnPos}");
         }
     }
     
