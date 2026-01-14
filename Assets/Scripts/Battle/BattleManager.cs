@@ -50,6 +50,9 @@ public class BattleManager : MonoBehaviour
         GameSession.EnemyDefeated = true;
         Debug.Log($"[BattleManager] Setting EnemyDefeated to true, GameManager exists: {GameManager.Instance != null}");
         
+        // The skeleton defeat objective will be triggered when Level One loads
+        Debug.Log("[BattleManager] Skeleton defeat marked - objective will trigger on Level One load");
+        
         // Try to ensure GameManager state is set
         if (GameManager.Instance != null)
         {
