@@ -11,10 +11,6 @@ public class LevelOneCaptionController : MonoBehaviour
     [SerializeField] private string keyPickupMonologue = "[You] A way out.";
     [SerializeField] private string doorOpenCelebration = "[You] Free. For now.";
     [SerializeField] private string skeletonDefeated = "[System] Guardian defeated";
-<<<<<<< Updated upstream
-    [SerializeField] private string skeletonKeyPickup = "[You] This key... I wonder if it opens another cell";
-    
-=======
     [SerializeField] private string skeletonKeyPickup = "[You] This key... it glows.";
 
     [Header("Voice Clips (Level One)")]
@@ -27,7 +23,6 @@ public class LevelOneCaptionController : MonoBehaviour
     [SerializeField] private AudioClip st006_freeAtLast;
     [SerializeField] private AudioClip st008_keyGlows;
 
->>>>>>> Stashed changes
     [Header("Timing")]
     [SerializeField] private float startDelay = 2f;
     [SerializeField] private float instructionDuration = 3f;
@@ -67,28 +62,19 @@ public class LevelOneCaptionController : MonoBehaviour
             CaptionManager.Instance.ShowInstruction(wakeUpInstruction, 2f);
 
             yield return new WaitForSeconds(2.5f);
-<<<<<<< Updated upstream
-            
-            // Pan camera while thinking AND add blinking effect
-=======
 
-            // Pan camera while thinking
->>>>>>> Stashed changes
+            // Pan camera while thinking AND add blinking effect
             if (CameraPanner.Instance != null)
             {
                 StartCoroutine(CameraPanner.Instance.PanLookAround(3f, 45f));
             }
-<<<<<<< Updated upstream
-            
+
             // Add blinking effect (2 blinks) during the camera pan
             if (ScreenBlinker.Instance != null)
             {
                 StartCoroutine(ScreenBlinker.Instance.BlinkMultiple(2, 0.3f, 0.3f));
             }
-            
-=======
 
->>>>>>> Stashed changes
             // Second thought: Amnesia
             PlayVoice(st002_myHead);
             CaptionManager.Instance.ShowMonologue(wakeUpMonologue, monologueDuration);
