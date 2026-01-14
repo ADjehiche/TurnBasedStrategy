@@ -118,11 +118,11 @@ public class FlashbackSceneController : MonoBehaviour
             
             if (debugMode) Debug.Log($"[FlashbackSceneController] Line {i + 1}/{dialogueLines.Length}: {line}");
             
-            // Show dialogue via CaptionManager with [Flashback] prefix
+            // Show dialogue via CaptionManager with [Flashback] prefix in RED
             if (CaptionManager.Instance != null)
             {
                 string formattedLine = $"[Flashback] {line}";
-                CaptionManager.Instance.ShowMonologue(formattedLine, lineDuration);
+                CaptionManager.Instance.ShowFlashback(formattedLine, lineDuration);
             }
             
             // Play voice line if available
