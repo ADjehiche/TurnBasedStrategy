@@ -40,6 +40,18 @@ public static class GameSession
     public static bool HasExploredMaze;                 // Track maze exploration completion
     public static bool HasReturnedToArchive;            // Track return to archive completion
     
+    // Fragment collection (glyphs for boss door)
+    public static bool HasCollectedRedFragment;         // Red (Rage) fragment from Combat Wing
+    public static bool HasCollectedBlueFragment;        // Blue (Logic) fragment from Maze
+    public static bool HasCollectedPurpleFragment;      // Purple (Personality) fragment from Boss
+    
+    // Helper to count collected fragments (boss door requires Red + Blue)
+    public static int CollectedFragmentCount => 
+        (HasCollectedRedFragment ? 1 : 0) + 
+        (HasCollectedBlueFragment ? 1 : 0);
+    
+    public static bool CanUnlockBossDoor => CollectedFragmentCount >= 2;
+    
     // Caption state persistence (so captions don't repeat after battle)
     public static bool HasShownStartInstruction;
     public static bool HasShownKeyPickup;
@@ -102,5 +114,10 @@ public static class GameSession
         CheckpointPosition = default;
         CheckpointRotation = default;
         IsRespawning = false;
+        
+        // Reset fragment collection
+        HasCollectedRedFragment = false;
+        HasCollectedBlueFragment = false;
+        HasCollectedPurpleFragment = false;
     }
 }
