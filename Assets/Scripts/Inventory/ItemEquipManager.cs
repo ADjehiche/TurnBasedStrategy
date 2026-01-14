@@ -121,6 +121,9 @@ public class ItemEquipManager : MonoBehaviour
 
     }
     
+    // --- Potion in hand prompt state ---
+    private bool potionPromptShown = false;
+
     void Update()
     {
         // Check for hotbar key presses (1-9 for slots 0-8, 0 for slot 9)
@@ -136,11 +139,60 @@ public class ItemEquipManager : MonoBehaviour
                     break;
                 }
             }
-            
             // Check key 0 (maps to slot 9, the 10th slot)
             if (Keyboard.current[Key.Digit0].wasPressedThisFrame)
             {
                 SelectHotbarSlot(9); // 0 -> slot 9
+            }
+
+            // --- Potion use logic ---
+            // Don't show potion captions during dialog/cutscenes
+            bool isDialogActive = PlayerMovementLock.Instance != null && PlayerMovementLock.Instance.IsLocked();
+            
+            if (currentlySelectedSlot != null && currentlySelectedSlot.ItemData != null &&
+                currentlySelectedSlot.ItemData.potionEffectType != PotionEffectType.None)
+            {
+                // Show prompt if not already shown (and not in dialog)
+                if (!potionPromptShown && !isDialogActive)
+                {
+                    string potionName = currentlySelectedSlot.ItemData.itemName;
+                    if (CaptionManager.Instance != null)
+                        CaptionManager.Instance.ShowInstruction($"{potionName} - Press E to drink");
+                    potionPromptShown = true;
+                }
+                // Drink potion on E
+                if (Keyboard.current.eKey.wasPressedThisFrame)
+                {
+                    var item = currentlySelectedSlot.ItemData;
+                    var handler = FindFirstObjectByType<PotionUseHandler>();
+                    if (handler != null)
+                    {
+                        handler.UsePotion(item);
+                        // Remove from inventory
+                        RemoveItemFromCurrentSlot();
+                        // Show effect caption (only if not in dialog)
+                        if (!isDialogActive && CaptionManager.Instance != null)
+                        {
+                            if (item.potionEffectType == PotionEffectType.Speed)
+                            {
+                                float mult = item.speedMultiplier > 0 ? item.speedMultiplier : 1.2f;
+                                float dur = item.effectDuration > 0 ? item.effectDuration : 180f;
+                                CaptionManager.Instance.ShowInstruction($"Speed increased by {mult}x for {dur}s!");
+                            }
+                            else if (item.potionEffectType == PotionEffectType.Stamina)
+                            {
+                                int amt = item.staminaIncrease > 0 ? item.staminaIncrease : 1;
+                                CaptionManager.Instance.ShowInstruction($"Max stamina increased by {amt}!");
+                            }
+                        }
+                        potionPromptShown = false;
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                potionPromptShown = false;
             }
         }
     }
@@ -210,10 +262,13 @@ public class ItemEquipManager : MonoBehaviour
     {
         // Get the currently selected slot
         currentlySelectedSlot = inventorySystem.InventorySlots[currentlySelectedSlotIndex];
-        
+
+        // Reset potion prompt state on equip change
+        potionPromptShown = false;
+
         // Clear current equipped item
         ClearEquippedItem();
-        
+
         // Check if slot has an item
         if (currentlySelectedSlot.ItemData != null)
         {
@@ -250,6 +305,12 @@ public class ItemEquipManager : MonoBehaviour
         // Reset local position and rotation to match hold position exactly
         currentlyEquippedItem.transform.localPosition = Vector3.zero;
         currentlyEquippedItem.transform.localRotation = Quaternion.identity;
+        
+        // Rotate potions 90 degrees on X axis so they look upright
+        if (itemData.potionEffectType != PotionEffectType.None)
+        {
+            currentlyEquippedItem.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        }
         
         // Disable physics on equipped item (it's just for display)
         Rigidbody rb = currentlyEquippedItem.GetComponent<Rigidbody>();

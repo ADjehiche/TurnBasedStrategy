@@ -221,6 +221,14 @@ public class DoorTrigger : MonoBehaviour
         {
             GameSession.DoorOpened = true;
             Debug.Log("[DoorTrigger] First door opened - marked in GameSession");
+            
+            // Trigger cell escaped objective
+            var objectiveManager = FindFirstObjectByType<SimpleLevelOneObjectives>();
+            if (objectiveManager != null)
+            {
+                objectiveManager.OnCellEscaped();
+                Debug.Log("[DoorTrigger] Cell escape objective triggered");
+            }
         }
         
         // Trigger celebration monologue when door starts opening

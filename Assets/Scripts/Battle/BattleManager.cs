@@ -24,15 +24,34 @@ public class BattleManager : MonoBehaviour
     {
         if (isOver)
         {
-            Debug.Log("Battle ended - returning to LevelOne after delay");
-            Invoke("ReturnToLevelOne", delayBeforeReturn);
+            // Check if player won (all enemies defeated)
+            bool playerWon = EnemyManager.Instance != null && EnemyManager.Instance.AllEnemiesDefeated();
+            
+            if (playerWon && BattleRewardManager.Instance != null)
+            {
+                Debug.Log("[BattleManager] Battle won - waiting for reward selection before returning to level");
+                // Don't return to level yet - let BattleRewardManager handle it
+                // The reward UI will call ReturnToLevelOne() when player selects/skips reward
+            }
+            else
+            {
+                // Player lost or no reward system - return immediately
+                Debug.Log("[BattleManager] Battle lost - returning to LevelOne after delay");
+                Invoke("ReturnToLevelOne", delayBeforeReturn);
+            }
         }
     }
     
-    private void ReturnToLevelOne()
+    /// <summary>
+    /// Call this after rewards are selected to return to exploration
+    /// </summary>
+    public void ReturnToLevelOne()
     {
         GameSession.EnemyDefeated = true;
         Debug.Log($"[BattleManager] Setting EnemyDefeated to true, GameManager exists: {GameManager.Instance != null}");
+        
+        // The skeleton defeat objective will be triggered when Level One loads
+        Debug.Log("[BattleManager] Skeleton defeat marked - objective will trigger on Level One load");
         
         // Try to ensure GameManager state is set
         if (GameManager.Instance != null)

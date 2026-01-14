@@ -52,11 +52,11 @@ public class InventoryUIController : MonoBehaviour
     void DisplayInventory(InventorySystem invToDisplay)
     {   
         chestPanel.gameObject.SetActive(true);
-        chestPanel.RefreshDynamicInventory(invToDisplay);
+        chestPanel.RefreshDynamicInventory(invToDisplay, "Chest");
     }
     void DisplayPlayerBackpack(InventorySystem invToDisplay)
     {   
         playerBackPackPanel.gameObject.SetActive(true);
-        playerBackPackPanel.RefreshDynamicInventory(invToDisplay);
+        playerBackPackPanel.RefreshDynamicInventory(invToDisplay, "Backpack");
     }
 }
