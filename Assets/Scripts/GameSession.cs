@@ -9,6 +9,7 @@ public static class GameSession
     public static bool HasReturnPosition;
     public static Vector3 ReturnPosition;
     public static Vector3 BattleTriggerCenter; // Where player spawns after battle
+    public static string BattleSceneName = "Battle_Template"; // Which battle scene to load
 
     // World state preservation
     public static bool DoorOpened;           // Track if first door was opened
@@ -45,6 +46,12 @@ public static class GameSession
         BattleTriggerCenter = center;
         Debug.Log($"[GameSession] Battle trigger center saved: {center}");
     }
+
+    public static void SetBattleSceneName(string sceneName)
+    {
+        BattleSceneName = sceneName;
+        Debug.Log($"[GameSession] Battle scene set to: {sceneName}");
+    }
     
     public static void SaveCheckpoint(Vector3 pos, Quaternion rot)
     {
@@ -60,6 +67,7 @@ public static class GameSession
         HasReturnPosition = false;
         ReturnPosition = default;
         BattleTriggerCenter = default;
+        BattleSceneName = "Battle_Template"; // Reset to default
         DoorOpened = false;
         OriginalKeyCollected = false;
         Symbol1Activated = false;

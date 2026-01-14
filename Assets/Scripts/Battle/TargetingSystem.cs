@@ -414,11 +414,10 @@ public class TargetingSystem : MonoBehaviour
                 {
                     if (PlayerStamina.Instance != null)
                     {
-                        PlayerStamina.Instance.currentStamina = Mathf.Min(
-                            PlayerStamina.Instance.maxStamina,
-                            PlayerStamina.Instance.currentStamina + eff.amount
-                        );
-                        Debug.Log($"[TargetingSystem] {card.cardName} restored {eff.amount} stamina.");
+                        // Allow stamina to go over max limit
+                        PlayerStamina.Instance.currentStamina += eff.amount;
+                        PlayerStamina.InstanceChanged?.Invoke(); // Update UI
+                        Debug.Log($"[TargetingSystem] {card.cardName} gained {eff.amount} stamina. Total: {PlayerStamina.Instance.currentStamina}");
                     }
                     break;
                 }

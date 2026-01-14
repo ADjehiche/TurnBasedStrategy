@@ -14,10 +14,14 @@ public class CardRewardUI : MonoBehaviour
 
     [Header("UI References")]
     [SerializeField] private GameObject rewardPanel;
-    [SerializeField] private GameObject cardOptionPrefab;
+    [SerializeField] private GameObject cardPrefab; // Same prefab used in HandManager
     [SerializeField] private Transform cardOptionsContainer;
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private Button skipButton;
+
+    [Header("Card Display Settings")]
+    [SerializeField] private float cardScale = 1.2f; // Make reward cards bigger than hand cards
+    [SerializeField] private float cardSpacing = 400f; // Space between cards
 
     [Header("Card Display")]
     private List<GameObject> currentCardDisplays = new List<GameObject>();
@@ -44,6 +48,53 @@ public class CardRewardUI : MonoBehaviour
         {
             skipButton.onClick.AddListener(OnSkipReward);
         }
+
+        // Setup the layout group for proper card spacing
+        SetupCardContainerLayout();
+    }
+
+    /// <summary>
+    /// Configure the card container with proper layout settings
+    /// </summary>
+    private void SetupCardContainerLayout()
+    {
+        if (cardOptionsContainer == null) return;
+
+        // Force the container to have proper size
+        RectTransform containerRect = cardOptionsContainer.GetComponent<RectTransform>();
+        if (containerRect != null)
+        {
+            // Set anchors to center
+            containerRect.anchorMin = new Vector2(0.5f, 0.5f);
+            containerRect.anchorMax = new Vector2(0.5f, 0.5f);
+            containerRect.pivot = new Vector2(0.5f, 0.5f);
+            
+            // Force a good size for 2 cards side-by-side
+            containerRect.sizeDelta = new Vector2(700f, 450f); // Width x Height
+            containerRect.anchoredPosition = Vector2.zero; // Center it
+            
+            Debug.Log($"[CardRewardUI] Container size forced to: {containerRect.sizeDelta}");
+        }
+
+        // Add HorizontalLayoutGroup if not present
+        var layoutGroup = cardOptionsContainer.GetComponent<HorizontalLayoutGroup>();
+        if (layoutGroup == null)
+        {
+            layoutGroup = cardOptionsContainer.gameObject.AddComponent<HorizontalLayoutGroup>();
+        }
+
+        // Configure spacing and alignment
+        layoutGroup.spacing = cardSpacing;
+        layoutGroup.childAlignment = TextAnchor.MiddleCenter;
+        layoutGroup.childControlWidth = false;
+        layoutGroup.childControlHeight = false;
+        layoutGroup.childForceExpandWidth = false;
+        layoutGroup.childForceExpandHeight = false;
+
+        // Add padding around the cards
+        layoutGroup.padding = new RectOffset(20, 20, 20, 20);
+
+        Debug.Log($"[CardRewardUI] Layout configured: spacing={cardSpacing}, scale={cardScale}");
     }
 
     /// <summary>
@@ -57,6 +108,20 @@ public class CardRewardUI : MonoBehaviour
             return;
         }
 
+        if (cardOptionsContainer == null)
+        {
+            Debug.LogError("[CardRewardUI] cardOptionsContainer is not assigned in inspector!");
+            return;
+        }
+
+        if (cardPrefab == null)
+        {
+            Debug.LogError("[CardRewardUI] cardPrefab is not assigned in inspector!");
+            return;
+        }
+
+        Debug.Log("[CardRewardUI] Starting reward selection...");
+
         // Get 2 random reward cards
         currentOptions = CardCollection.Instance.GetRandomRewardOptions(2);
 
@@ -66,15 +131,50 @@ public class CardRewardUI : MonoBehaviour
             return;
         }
 
-        // Clear previous displays
-        ClearCardDisplays();
+        Debug.Log($"[CardRewardUI] Got {currentOptions.Count} reward options: {currentOptions[0].cardName}, {currentOptions[1].cardName}");
+
+        // Clear previous card DISPLAYS (but NOT currentOptions!)
+        foreach (var cardDisplay in currentCardDisplays)
+        {
+            if (cardDisplay != null)
+            {
+                Destroy(cardDisplay);
+            }
+        }
+        currentCardDisplays.Clear();
+
+        // Hide the player's hand during reward selection
+        if (HandManager.Instance != null)
+        {
+            HandManager.Instance.HideHand();
+            Debug.Log("[CardRewardUI] Hand hidden during reward selection");
+        }
 
         // Create card option displays
-        foreach (var card in currentOptions)
+        try
         {
-            GameObject cardDisplay = CreateCardOption(card);
-            currentCardDisplays.Add(cardDisplay);
+            Debug.Log($"[CardRewardUI] About to create {currentOptions.Count} card displays...");
+            foreach (var card in currentOptions)
+            {
+                Debug.Log($"[CardRewardUI] Creating display for: {card.cardName}");
+                GameObject cardDisplay = CreateCardOption(card);
+                if (cardDisplay != null)
+                {
+                    currentCardDisplays.Add(cardDisplay);
+                    Debug.Log($"[CardRewardUI] Successfully added card display for {card.cardName}");
+                }
+                else
+                {
+                    Debug.LogError($"[CardRewardUI] CreateCardOption returned null for {card.cardName}!");
+                }
+            }
         }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[CardRewardUI] Exception while creating card displays: {ex.Message}\n{ex.StackTrace}");
+        }
+
+        Debug.Log($"[CardRewardUI] Created {currentCardDisplays.Count} card displays");
 
         // Show the panel
         if (rewardPanel != null)
@@ -87,72 +187,84 @@ public class CardRewardUI : MonoBehaviour
             titleText.text = "Choose Your Reward";
         }
 
-        Debug.Log("[CardRewardUI] Showing reward selection");
+        Debug.Log("[CardRewardUI] Reward panel shown");
     }
 
     /// <summary>
-    /// Create a clickable card option display
+    /// Create a clickable card option display (same method as HandManager)
     /// </summary>
     private GameObject CreateCardOption(Card card)
     {
-        GameObject cardObj;
-
-        if (cardOptionPrefab != null)
+        if (cardPrefab == null)
         {
-            // Use prefab if provided
-            cardObj = Instantiate(cardOptionPrefab, cardOptionsContainer);
+            Debug.LogError("[CardRewardUI] Card prefab is not assigned!");
+            return null;
+        }
+
+        Debug.Log($"[CardRewardUI] Creating card option for: {card.cardName}");
+
+        // Instantiate the same card prefab used in battle (inactive to prevent OnEnable)
+        GameObject cardObj = Instantiate(cardPrefab, cardOptionsContainer);
+        cardObj.SetActive(false);
+
+        // Scale the card to make it more prominent
+        cardObj.transform.localScale = Vector3.one * cardScale;
+        
+        // Reset rotation (in case HandManager uses rotation)
+        cardObj.transform.localRotation = Quaternion.identity;
+
+        // Set the card data on CardInstance component BEFORE enabling (same as HandManager)
+        var instance = cardObj.GetComponent<CardInstance>();
+        if (instance != null)
+        {
+            instance.SetData(card);
+            Debug.Log($"[CardRewardUI] Set data on CardInstance for {card.cardName}");
         }
         else
         {
-            // Create simple UI if no prefab
-            cardObj = new GameObject(card.cardName);
-            cardObj.transform.SetParent(cardOptionsContainer);
-            
-            // Add components for display
-            var rectTransform = cardObj.AddComponent<RectTransform>();
-            rectTransform.sizeDelta = new Vector2(200, 300);
-            
-            var image = cardObj.AddComponent<Image>();
-            image.color = Color.white;
-            
-            // Add card name text
-            GameObject textObj = new GameObject("CardName");
-            textObj.transform.SetParent(cardObj.transform);
-            var text = textObj.AddComponent<TextMeshProUGUI>();
-            text.text = card.cardName;
-            text.fontSize = 24;
-            text.alignment = TextAlignmentOptions.Center;
-            text.color = Color.black;
-            
-            var textRect = textObj.GetComponent<RectTransform>();
-            textRect.anchorMin = new Vector2(0, 0);
-            textRect.anchorMax = new Vector2(1, 1);
-            textRect.offsetMin = Vector2.zero;
-            textRect.offsetMax = Vector2.zero;
+            // Fallback
+            var display = cardObj.GetComponent<CardDisplay>();
+            if (display != null)
+            {
+                display.cardData = card;
+                Debug.Log($"[CardRewardUI] Set data on CardDisplay (fallback) for {card.cardName}");
+            }
+            else
+            {
+                Debug.LogError("[CardRewardUI] Card prefab is missing CardInstance and CardDisplay components!");
+            }
         }
 
-        // Make it clickable
+        // Now enable the card (OnEnable will see the data)
+        cardObj.SetActive(true);
+        Debug.Log($"[CardRewardUI] Card GameObject enabled for {card.cardName}");
+
+        // Manually refresh the display to ensure it's updated
+        var cardDisplay = cardObj.GetComponent<CardDisplay>();
+        if (cardDisplay != null)
+        {
+            cardDisplay.Refresh();
+            Debug.Log($"[CardRewardUI] Manually refreshed CardDisplay for {card.cardName}");
+        }
+
+        // Make it clickable - add Button if not already present
         Button button = cardObj.GetComponent<Button>();
         if (button == null)
         {
             button = cardObj.AddComponent<Button>();
+            // Setup button visuals
+            button.transition = UnityEngine.UI.Selectable.Transition.ColorTint;
+            var colors = button.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1f, 1f, 0.8f); // Light yellow
+            colors.pressedColor = new Color(0.8f, 0.8f, 0.8f); // Light gray
+            button.colors = colors;
         }
 
         // Setup click handler
         Card selectedCard = card; // Capture for lambda
+        button.onClick.RemoveAllListeners(); // Clear any existing listeners
         button.onClick.AddListener(() => OnCardSelected(selectedCard));
-
-        // Try to set card data if CardDisplay component exists
-        CardDisplay cardDisplay = cardObj.GetComponent<CardDisplay>();
-        if (cardDisplay != null)
-        {
-            CardInstance cardInstance = cardObj.GetComponent<CardInstance>();
-            if (cardInstance == null)
-            {
-                cardInstance = cardObj.AddComponent<CardInstance>();
-            }
-            cardInstance.SetData(card);
-        }
 
         return cardObj;
     }
@@ -173,8 +285,8 @@ public class CardRewardUI : MonoBehaviour
         // Hide the reward panel
         HideRewardPanel();
 
-        // Continue to next scene or gameplay
-        // You can add scene transition logic here
+        // Return to exploration scene
+        ReturnToExploration();
     }
 
     /// <summary>
@@ -184,6 +296,26 @@ public class CardRewardUI : MonoBehaviour
     {
         Debug.Log("[CardRewardUI] Player skipped reward");
         HideRewardPanel();
+        
+        // Return to exploration scene
+        ReturnToExploration();
+    }
+
+    /// <summary>
+    /// Return to exploration after reward selection
+    /// </summary>
+    private void ReturnToExploration()
+    {
+        // Call BattleManager to return to level
+        BattleManager battleManager = FindFirstObjectByType<BattleManager>();
+        if (battleManager != null)
+        {
+            battleManager.ReturnToLevelOne();
+        }
+        else
+        {
+            Debug.LogWarning("[CardRewardUI] BattleManager not found - cannot return to exploration");
+        }
     }
 
     /// <summary>
@@ -194,6 +326,13 @@ public class CardRewardUI : MonoBehaviour
         if (rewardPanel != null)
         {
             rewardPanel.SetActive(false);
+        }
+
+        // Show the hand again
+        if (HandManager.Instance != null)
+        {
+            HandManager.Instance.ShowHand();
+            Debug.Log("[CardRewardUI] Hand shown after reward selection");
         }
 
         ClearCardDisplays();

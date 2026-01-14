@@ -27,6 +27,7 @@ public class SkeletonWarningTrigger : MonoBehaviour
     
     [Header("Battle")]
     [SerializeField] private GameManager gameManager;
+    [SerializeField] private string battleSceneName = "Battle_1"; // Which battle scene to load
     
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true;
@@ -172,11 +173,23 @@ public class SkeletonWarningTrigger : MonoBehaviour
         // Small pause before battle starts
         yield return new WaitForSeconds(0.5f);
         
+        // Set which battle scene to load
+        GameSession.SetBattleSceneName(battleSceneName);
+        
+        // Save battle trigger position for return spawn
+        if (player != null)
+        {
+            Vector3 triggerCenter = transform.position;
+            triggerCenter.y = player.transform.position.y; // Keep player's Y
+            GameSession.SetBattleTriggerPosition(triggerCenter);
+            gameManager.SavePlayerPosition(triggerCenter);
+        }
+        
         // Automatically start battle
         if (gameManager != null)
         {
             if (showDebugLogs)
-                Debug.Log("[SkeletonWarningTrigger] ⚔️ Starting battle!");
+                Debug.Log($"[SkeletonWarningTrigger] ⚔️ Starting battle: {battleSceneName}");
             
             gameManager.StartBattle();
         }

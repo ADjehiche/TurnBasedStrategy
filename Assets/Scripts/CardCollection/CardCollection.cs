@@ -46,6 +46,7 @@ public class CardCollection : MonoBehaviour
 
     /// <summary>
     /// Load all cards marked as starter cards (canAppearInStartingDecks = true)
+    /// Also includes merge-only cards (rarely) for rewards
     /// </summary>
     private void LoadStarterCardPool()
     {
@@ -72,6 +73,12 @@ public class CardCollection : MonoBehaviour
     public void InitializeStartingCollection()
     {
         ownedCards.Clear();
+
+        // Ensure starter pool is loaded before initializing
+        if (starterPool == null || starterPool.Count == 0)
+        {
+            LoadStarterCardPool();
+        }
 
         // Get starter cards by category
         var attackCards = starterPool.Where(c => c.category == CardCategory.Attack).ToList();
@@ -138,17 +145,37 @@ public class CardCollection : MonoBehaviour
 
     /// <summary>
     /// Get 2 random reward cards from the starter pool for post-battle selection
+    /// 10% chance to include a rare merge-only card if available
     /// </summary>
     public List<Card> GetRandomRewardOptions(int count = 2)
     {
         List<Card> options = new List<Card>();
         List<Card> availablePool = new List<Card>(starterPool);
 
+        // Load all cards including merge-only (for rare rewards)
+        Card[] allCards = Resources.LoadAll<Card>("Cards");
+        var mergeOnlyCards = allCards.Where(c => !c.canAppearInStartingDecks && !c.isStarterCard).ToList();
+
         for (int i = 0; i < count && availablePool.Count > 0; i++)
         {
-            int randomIndex = Random.Range(0, availablePool.Count);
-            options.Add(availablePool[randomIndex]);
-            availablePool.RemoveAt(randomIndex); // Prevent duplicates in the same choice
+            Card selectedCard;
+
+            // 10% chance to offer a merge-only card (if available)
+            if (mergeOnlyCards.Count > 0 && Random.value < 0.10f)
+            {
+                selectedCard = mergeOnlyCards[Random.Range(0, mergeOnlyCards.Count)];
+                mergeOnlyCards.Remove(selectedCard); // Prevent duplicates in same choice
+                Debug.Log($"[CardCollection] Rare merge-only card offered: {selectedCard.cardName}");
+            }
+            else
+            {
+                // Normal starter pool card
+                int randomIndex = Random.Range(0, availablePool.Count);
+                selectedCard = availablePool[randomIndex];
+                availablePool.RemoveAt(randomIndex);
+            }
+
+            options.Add(selectedCard);
         }
 
         return options;
@@ -210,12 +237,25 @@ public class CardCollection : MonoBehaviour
             availableCards.Remove(utilityCard);
         }
 
-        // Step 4: Fill remaining slots with random cards
+        // Step 4: Fill remaining slots - PREFER ATTACK CARDS
         while (hand.Count < handSize && availableCards.Count > 0)
         {
-            int randomIndex = Random.Range(0, availableCards.Count);
-            hand.Add(availableCards[randomIndex]);
-            availableCards.RemoveAt(randomIndex);
+            // Try to add attack cards first (if available)
+            var remainingAttacks = availableCards.Where(c => c.category == CardCategory.Attack).ToList();
+            
+            if (remainingAttacks.Count > 0)
+            {
+                Card attackCard = remainingAttacks[Random.Range(0, remainingAttacks.Count)];
+                hand.Add(attackCard);
+                availableCards.Remove(attackCard);
+            }
+            else
+            {
+                // No more attacks, add any random card
+                int randomIndex = Random.Range(0, availableCards.Count);
+                hand.Add(availableCards[randomIndex]);
+                availableCards.RemoveAt(randomIndex);
+            }
         }
 
         return hand;

@@ -268,6 +268,16 @@ public class PlayerController : MonoBehaviour
     {
         if (other.CompareTag(BATTLE_TRIGGER_TAG))
         {
+            // Check if this trigger has a BattleTrigger component for custom battle scenes
+            BattleTrigger battleTrigger = other.GetComponent<BattleTrigger>();
+            if (battleTrigger != null)
+            {
+                // Let BattleTrigger handle everything (it will call GameManager.StartBattle)
+                // Don't do anything here - BattleTrigger has its own OnTriggerEnter
+                return;
+            }
+            
+            // Fallback: Old system without BattleTrigger component
             // Save battle trigger center for proper respawn position
             Vector3 triggerCenter = other.bounds.center;
             triggerCenter.y = transform.position.y; // Keep player's Y position
@@ -276,6 +286,8 @@ public class PlayerController : MonoBehaviour
             // Also save for GameManager (backward compatibility)
             gameManager.SavePlayerPosition(triggerCenter);
             
+            // Use default battle scene
+            GameSession.SetBattleSceneName("Battle_Template");
             gameManager.StartBattle();
         }
     }

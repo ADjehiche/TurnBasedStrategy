@@ -122,15 +122,29 @@ public class EnemyHealth : MonoBehaviour
         statusDisplay?.SetWeakenPercent(weakenPercent);
     }
 
+    /// <summary>
+    /// Tick status effects at start of turn.
+    /// NEW: Bleed countdown system - takes N damage, then decreases by 1.
+    /// </summary>
     public void TickStatuses()
     {
+        // Bleed countdown: Deal damage equal to current stacks, then decrease
         if (bleedStacks > 0)
         {
-            TakeDamage(1);
-            bleedStacks--;
+            int bleedDamage = bleedStacks; // Take damage equal to current bleed value
+            Debug.Log($"[EnemyHealth] {gameObject.name} takes {bleedDamage} bleed damage (Bleed {bleedStacks})");
+            TakeDamage(bleedDamage);
+            
+            bleedStacks--; // Decrease bleed counter by 1
             statusDisplay?.SetBleedTurns(bleedStacks);
+            
+            if (bleedStacks == 0)
+            {
+                Debug.Log($"[EnemyHealth] {gameObject.name} bleed expired");
+            }
         }
 
+        // Weaken countdown
         if (weakenTurns > 0)
         {
             weakenTurns--;
@@ -138,6 +152,7 @@ public class EnemyHealth : MonoBehaviour
             {
                 weakenPercent = 0;
                 statusDisplay?.SetWeakenPercent(0);
+                Debug.Log($"[EnemyHealth] {gameObject.name} weakness expired");
             }
         }
     }

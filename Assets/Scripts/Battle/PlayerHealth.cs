@@ -230,18 +230,30 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log($"[PlayerHealth] Applied {percent}% weakness for {turns} turn(s)");
     }
 
+    /// <summary>
+    /// Tick status effects at start of player turn.
+    /// NEW: Bleed countdown system - takes N damage, then decreases by 1.
+    /// </summary>
     public void TickStatuses()
     {
-        // Process bleed damage
+        // Bleed countdown: Deal damage equal to current stacks, then decrease
         if (bleedStacks > 0)
         {
-            Debug.Log($"[PlayerHealth] Bleed deals {bleedStacks} damage");
-            TakeDamage(bleedStacks, null);
+            int bleedDamage = bleedStacks; // Take damage equal to current bleed value
+            Debug.Log($"[PlayerHealth] Player takes {bleedDamage} bleed damage (Bleed {bleedStacks})");
+            TakeDamage(bleedDamage, null);
+            
+            bleedStacks--; // Decrease bleed counter by 1
             
             // Update bleed display
             if (statusDisplay != null)
             {
                 statusDisplay.SetBleedTurns(bleedStacks);
+            }
+            
+            if (bleedStacks == 0)
+            {
+                Debug.Log("[PlayerHealth] Player bleed expired");
             }
         }
 

@@ -24,6 +24,30 @@ public class BattleRewardManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        // SAFETY: Create CardCollection if it doesn't exist (for testing from Battle_Template directly)
+        EnsureCardCollectionExists();
+    }
+
+    /// <summary>
+    /// Safety method to create CardCollection if it doesn't exist.
+    /// This allows testing Battle_Template scene directly without going through TitleScene.
+    /// </summary>
+    private void EnsureCardCollectionExists()
+    {
+        if (CardCollection.Instance == null)
+        {
+            Debug.LogWarning("[BattleRewardManager] CardCollection not found! Creating it now...");
+            GameObject collectionObj = new GameObject("CardCollection");
+            collectionObj.AddComponent<CardCollection>();
+            
+            // Initialize with starting cards
+            if (CardCollection.Instance != null && CardCollection.Instance.OwnedCards.Count == 0)
+            {
+                CardCollection.Instance.InitializeStartingCollection();
+                Debug.Log("[BattleRewardManager] CardCollection created and initialized with 15 starting cards");
+            }
+        }
     }
 
     private void OnEnable()
@@ -44,6 +68,14 @@ public class BattleRewardManager : MonoBehaviour
         if (EnemyManager.Instance != null && EnemyManager.Instance.AllEnemiesDefeated())
         {
             Debug.Log("[BattleRewardManager] Battle won! Showing rewards...");
+            
+            // Disable TurnManager to stop the game
+            if (TurnManager.Instance != null)
+            {
+                TurnManager.Instance.enabled = false;
+                Debug.Log("[BattleRewardManager] Disabled TurnManager");
+            }
+            
             StartCoroutine(ShowRewardsAfterDelay());
         }
         else
@@ -67,7 +99,7 @@ public class BattleRewardManager : MonoBehaviour
         // Find CardRewardUI if not assigned
         if (cardRewardUI == null)
         {
-            cardRewardUI = FindObjectOfType<CardRewardUI>();
+            cardRewardUI = FindFirstObjectByType<CardRewardUI>();
         }
 
         if (cardRewardUI != null)
