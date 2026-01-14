@@ -14,7 +14,7 @@ public class GameSettingsManager : MonoBehaviour
     [Header("Accessibility")]
     [Range(0.5f, 2.0f)] public float defaultTextScale = 1.0f;
     [Range(0f, 1f)] public float defaultColorSensitivity = 0f;
-    [Range(0.1f, 10f)] public float defaultMouseSensitivity = 1.5f;
+    [Range(1f, 30f)] public float defaultMouseSensitivity = 1.5f;
 
 
     [Header("Difficulty")]
@@ -62,7 +62,7 @@ public class GameSettingsManager : MonoBehaviour
 
         _mouseSensitivity = Mathf.Clamp(
             PlayerPrefs.GetFloat(K_MouseSensitivity, defaultMouseSensitivity),
-            0.1f, 10f
+            1f, 30f
         );
 
         ApplyAll();
