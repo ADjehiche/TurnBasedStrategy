@@ -17,11 +17,11 @@ MonoBehaviour:
   - {fileID: 1405839017372536016}
   - {fileID: 3677660785092923459}
   - {fileID: 5182500361089993413}
-  m_FixedDuration: 0
+  m_FixedDuration: 3.283333333333333
   m_EditorSettings:
     m_Framerate: 60
     m_ScenePreview: 1
-  m_DurationMode: 0
+  m_DurationMode: 1
   m_MarkerTrack: {fileID: 0}
 --- !u!74 &722885880630586553
 AnimationClip:
@@ -241,7 +241,7 @@ MonoBehaviour:
     m_Start: 0
     m_ClipIn: 0
     m_Asset: {fileID: 6794278755782985066}
-    m_Duration: 3.0166666666666666
+    m_Duration: 3
     m_TimeScale: 1
     m_ParentTrack: {fileID: 1405839017372536016}
     m_EaseInDuration: 0

@@ -118,6 +118,21 @@ public class CompanionFollower : MonoBehaviour
     /// </summary>
     public void StartFollowing()
     {
+        // Auto-find player if not assigned (important for dynamically spawned companions)
+        if (player == null)
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                player = playerObj.transform;
+            }
+            else
+            {
+                Debug.LogError("[CompanionFollower] Cannot start following - Player not found!");
+                return;
+            }
+        }
+        
         isFollowing = true;
         GameSession.CompanionActive = true;
         

@@ -36,6 +36,9 @@ public class LevelTwoReturnManager : MonoBehaviour
         // Restore red companion if it was active
         RestoreRedCompanion();
         
+        // Restore blue companion if it was active
+        RestoreBlueCompanion();
+        
         // Notify objectives system if skeletons were defeated
         if (GameSession.EnemyDefeated || GameSession.CombatWingVictory)
         {
@@ -43,6 +46,9 @@ public class LevelTwoReturnManager : MonoBehaviour
         }
         
         // Play boss door cutscene if returning from flashback with both fragments
+        if (debugMode) 
+            Debug.Log($"[LevelTwoReturnManager] Checking Boss Door: FlashbackPlayed={GameSession.HasPlayedRageFlashback}, CanUnlock={GameSession.CanUnlockBossDoor} (Red={GameSession.HasCollectedRedFragment}, Blue={GameSession.HasCollectedBlueFragment})");
+            
         if (GameSession.HasPlayedRageFlashback && GameSession.CanUnlockBossDoor)
         {
             TriggerBossDoorCutscene();
@@ -52,7 +58,7 @@ public class LevelTwoReturnManager : MonoBehaviour
     /// <summary>
     /// Play boss door cutscene when both fragments collected
     /// </summary>
-    private void TriggerBossDoorCutscene()
+    public void TriggerBossDoorCutscene()
     {
         if (bossDoorCutscene != null)
         {
@@ -228,6 +234,7 @@ public class LevelTwoReturnManager : MonoBehaviour
     
     [Header("Red Companion Restore")]
     [SerializeField] private GameObject redCompanionPrefab;
+    [SerializeField] private GameObject blueCompanionPrefab;
     
     /// <summary>
     /// Restore the red companion if it was active before scene change
@@ -266,5 +273,88 @@ public class LevelTwoReturnManager : MonoBehaviour
         }
         
         if (debugMode) Debug.Log("[LevelTwoReturnManager] 🔴 Red companion restored!");
+    }
+    
+    /// <summary>
+    /// Restore the blue companion if it was active before scene change
+    /// </summary>
+    private void RestoreBlueCompanion()
+    {
+        if (!GameSession.BlueCompanionActive) return;
+        
+        // Strategy: Find the blue fragment that the maze generated and "hijack" it
+        // We move it to the player and set it to follow mode
+        
+        GameObject blueBlob = null;
+        
+        // Find existing blue companion
+        CompanionFollower[] existingCompanions = FindObjectsByType<CompanionFollower>(FindObjectsSortMode.None);
+        foreach (var comp in existingCompanions)
+        {
+            if (comp.gameObject.name.Contains("Blue") || comp.gameObject.name.Contains("Logic"))
+            {
+                blueBlob = comp.gameObject;
+                break;
+            }
+        }
+        
+        // If found (which it should be if maze spawned it), use it
+        if (blueBlob != null)
+        {
+            if (debugMode) Debug.Log($"[LevelTwoReturnManager] 🔵 Found existing blob '{blueBlob.name}', hijacking it for restoration");
+            
+            // 1. Teleport to player
+            Vector3 spawnPos = player != null ? player.position : Vector3.zero;
+            spawnPos += Vector3.right * 2f + Vector3.up * 0.5f;
+            
+            // Use NavMeshAgent warp if attached, otherwise transform
+            UnityEngine.AI.NavMeshAgent agent = blueBlob.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent != null)
+            {
+                agent.Warp(spawnPos);
+            }
+            else
+            {
+                blueBlob.transform.position = spawnPos;
+            }
+            
+            // 2. Start following
+            CompanionFollower follower = blueBlob.GetComponent<CompanionFollower>();
+            if (follower != null)
+            {
+                follower.StartFollowing();
+            }
+            
+            // 3. Disable Interaction Scripts
+            BlueFragmentCollectable collectable = blueBlob.GetComponent<BlueFragmentCollectable>();
+            if (collectable != null) collectable.enabled = false;
+            
+            CompanionInteraction interaction = blueBlob.GetComponent<CompanionInteraction>();
+            if (interaction != null) interaction.enabled = false;
+            
+            // 4. Disable Trigger Collider
+            Collider col = blueBlob.GetComponent<Collider>();
+            if (col != null) col.enabled = false;
+        }
+        else
+        {
+            // Fallback: If for some reason maze didn't spawn it, create from prefab
+            if (debugMode) Debug.LogWarning("[LevelTwoReturnManager] Could not find existing blue blob to restore! Spawning from prefab.");
+            
+            if (blueCompanionPrefab != null)
+            {
+                Vector3 spawnPos = player != null ? player.position : Vector3.zero;
+                spawnPos += Vector3.right * 2f + Vector3.up * 0.5f;
+                GameObject newBlob = Instantiate(blueCompanionPrefab, spawnPos, Quaternion.identity);
+                newBlob.GetComponent<CompanionFollower>()?.StartFollowing();
+                
+                // Disable interactions on new blob too
+                if (newBlob.GetComponent<BlueFragmentCollectable>()) newBlob.GetComponent<BlueFragmentCollectable>().enabled = false;
+                if (newBlob.GetComponent<CompanionInteraction>()) newBlob.GetComponent<CompanionInteraction>().enabled = false;
+                if (newBlob.GetComponent<Collider>()) newBlob.GetComponent<Collider>().enabled = false;
+            }
+        }
+        
+        if (debugMode) Debug.Log("[LevelTwoReturnManager] 🔵 Blue companion restored!");
     }
 }
