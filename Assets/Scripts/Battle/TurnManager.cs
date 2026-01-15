@@ -186,6 +186,13 @@ public class TurnManager : MonoBehaviour
         {
             endTurnButton.interactable = false;
         }
+        
+        // Clear temporary stamina at end of player turn
+        if (PlayerStamina.Instance != null)
+        {
+            PlayerStamina.Instance.ClearTemporaryStamina();
+        }
+        
         // Discard all remaining (unplayed) cards at end of player turn
         if (handManager != null)
             handManager.DiscardAllInHand();

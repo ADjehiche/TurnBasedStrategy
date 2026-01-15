@@ -320,6 +320,15 @@ public class TargetingSystem : MonoBehaviour
                     // Check if this is an AllEnemies card
                     if (card.targetType == TargetType.AllEnemies)
                     {
+                        // Apply player weakness to outgoing damage
+                        int finalDamage = amount;
+                        if (PlayerHealth.Instance != null && PlayerHealth.Instance.weakenPercent > 0)
+                        {
+                            int reduction = Mathf.RoundToInt(amount * (PlayerHealth.Instance.weakenPercent / 100f));
+                            finalDamage = amount - reduction;
+                            Debug.Log($"[TargetingSystem] 💀 Player weakness reduced {amount} → {finalDamage} damage ({PlayerHealth.Instance.weakenPercent}% reduction)");
+                        }
+                        
                         // Deal damage to ALL enemies
                         if (EnemyManager.Instance != null)
                         {
@@ -328,8 +337,8 @@ public class TargetingSystem : MonoBehaviour
                             {
                                 if (enemyHealth != null)
                                 {
-                                    enemyHealth.TakeDamage(amount);
-                                    Debug.Log($"[TargetingSystem] {card.cardName} dealt {amount} damage to {enemyHealth.gameObject.name}.");
+                                    enemyHealth.TakeDamage(finalDamage);
+                                    Debug.Log($"[TargetingSystem] {card.cardName} dealt {finalDamage} damage to {enemyHealth.gameObject.name}.");
                                 }
                             }
                             
@@ -359,8 +368,17 @@ public class TargetingSystem : MonoBehaviour
                             BattleAnimator.Instance.Bump(playerTransform, Vector3.right);
                         }
                         
-                        enemy.TakeDamage(amount);
-                        Debug.Log($"[TargetingSystem] {card.cardName} dealt {amount} damage to enemy.");
+                        // Apply player weakness to outgoing damage
+                        int finalDamage = amount;
+                        if (PlayerHealth.Instance != null && PlayerHealth.Instance.weakenPercent > 0)
+                        {
+                            int reduction = Mathf.RoundToInt(amount * (PlayerHealth.Instance.weakenPercent / 100f));
+                            finalDamage = amount - reduction;
+                            Debug.Log($"[TargetingSystem] 💀 Player weakness reduced {amount} → {finalDamage} damage ({PlayerHealth.Instance.weakenPercent}% reduction)");
+                        }
+                        
+                        enemy.TakeDamage(finalDamage);
+                        Debug.Log($"[TargetingSystem] {card.cardName} dealt {finalDamage} damage to enemy.");
                     }
                     else if (eff.applyToSelf && player != null)
                     {
@@ -414,10 +432,9 @@ public class TargetingSystem : MonoBehaviour
                 {
                     if (PlayerStamina.Instance != null)
                     {
-                        // Allow stamina to go over max limit
-                        PlayerStamina.Instance.currentStamina += eff.amount;
-                        PlayerStamina.InstanceChanged?.Invoke(); // Update UI
-                        Debug.Log($"[TargetingSystem] {card.cardName} gained {eff.amount} stamina. Total: {PlayerStamina.Instance.currentStamina}");
+                        // Add as TEMPORARY stamina (lasts until end of turn)
+                        PlayerStamina.Instance.AddTemporaryStamina(eff.amount);
+                        Debug.Log($"[TargetingSystem] {card.cardName} gained {eff.amount} TEMPORARY stamina (expires this turn). Total: {PlayerStamina.Instance.TotalStamina}");
                     }
                     break;
                 }
