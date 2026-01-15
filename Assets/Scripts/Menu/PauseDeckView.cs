@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEngine;
 using TMPro;
 using CardGame;
+using UnityEngine.UI;
 
 public class PauseDeckView : MonoBehaviour
 {
@@ -67,28 +68,59 @@ public class PauseDeckView : MonoBehaviour
             SpawnCard(g.Key, g.Count());
     }
 
-
     private void SpawnCard(Card card, int count)
     {
-        var go = Instantiate(cardUiPrefab, contentRoot, false);
+        // Grid cell size (must match GridLayoutGroup)
+        float cellW = 180f;
+        float cellH = 252f;
 
-        // Option A: Use CardDisplay directly (recommended for UI prefabs)
+        // 1) Slot = the grid item
+        var slot = new GameObject("CardSlot", typeof(RectTransform), typeof(LayoutElement));
+        var slotRT = slot.GetComponent<RectTransform>();
+        slotRT.SetParent(contentRoot, false);
+        slotRT.localScale = Vector3.one;
+        slotRT.sizeDelta = new Vector2(cellW, cellH);
+
+        var le = slot.GetComponent<LayoutElement>();
+        le.preferredWidth = cellW;
+        le.preferredHeight = cellH;
+
+        // 2) Card inside slot
+        var go = Instantiate(cardUiPrefab, slotRT, false);
+
+        // CRITICAL: neutralize prefab’s battle scaling
+        go.transform.localScale = Vector3.one;
+
+        // If the card prefab has its own Canvas, it will ignore parent scaling/layout → disable it in pause UI
+        var extraCanvas = go.GetComponentInChildren<Canvas>(true);
+        if (extraCanvas != null) extraCanvas.enabled = false;
+
+        var rt = go.GetComponent<RectTransform>();
+        if (rt != null)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(0f, -10f); // small down nudge
+
+            // Force UI to update so bounds are correct
+            Canvas.ForceUpdateCanvases();
+
+            // Fit based on actual rendered bounds (works even if prefab sizeDelta is weird)
+            var bounds = RectTransformUtility.CalculateRelativeRectTransformBounds(slotRT, rt);
+            float sx = cellW / Mathf.Max(1f, bounds.size.x);
+            float sy = cellH / Mathf.Max(1f, bounds.size.y);
+            float s = Mathf.Min(sx, sy);
+
+            rt.localScale = Vector3.one * s;
+        }
+
+        // Bind data
         var display = go.GetComponent<CardDisplay>();
-        if (display != null)
-        {
-            display.SetCard(card); // sets + Refresh :contentReference[oaicite:5]{index=5}
-        }
-        else
-        {
-            // Option B: If your prefab uses CardInstance to drive CardDisplay
-            var instance = go.GetComponent<CardInstance>();
-            if (instance != null) instance.SetData(card); // keeps CardDisplay synced :contentReference[oaicite:6]{index=6}
-        }
+        if (display != null) display.SetCard(card);
 
-        // Optional: show stack count if you added a TMP child named "CountText"
         var countText = go.GetComponentsInChildren<TMP_Text>(true)
-                          .FirstOrDefault(t => t.name == "CountText");
-        if (countText != null)
-            countText.text = count > 1 ? $"x{count}" : "";
+            .FirstOrDefault(t => t.name == "CountText");
+        if (countText != null) countText.text = count > 1 ? $"x{count}" : "";
     }
+
 }
