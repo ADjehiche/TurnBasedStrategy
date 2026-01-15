@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Playables;
 using System.Collections;
 
 /// <summary>
@@ -48,6 +49,9 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
     [SerializeField] private string interactionPrompt = "[System] Press E to interact";
     [SerializeField] private float promptDuration = 5f;
     
+    [Header("Boss Door Cutscene")]
+    [Tooltip("Timeline cutscene to play when both fragments collected")]
+    [SerializeField] private PlayableDirector bossDoorCutscene;
     public UnityEngine.Events.UnityAction<IInteractable> OnInteractionComplete { get; set; }
     
     void Start()
@@ -268,17 +272,8 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
         {
             if (debugMode) Debug.Log("[RedFragmentCollectable] Both fragments collected - boss door can now unlock!");
             
-            // Show boss door unlock message
-            if (CaptionManager.Instance != null)
-            {
-                CaptionManager.Instance.ShowSystemMessage("[Boss Door Unsealed]", 3f);
-            }
-            
-            // Play special unlock sound
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.Play("DoorUnlock");
-            }
+            // NOTE: Cutscene will play AFTER flashback returns (triggered by LevelTwoReturnManager)
+            // Just show a brief message here, cutscene handles the rest
         }
         else
         {

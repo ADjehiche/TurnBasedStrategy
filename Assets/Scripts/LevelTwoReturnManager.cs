@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Playables;
 
 /// <summary>
 /// Handles player positioning and state restoration when returning to Level Two
@@ -13,6 +14,10 @@ public class LevelTwoReturnManager : MonoBehaviour
     [Header("Battle Triggers to Disable")]
     [Tooltip("Battle triggers that should be disabled after enemies are defeated")]
     [SerializeField] private GameObject[] combatWingTriggers;
+    
+    [Header("Boss Door Cutscene")]
+    [Tooltip("Timeline cutscene to play when returning after both fragments collected")]
+    [SerializeField] private PlayableDirector bossDoorCutscene;
     
     [Header("Debug")]
     [SerializeField] private bool debugMode = true;
@@ -36,6 +41,32 @@ public class LevelTwoReturnManager : MonoBehaviour
         {
             NotifySkeletonsDefeated();
         }
+        
+        // Play boss door cutscene if returning from flashback with both fragments
+        if (GameSession.HasPlayedRageFlashback && GameSession.CanUnlockBossDoor)
+        {
+            TriggerBossDoorCutscene();
+        }
+    }
+    
+    /// <summary>
+    /// Play boss door cutscene when both fragments collected
+    /// </summary>
+    private void TriggerBossDoorCutscene()
+    {
+        if (bossDoorCutscene != null)
+        {
+            // Small delay to let scene initialize
+            StartCoroutine(PlayCutsceneDelayed());
+        }
+    }
+    
+    private System.Collections.IEnumerator PlayCutsceneDelayed()
+    {
+        yield return new WaitForSeconds(1f);
+        
+        if (debugMode) Debug.Log("[LevelTwoReturnManager] 🏰 Playing boss door cutscene!");
+        bossDoorCutscene.Play();
     }
     
     /// <summary>
