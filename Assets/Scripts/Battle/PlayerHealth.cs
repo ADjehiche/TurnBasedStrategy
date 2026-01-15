@@ -86,13 +86,8 @@ public class PlayerHealth : MonoBehaviour
             PlayerStatusEffects.Instance.TryReflectDamage(amount, attacker);
         }
 
-        // Apply weakness reduction if active
-        if (weakenPercent > 0)
-        {
-            int reduction = Mathf.RoundToInt(amount * (weakenPercent / 100f));
-            amount -= reduction;
-            Debug.Log($"[PlayerHealth] Weakness reduced damage by {reduction} ({weakenPercent}%). Final damage: {amount}");
-        }
+        // NOTE: Weakness is applied to OUTGOING damage (when player attacks), not incoming damage
+        // Enemy weakness reduces enemy's outgoing damage in EnemyManager/BossAI
 
         int remaining = amount;
 
@@ -212,22 +207,36 @@ public class PlayerHealth : MonoBehaviour
     public void AddBleed(int amount)
     {
         bleedStacks += amount;
+        
+        Debug.Log($"[PlayerHealth] 🩸 PLAYER BLEED ADDED! Amount: {amount}, Total stacks: {bleedStacks}");
+        
         if (statusDisplay != null)
         {
+            Debug.Log($"[PlayerHealth] ✅ Calling SetBleedTurns({bleedStacks}) on {statusDisplay.gameObject.name}");
             statusDisplay.SetBleedTurns(bleedStacks);
         }
-        Debug.Log($"[PlayerHealth] Added {amount} bleed stack(s). Total: {bleedStacks}");
+        else
+        {
+            Debug.LogWarning($"[PlayerHealth] ⚠️ Status display is NULL! Bleed not shown in UI.");
+        }
     }
 
     public void AddWeaken(int percent, int turns)
     {
         weakenPercent = percent;
         weakenTurns = turns;
+        
+        Debug.Log($"[PlayerHealth] 💀 PLAYER WEAKNESS ADDED! Percent: {percent}%, Turns: {turns}");
+        
         if (statusDisplay != null)
         {
+            Debug.Log($"[PlayerHealth] ✅ Calling SetWeakenPercent({percent}) on {statusDisplay.gameObject.name}");
             statusDisplay.SetWeakenPercent(weakenPercent);
         }
-        Debug.Log($"[PlayerHealth] Applied {percent}% weakness for {turns} turn(s)");
+        else
+        {
+            Debug.LogWarning($"[PlayerHealth] ⚠️ Status display is NULL! Weakness not shown in UI.");
+        }
     }
 
     /// <summary>
