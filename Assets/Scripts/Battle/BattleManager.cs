@@ -58,6 +58,13 @@ public class BattleManager : MonoBehaviour
             Debug.Log("[BattleManager] Combat Wing victory - Red Fragment will spawn on return");
         }
         
+        // Check if this was the Boss battle (Battle_Boss from LevelTwo)
+        if (GameSession.BattleSceneName == "Battle_Boss" && GameSession.ReturnSceneName == "LevelTwo")
+        {
+            GameSession.BossDefeated = true;
+            Debug.Log("[BattleManager] Boss defeated! Warden dialogue and purple fragment will spawn on return");
+        }
+        
         // The skeleton defeat objective will be triggered when level loads
         Debug.Log($"[BattleManager] Returning to: {GameSession.ReturnSceneName}");
         

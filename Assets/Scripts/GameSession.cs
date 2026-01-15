@@ -26,8 +26,9 @@ public static class GameSession
     public static bool BothSymbolsActivated => Symbol1Activated && Symbol2Activated;
     
     // Companion state
-    public static bool CompanionActive;      // Track if companion is following player (yellow)
-    public static bool RedCompanionActive;   // Track if red companion is following player
+    public static bool CompanionActive;       // Track if companion is following player (yellow)
+    public static bool RedCompanionActive;    // Track if red companion is following player
+    public static bool BlueCompanionActive;   // Track if blue companion is following player
     
     // Objective system persistence (so objectives don't reset after battle)
     public static bool ObjectivesStarted;       // Track if objectives have been started
@@ -77,6 +78,11 @@ public static class GameSession
     // Flashback system (for returning after flashback scene)
     public static string FlashbackReturnScene;
     public static bool HasPlayedRageFlashback; // True after rage flashback completed - companion should follow
+    
+    // Boss battle state
+    public static bool BossDefeated;           // True after boss battle won
+    public static bool WardensWarningShown;    // True after Warden's pre-death dialogue
+    public static bool BossSpawned;            // True after boss spawn animation played
 
     public static void SetReturnPosition(Vector3 pos)
     {
@@ -104,6 +110,7 @@ public static class GameSession
         Debug.Log($"[GameSession] ✅ Checkpoint saved at {pos}, rotation {rot.eulerAngles}");
     }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     public static void Reset()
     {
         EnemyDefeated = false;
@@ -119,6 +126,8 @@ public static class GameSession
         Symbol1Activated = false;
         Symbol2Activated = false;
         CompanionActive = false;
+        RedCompanionActive = false;
+        BlueCompanionActive = false;
         
         // Reset caption states
         HasShownStartInstruction = false;

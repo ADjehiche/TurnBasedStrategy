@@ -38,9 +38,13 @@ public class CompanionFollower : MonoBehaviour
     [SerializeField] private bool showDebugLogs = false;
     
     private float bobTimeOffset;
+    private Vector3 originalOffset;
     
     void Start()
     {
+        // Cache original offset
+        originalOffset = followOffset;
+        
         // Auto-find player if not assigned
         if (player == null)
         {
@@ -118,6 +122,21 @@ public class CompanionFollower : MonoBehaviour
     /// </summary>
     public void StartFollowing()
     {
+        // Auto-find player if not assigned (important for dynamically spawned companions)
+        if (player == null)
+        {
+            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+            if (playerObj != null)
+            {
+                player = playerObj.transform;
+            }
+            else
+            {
+                Debug.LogError("[CompanionFollower] Cannot start following - Player not found!");
+                return;
+            }
+        }
+        
         isFollowing = true;
         GameSession.CompanionActive = true;
         
@@ -150,5 +169,21 @@ public class CompanionFollower : MonoBehaviour
     public void SetFollowing(bool follow)
     {
         isFollowing = follow;
+    }
+    
+    /// <summary>
+    /// Set a custom follow offset (e.g. for guidance)
+    /// </summary>
+    public void SetFollowOffset(Vector3 newOffset)
+    {
+        followOffset = newOffset;
+    }
+    
+    /// <summary>
+    /// Reset the follow offset to original value
+    /// </summary>
+    public void ResetFollowOffset()
+    {
+        followOffset = originalOffset;
     }
 }

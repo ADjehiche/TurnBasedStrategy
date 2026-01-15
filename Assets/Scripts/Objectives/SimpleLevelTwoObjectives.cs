@@ -18,19 +18,23 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
     private string[] objectives = {
         "Explore the Archive",
         "Explore Further Inside", 
-        "Defeat the Skeletons",    // NEW: Combat Wing battle
+        "Defeat the Skeletons",    // Combat Wing battle
         "Explore Further Inside",  // Return to exploration after battle
         "Explore the Maze",
-        "Return to the Archive"
+        "Return to the Archive",
+        "Defeat the Warden",       // NEW: Boss battle
+        "Make Your Choice"         // NEW: Final choice (take fragment or leave)
     };
     
     // Completion flags
     private bool hasExploredArchive = false;
     private bool hasExploredTunnel = false;
-    private bool hasEnteredCombatWing = false;  // NEW
-    private bool hasDefeatedSkeletons = false;  // NEW
+    private bool hasEnteredCombatWing = false;
+    private bool hasDefeatedSkeletons = false;
     private bool hasExploredMaze = false;
     private bool hasReturnedToArchive = false;
+    private bool hasEnteredBossRoom = false;     // NEW
+    private bool hasDefeatedWarden = false;      // NEW
     
     private void Awake()
     {
@@ -303,11 +307,44 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
             Debug.Log("[SimpleLevelTwoObjectives] Conditions met - completing 'Return to the Archive' objective");
             hasReturnedToArchive = true;
             SaveObjectiveState(); // Save progress
-            CompleteCurrentObjective(); // Complete "Return to the Archive"
+            CompleteCurrentObjective(); // Complete "Return to the Archive", show "Defeat the Warden"
         }
         else
         {
             Debug.LogWarning($"[SimpleLevelTwoObjectives] Returned to archive but conditions not met - hasReturnedToArchive: {hasReturnedToArchive}, currentObjectiveIndex: {currentObjectiveIndex} (expected 5)");
+        }
+    }
+    
+    /// <summary>
+    /// Call this when player enters the boss room (triggers boss fight)
+    /// </summary>
+    public void OnBossRoomEntered()
+    {
+        Debug.Log($"[SimpleLevelTwoObjectives] OnBossRoomEntered called - hasEnteredBossRoom: {hasEnteredBossRoom}, currentObjectiveIndex: {currentObjectiveIndex}");
+        
+        // Boss room is objective index 6
+        if (!hasEnteredBossRoom && currentObjectiveIndex == 6)
+        {
+            Debug.Log("[SimpleLevelTwoObjectives] Entering boss room - 'Defeat the Warden' objective active");
+            hasEnteredBossRoom = true;
+            SaveObjectiveState();
+            // Don't complete yet - objective stays as "Defeat the Warden" during battle
+        }
+    }
+    
+    /// <summary>
+    /// Call this when the Warden is defeated
+    /// </summary>
+    public void OnWardenDefeated()
+    {
+        Debug.Log($"[SimpleLevelTwoObjectives] OnWardenDefeated called - hasDefeatedWarden: {hasDefeatedWarden}, currentObjectiveIndex: {currentObjectiveIndex}");
+        
+        if (!hasDefeatedWarden && currentObjectiveIndex == 6)
+        {
+            Debug.Log("[SimpleLevelTwoObjectives] Warden defeated - showing 'Make Your Choice' objective");
+            hasDefeatedWarden = true;
+            SaveObjectiveState();
+            CompleteCurrentObjective(); // Complete "Defeat the Warden", show "Make Your Choice"
         }
     }
     

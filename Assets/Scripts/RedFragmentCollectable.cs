@@ -185,14 +185,29 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
         }
         else if (FlashbackManager.Instance != null)
         {
-            FlashbackManager.Instance.StartOverlayFlashback(flashbackDialogue, dialogueLineDuration, null);
+            // Use overlay flashback (no scene change)
+            FlashbackManager.Instance.StartOverlayFlashback(flashbackDialogue, dialogueLineDuration, () => {
+                // When overlay finishes, check for boss door unlock
+                if (GameSession.CanUnlockBossDoor)
+                {
+                    LevelTwoReturnManager returnManager = FindFirstObjectByType<LevelTwoReturnManager>();
+                    if (returnManager != null) returnManager.TriggerBossDoorCutscene();
+                }
+            });
         }
         else
         {
-            // No flashback manager - just unlock
+            // No flashback manager - just unlock movement
             if (PlayerMovementLock.Instance != null)
             {
                 PlayerMovementLock.Instance.UnlockMovement("No flashback");
+            }
+            
+            // Check for boss door unlock immediately
+            if (GameSession.CanUnlockBossDoor)
+            {
+                LevelTwoReturnManager returnManager = FindFirstObjectByType<LevelTwoReturnManager>();
+                if (returnManager != null) returnManager.TriggerBossDoorCutscene();
             }
         }
     }

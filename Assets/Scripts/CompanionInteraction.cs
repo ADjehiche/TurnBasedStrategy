@@ -220,6 +220,48 @@ public class CompanionInteraction : MonoBehaviour
                 
             companionFollower.StartFollowing();
             
+            // Set specific companion flags based on colour
+            if (blobColour == "Blue" || blobColour == "Logic")
+            {
+                GameSession.BlueCompanionActive = true;
+                GameSession.HasCollectedBlueFragment = true;
+                Debug.Log($"[CompanionInteraction] 🔵 Set Blue flags: Active={GameSession.BlueCompanionActive}, Collected={GameSession.HasCollectedBlueFragment}");
+                
+                // Also notify guidance controller if it exists (for maze timer stop)
+                MazeGuidanceController guidance = FindFirstObjectByType<MazeGuidanceController>();
+                if (guidance != null)
+                {
+                    guidance.OnBlueFragmentCollected();
+                }
+
+                // Check if this completes the collection for the Boss Door
+                if (GameSession.CanUnlockBossDoor)
+                {
+                    Debug.Log("[CompanionInteraction] 🗝️ Both fragments collected! Attempting to trigger boss door cutscene...");
+                    LevelTwoReturnManager returnManager = FindFirstObjectByType<LevelTwoReturnManager>();
+                    if (returnManager != null)
+                    {
+                        returnManager.TriggerBossDoorCutscene();
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[CompanionInteraction] Could not find LevelTwoReturnManager to trigger cutscene");
+                    }
+                }
+            }
+            else if (blobColour == "Red" || blobColour == "Rage")
+            {
+                GameSession.RedCompanionActive = true;
+                Debug.Log($"[CompanionInteraction] 🔴 Set Red flags: Active={GameSession.RedCompanionActive}");
+                
+                // Red could also complete the set (if Blue collected first) - though rare given the flow
+                if (GameSession.CanUnlockBossDoor)
+                {
+                    LevelTwoReturnManager returnManager = FindFirstObjectByType<LevelTwoReturnManager>();
+                    if (returnManager != null) returnManager.TriggerBossDoorCutscene();
+                }
+            }
+            
             if (showDebugLogs)
                 Debug.Log("[CompanionInteraction] ✅ Fragment activated and following!");
         }

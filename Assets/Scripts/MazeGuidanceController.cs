@@ -23,7 +23,7 @@ public class MazeGuidanceController : MonoBehaviour
     
     [Header("Timer Settings")]
     [SerializeField] private float helpTimerDuration = 600f; // 10 minutes in seconds
-    [SerializeField] private bool debugMode = false;
+    [SerializeField] private bool debugMode = true; // Enabled for debugging
     
     [Header("Guidance Settings")]
     [SerializeField] private float guidanceSpeed = 8f; // Speed when guiding player
@@ -308,12 +308,12 @@ public class MazeGuidanceController : MonoBehaviour
         
         isGuidingToBlue = true;
         
-        // Stop normal following behavior
-        yellowFragment.SetFollowing(false);
+        // Keep following active!
+        yellowFragment.SetFollowing(true);
         
         if (debugMode)
         {
-            Debug.Log("[MazeGuidanceController] Starting guidance to blue fragment");
+            Debug.Log("[MazeGuidanceController] Starting guidance to blue fragment (Offset Hijack Mode)");
         }
         
         // Start guidance coroutine
@@ -327,11 +327,17 @@ public class MazeGuidanceController : MonoBehaviour
     /// <summary>
     /// Called when blue fragment is found and collected
     /// </summary>
-    public void OnBlueFragmentCollected()
+    public void OnBlueFragmentCollected(CompanionFollower follower = null)
     {
         if (debugMode)
         {
             Debug.Log("[MazeGuidanceController] Blue fragment collected");
+        }
+        
+        // Assign dynamic follower if provided
+        if (follower != null)
+        {
+            blueFragmentFollower = follower;
         }
         
         blueFragmentFound = true;
@@ -355,12 +361,11 @@ public class MazeGuidanceController : MonoBehaviour
         
         yield return captionController.ShowDialogue("Blue Fragment", "Thank you for freeing me from this maze!", 3f);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Player", "We should get out of here. Can you guide us back?", 3f);
+        yield return captionController.ShowDialogue("Player", "We should get out of here.", 3f);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Blue Fragment", "Of course! I know these paths well. Follow me!", 3f);
+        yield return captionController.ShowDialogue("Blue Fragment", "Best to hold the left wall!", 3f);
         
-        // Start guidance back to entrance
-        StartGuidanceToMazeEntrance();
+        // Guidance removed per user request - fragment just follows normally
     }
     
     /// <summary>
@@ -376,12 +381,12 @@ public class MazeGuidanceController : MonoBehaviour
         
         isGuidingToEntrance = true;
         
-        // Stop normal following behavior for blue fragment
-        blueFragmentFollower.SetFollowing(false);
+        // Keep following active!
+        blueFragmentFollower.SetFollowing(true);
         
         if (debugMode)
         {
-            Debug.Log("[MazeGuidanceController] Starting guidance to maze entrance");
+            Debug.Log("[MazeGuidanceController] Starting guidance to maze entrance (Offset Hijack Mode)");
         }
         
         // Start guidance coroutine
@@ -393,47 +398,44 @@ public class MazeGuidanceController : MonoBehaviour
     }
     
     /// <summary>
-    /// Generic guidance coroutine
+    /// Generic guidance coroutine using Offset Hijacking
     /// </summary>
     private IEnumerator GuideToTarget(Transform target, System.Action onReached)
     {
         CompanionFollower activeGuide = isGuidingToBlue ? yellowFragment : blueFragmentFollower;
         
-        if (activeGuide == null || target == null)
-        {
-            yield break;
-        }
+        if (activeGuide == null || target == null) yield break;
         
-        // Visual indicator that fragment is guiding
-        // TODO: Add glow effect or other visual indicator
+        if (debugMode)
+            Debug.Log($"[MazeGuidanceController] 🏃 Starting GuideToTarget (Offset Hijack). Guide: {activeGuide.name}, Target: {target.name}");
         
-        while (Vector3.Distance(player.position, target.position) > guidanceStopDistance)
+        // Continue until close to target
+        while (player != null && Vector3.Distance(player.position, target.position) > guidanceStopDistance)
         {
-            // Move guide towards target
-            Vector3 targetPosition = Vector3.MoveTowards(
-                activeGuide.transform.position,
-                target.position,
-                guidanceSpeed * Time.deltaTime
-            );
+            // Calculate direction from player to target
+            Vector3 playerToTargetVals = (target.position - player.position).normalized;
             
-            // Keep guide between player and target, but closer to target
-            Vector3 playerToTarget = (target.position - player.position).normalized;
-            Vector3 idealPosition = player.position + playerToTarget * 3f; // 3 units ahead of player
+            // We want the companion to be 5 units in that direction
+            // CompanionFollower adds offset RELATIVE to player rotation/transform
+            // So we need: LocalOffset = Player.InverseTransformDirection(WorldDir * 5f)
             
-            // Blend between direct path to target and staying near player
-            targetPosition = Vector3.Lerp(targetPosition, idealPosition, 0.3f);
+            Vector3 worldOffset = playerToTargetVals * 5f;
+            Vector3 neededLocalOffset = player.InverseTransformDirection(worldOffset);
             
-            activeGuide.transform.position = targetPosition;
+            // Hijack the offset
+            activeGuide.SetFollowOffset(neededLocalOffset);
             
-            // Make guide face the target
-            Vector3 lookDirection = (target.position - activeGuide.transform.position).normalized;
-            if (lookDirection != Vector3.zero)
-            {
-                activeGuide.transform.rotation = Quaternion.LookRotation(lookDirection);
-            }
+            // LOG movement once per second
+            if (debugMode && Time.frameCount % 60 == 0)
+                Debug.Log($"[MazeGuidanceController] Hijacking Offset. Dist: {Vector3.Distance(player.position, target.position):F1}. Set Local Offset: {neededLocalOffset}");
             
             yield return null;
         }
+        
+        if (debugMode) Debug.Log("[MazeGuidanceController] ✅ Reached target distance!");
+        
+        // Reset offset to original
+        activeGuide.ResetFollowOffset();
         
         // Reached target
         onReached?.Invoke();
