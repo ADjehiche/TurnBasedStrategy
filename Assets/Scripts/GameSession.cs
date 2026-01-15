@@ -109,6 +109,23 @@ public static class GameSession
         CheckpointRotation = rot;
         Debug.Log($"[GameSession] ✅ Checkpoint saved at {pos}, rotation {rot.eulerAngles}");
     }
+    
+    /// <summary>
+    /// Clear all position/checkpoint data when changing major levels
+    /// </summary>
+    public static void ClearPositionalFlags()
+    {
+        HasReturnPosition = false;
+        ReturnPosition = Vector3.zero;
+        BattleTriggerCenter = Vector3.zero;
+        
+        HasCheckpoint = false;
+        CheckpointPosition = Vector3.zero;
+        CheckpointRotation = Quaternion.identity;
+        IsRespawning = false;
+        
+        Debug.Log("[GameSession] 🧹 Positional flags cleared for new level.");
+    }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     public static void Reset()

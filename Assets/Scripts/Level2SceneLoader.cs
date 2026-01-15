@@ -39,7 +39,10 @@ public class Level2SceneLoader : MonoBehaviour
             yield return new WaitForSeconds((float)fadeTimeline.duration);
         }
 
-        // 2. Load the next level
+        // 2. Clear previous level state (checkpoints, return positions)
+        GameSession.ClearPositionalFlags();
+        
+        // 3. Load the next level
         SceneManager.LoadScene(nextLevelName);
     }
 }
