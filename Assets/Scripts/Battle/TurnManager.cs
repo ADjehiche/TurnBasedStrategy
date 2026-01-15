@@ -207,13 +207,15 @@ public class TurnManager : MonoBehaviour
         // NEW: Use CardCollection's rule-based drawing if available
         if (CardCollection.Instance != null)
         {
-            // Check if draw pile is empty - reshuffle discard pile
-            if (deckManager.DrawPile.Count == 0 && deckManager.DiscardPile.Count > 0)
+            // CRITICAL: Reshuffle if draw pile is low (not just empty)
+            // This prevents ending up with only 1-2 cards in the last hand
+            if (deckManager.DrawPile.Count < cardsPerTurn && deckManager.DiscardPile.Count > 0)
             {
-                Debug.Log("[TurnManager] Draw pile empty - shuffling discard pile back");
+                Debug.Log($"[TurnManager] ⚠️ Draw pile low ({deckManager.DrawPile.Count} cards, need {cardsPerTurn}). Reshuffling discard pile.");
                 deckManager.DrawPile.AddRange(deckManager.DiscardPile);
                 deckManager.DiscardPile.Clear();
                 DeckManager.Shuffle(deckManager.DrawPile);
+                Debug.Log($"[TurnManager] ✅ Reshuffled. Draw pile now has {deckManager.DrawPile.Count} cards.");
             }
 
             var hand = CardCollection.Instance.DrawHandWithRules(deckManager.DrawPile, cardsPerTurn);
