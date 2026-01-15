@@ -498,8 +498,16 @@ public class TargetingSystem : MonoBehaviour
 
                 case EffectType.RemoveDebuffs:
                 {
-                    // Remove player debuffs (if you add debuff tracking later)
-                    Debug.Log($"[TargetingSystem] {card.cardName} removed debuffs.");
+                    // Remove player debuffs (bleed, weakness, etc.)
+                    if (PlayerHealth.Instance != null)
+                    {
+                        PlayerHealth.Instance.ClearDebuffs();
+                        Debug.Log($"[TargetingSystem] {card.cardName} cleared all debuffs from player.");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[TargetingSystem] {card.cardName} tried to clear debuffs but PlayerHealth.Instance is null.");
+                    }
                     break;
                 }
 

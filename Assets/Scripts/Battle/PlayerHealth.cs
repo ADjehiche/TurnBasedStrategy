@@ -221,6 +221,25 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
+    public void ClearDebuffs()
+    {
+        int clearedBleed = bleedStacks;
+        int clearedWeaken = weakenPercent;
+        
+        bleedStacks = 0;
+        weakenPercent = 0;
+        weakenTurns = 0;
+        
+        Debug.Log($"[PlayerHealth] ✨ DEBUFFS CLEARED! Removed {clearedBleed} bleed stacks and {clearedWeaken}% weakness");
+        
+        if (statusDisplay != null)
+        {
+            statusDisplay.SetBleedTurns(0);
+            statusDisplay.SetWeakenPercent(0);
+            Debug.Log($"[PlayerHealth] ✅ Status display updated after clearing debuffs");
+        }
+    }
+
     public void AddWeaken(int percent, int turns)
     {
         weakenPercent = percent;

@@ -26,6 +26,7 @@ public class CardRewardUI : MonoBehaviour
     [Header("Card Display")]
     private List<GameObject> currentCardDisplays = new List<GameObject>();
     private List<Card> currentOptions = new List<Card>();
+    private bool isExplorationReward = false; // Track if this is exploration or battle reward
 
     private void Awake()
     {
@@ -98,10 +99,67 @@ public class CardRewardUI : MonoBehaviour
     }
 
     /// <summary>
+    /// Update card scale - can be called from inspector or code
+    /// </summary>
+    public void UpdateCardScale(float newScale)
+    {
+        cardScale = newScale;
+        Debug.Log($"[CardRewardUI] Card scale updated to: {cardScale}");
+        
+        // Update existing displayed cards if any
+        foreach (var cardObj in currentCardDisplays)
+        {
+            if (cardObj != null)
+            {
+                cardObj.transform.localScale = Vector3.one * cardScale;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Update card spacing - can be called from inspector or code
+    /// </summary>
+    public void UpdateCardSpacing(float newSpacing)
+    {
+        cardSpacing = newSpacing;
+        Debug.Log($"[CardRewardUI] Card spacing updated to: {cardSpacing}");
+        
+        var layoutGroup = cardOptionsContainer?.GetComponent<HorizontalLayoutGroup>();
+        if (layoutGroup != null)
+        {
+            layoutGroup.spacing = cardSpacing;
+        }
+    }
+
+    // Called when inspector values change in editor
+    private void OnValidate()
+    {
+        // Update layout if in editor mode
+        if (!Application.isPlaying) return;
+        
+        var layoutGroup = cardOptionsContainer?.GetComponent<HorizontalLayoutGroup>();
+        if (layoutGroup != null)
+        {
+            layoutGroup.spacing = cardSpacing;
+        }
+        
+        // Update scale on existing cards
+        foreach (var cardObj in currentCardDisplays)
+        {
+            if (cardObj != null)
+            {
+                cardObj.transform.localScale = Vector3.one * cardScale;
+            }
+        }
+    }
+
+    /// <summary>
     /// Show the reward selection UI with 2 random card options
     /// </summary>
     public void ShowRewardSelection()
     {
+        isExplorationReward = false; // This is a battle reward
+        
         if (CardCollection.Instance == null)
         {
             Debug.LogError("[CardRewardUI] CardCollection.Instance is null!");
@@ -235,6 +293,15 @@ public class CardRewardUI : MonoBehaviour
             }
         }
 
+        // CRITICAL: Mark as reward card to disable click-to-play while keeping hover
+        // Reward cards should only use Button component for selection, not battle card interactions
+        var cardMovement = cardObj.GetComponent<CardMovement>();
+        if (cardMovement != null)
+        {
+            cardMovement.isRewardCard = true; // Disable clicking but keep hover active
+            Debug.Log($"[CardRewardUI] Marked {card.cardName} as reward card (hover enabled, click disabled)");
+        }
+
         // Now enable the card (OnEnable will see the data)
         cardObj.SetActive(true);
         Debug.Log($"[CardRewardUI] Card GameObject enabled for {card.cardName}");
@@ -270,11 +337,29 @@ public class CardRewardUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Called when player selects a reward card
+    /// Called when player selects a reward card (routes to battle or exploration flow)
     /// </summary>
     private void OnCardSelected(Card selectedCard)
     {
         Debug.Log($"[CardRewardUI] Player selected: {selectedCard.cardName}");
+
+        // Route to appropriate flow based on context
+        if (isExplorationReward)
+        {
+            OnExplorationCardSelected(selectedCard);
+        }
+        else
+        {
+            OnBattleCardSelected(selectedCard);
+        }
+    }
+
+    /// <summary>
+    /// Handle battle reward selection (original flow)
+    /// </summary>
+    private void OnBattleCardSelected(Card selectedCard)
+    {
+        Debug.Log($"[CardRewardUI] Battle reward selected: {selectedCard.cardName}");
 
         // Add card to collection
         if (CardCollection.Instance != null)
@@ -299,6 +384,127 @@ public class CardRewardUI : MonoBehaviour
         
         // Return to exploration scene
         ReturnToExploration();
+    }
+
+    /// <summary>
+    /// Show reward selection for exploration (chests, etc.) with ONLY starter cards
+    /// Similar to ShowRewardSelection but doesn't return to battle scene
+    /// </summary>
+    public void ShowExplorationReward(int numberOfOptions = 2)
+    {
+        isExplorationReward = true; // This is an exploration reward
+
+        if (CardCollection.Instance == null)
+        {
+            Debug.LogError("[CardRewardUI] CardCollection.Instance is null!");
+            return;
+        }
+
+        if (cardOptionsContainer == null)
+        {
+            Debug.LogError("[CardRewardUI] cardOptionsContainer is not assigned in inspector!");
+            return;
+        }
+
+        if (cardPrefab == null)
+        {
+            Debug.LogError("[CardRewardUI] cardPrefab is not assigned in inspector!");
+            return;
+        }
+
+        Debug.Log("[CardRewardUI] Starting exploration reward selection (starter cards only)...");
+
+        // Get random STARTER cards only (no rare/advanced cards)
+        currentOptions = CardCollection.Instance.GetRandomStarterCards(numberOfOptions);
+
+        if (currentOptions.Count < numberOfOptions)
+        {
+            Debug.LogWarning($"[CardRewardUI] Not enough starter cards! Got {currentOptions.Count} instead of {numberOfOptions}");
+            // Continue anyway with what we have
+        }
+
+        Debug.Log($"[CardRewardUI] Got {currentOptions.Count} starter card options: {string.Join(", ", currentOptions.ConvertAll(c => c.cardName))}");
+
+        // Clear previous card displays
+        foreach (var cardDisplay in currentCardDisplays)
+        {
+            if (cardDisplay != null)
+            {
+                Destroy(cardDisplay);
+            }
+        }
+        currentCardDisplays.Clear();
+
+        // No need to hide hand in exploration (player doesn't have cards in hand during exploration)
+
+        // Create card option displays
+        try
+        {
+            foreach (var card in currentOptions)
+            {
+                GameObject cardDisplay = CreateCardOption(card);
+                if (cardDisplay != null)
+                {
+                    currentCardDisplays.Add(cardDisplay);
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[CardRewardUI] Exception while creating card displays: {ex.Message}\n{ex.StackTrace}");
+        }
+
+        Debug.Log($"[CardRewardUI] Created {currentCardDisplays.Count} card displays for exploration reward");
+
+        // Show the panel
+        if (rewardPanel != null)
+        {
+            rewardPanel.SetActive(true);
+        }
+
+        if (titleText != null)
+        {
+            titleText.text = "Choose Your Card";
+        }
+
+        Debug.Log("[CardRewardUI] Exploration reward panel shown");
+    }
+
+    /// <summary>
+    /// Handle card selection for exploration rewards (doesn't return to battle scene)
+    /// </summary>
+    private void OnExplorationCardSelected(Card selectedCard)
+    {
+        Debug.Log($"[CardRewardUI] Exploration reward selected: {selectedCard.cardName}");
+
+        // Add to collection
+        if (CardCollection.Instance != null)
+        {
+            CardCollection.Instance.AddCard(selectedCard);
+            Debug.Log($"[CardRewardUI] {selectedCard.cardName} added to collection");
+        }
+
+        // Hide reward panel
+        HideExplorationRewardPanel();
+
+        // Notify ExplorationRewardManager that reward was claimed
+        if (ExplorationRewardManager.Instance != null)
+        {
+            ExplorationRewardManager.Instance.OnRewardClaimed();
+        }
+    }
+
+    /// <summary>
+    /// Hide the reward panel for exploration (doesn't return to battle scene)
+    /// </summary>
+    private void HideExplorationRewardPanel()
+    {
+        if (rewardPanel != null)
+        {
+            rewardPanel.SetActive(false);
+        }
+
+        ClearCardDisplays();
     }
 
     /// <summary>
