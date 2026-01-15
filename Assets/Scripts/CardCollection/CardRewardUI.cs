@@ -27,6 +27,7 @@ public class CardRewardUI : MonoBehaviour
     private List<GameObject> currentCardDisplays = new List<GameObject>();
     private List<Card> currentOptions = new List<Card>();
     private bool isExplorationReward = false; // Track if this is exploration or battle reward
+    private bool keyboardShortcutsEnabled = false; // Track if keyboard shortcuts are active
 
     private void Awake()
     {
@@ -36,6 +37,38 @@ public class CardRewardUI : MonoBehaviour
             return;
         }
         Instance = this;
+    }
+
+    private void Update()
+    {
+        // Keyboard shortcuts for card selection (workaround for Level Two click issues)
+        if (keyboardShortcutsEnabled && rewardPanel != null && rewardPanel.activeSelf)
+        {
+            // Press 1 to select first card
+            if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
+            {
+                if (currentOptions.Count > 0)
+                {
+                    Debug.Log("[CardRewardUI] ⌨️ Keyboard shortcut: Selected card 1");
+                    OnCardSelected(currentOptions[0]);
+                }
+            }
+            // Press 2 to select second card
+            else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
+            {
+                if (currentOptions.Count > 1)
+                {
+                    Debug.Log("[CardRewardUI] ⌨️ Keyboard shortcut: Selected card 2");
+                    OnCardSelected(currentOptions[1]);
+                }
+            }
+            // Press Escape to skip
+            else if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                Debug.Log("[CardRewardUI] ⌨️ Keyboard shortcut: Skipped reward");
+                OnSkipReward();
+            }
+        }
     }
 
     private void Start()
@@ -380,10 +413,25 @@ public class CardRewardUI : MonoBehaviour
     private void OnSkipReward()
     {
         Debug.Log("[CardRewardUI] Player skipped reward");
-        HideRewardPanel();
-        
-        // Return to exploration scene
-        ReturnToExploration();
+
+        // Check if this is an exploration reward (different flow than battle reward)
+        if (isExplorationReward)
+        {
+            Debug.Log("[CardRewardUI] Skipping exploration reward - hiding panel and unlocking movement");
+            HideExplorationRewardPanel();
+
+            // Notify ExplorationRewardManager that reward was handled (skipped)
+            if (ExplorationRewardManager.Instance != null)
+            {
+                ExplorationRewardManager.Instance.OnRewardClaimed();
+            }
+        }
+        else
+        {
+            // Battle reward skip - hide and return to exploration scene
+            HideRewardPanel();
+            ReturnToExploration();
+        }
     }
 
     /// <summary>
@@ -460,12 +508,49 @@ public class CardRewardUI : MonoBehaviour
         if (rewardPanel != null)
         {
             rewardPanel.SetActive(true);
+            
+            // CRITICAL: Ensure reward panel is on top of all other UI
+            Canvas rewardCanvas = rewardPanel.GetComponent<Canvas>();
+            if (rewardCanvas != null)
+            {
+                rewardCanvas.overrideSorting = true;
+                rewardCanvas.sortingOrder = 1000; // Very high to be on top
+                Debug.Log("[CardRewardUI] Set reward canvas sorting order to 1000");
+            }
+            else
+            {
+                // If no Canvas, add one
+                rewardCanvas = rewardPanel.AddComponent<Canvas>();
+                rewardCanvas.overrideSorting = true;
+                rewardCanvas.sortingOrder = 1000;
+                
+                // Also add GraphicRaycaster for button clicks
+                if (rewardPanel.GetComponent<GraphicRaycaster>() == null)
+                {
+                    rewardPanel.AddComponent<GraphicRaycaster>();
+                }
+                
+                Debug.Log("[CardRewardUI] Added Canvas and GraphicRaycaster to reward panel");
+            }
         }
 
         if (titleText != null)
         {
-            titleText.text = "Choose Your Card";
+            titleText.text = "Choose Your Card (Press 1 or 2)";
         }
+
+        // CRITICAL: Ensure cursor is unlocked for card selection
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        
+        // CRITICAL: Disable any UI that might block raycasts
+        DisableBlockingUI();
+        
+        // Enable keyboard shortcuts for Level Two workaround
+        keyboardShortcutsEnabled = true;
+        
+        Debug.Log("[CardRewardUI] ✨ Cursor unlocked for exploration reward selection");
+        Debug.Log("[CardRewardUI] ⌨️ Keyboard shortcuts enabled: Press 1 or 2 to select, ESC to skip");
 
         Debug.Log("[CardRewardUI] Exploration reward panel shown");
     }
@@ -503,6 +588,12 @@ public class CardRewardUI : MonoBehaviour
         {
             rewardPanel.SetActive(false);
         }
+
+        // Disable keyboard shortcuts
+        keyboardShortcutsEnabled = false;
+
+        // Re-enable any UI that was disabled
+        EnableBlockingUI();
 
         ClearCardDisplays();
     }
@@ -542,6 +633,135 @@ public class CardRewardUI : MonoBehaviour
         }
 
         ClearCardDisplays();
+    }
+
+    /// <summary>
+    /// Temporarily disable UI elements that might block raycasts to reward cards
+    /// </summary>
+    private void DisableBlockingUI()
+    {
+        Debug.Log("[CardRewardUI] 🔍 Disabling ALL potentially blocking UI...");
+        
+        // Method 1: Disable caption panel if it exists (common in Level Two)
+        GameObject captionPanel = GameObject.Find("CaptionPanel");
+        if (captionPanel != null)
+        {
+            var canvasGroup = captionPanel.GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                canvasGroup.blocksRaycasts = false;
+                canvasGroup.interactable = false;
+                Debug.Log("[CardRewardUI] ✓ Disabled caption panel raycasts");
+            }
+            
+            // Also disable Canvas if present
+            var captionCanvas = captionPanel.GetComponent<Canvas>();
+            if (captionCanvas != null)
+            {
+                captionCanvas.enabled = false;
+                Debug.Log("[CardRewardUI] ✓ Disabled caption Canvas");
+            }
+        }
+        
+        // Method 2: Disable ALL other Canvas GraphicRaycasters except reward panel
+        GraphicRaycaster[] allRaycasters = FindObjectsByType<GraphicRaycaster>(FindObjectsSortMode.None);
+        Debug.Log($"[CardRewardUI] Found {allRaycasters.Length} GraphicRaycasters in scene");
+        
+        foreach (var raycaster in allRaycasters)
+        {
+            // Don't disable the reward panel's raycaster
+            if (rewardPanel != null && raycaster.transform.IsChildOf(rewardPanel.transform))
+            {
+                raycaster.enabled = true;
+                Debug.Log($"[CardRewardUI] ✓ Keeping raycaster ENABLED: {raycaster.gameObject.name} (reward panel)");
+            }
+            else if (rewardPanel != null && raycaster.gameObject == rewardPanel)
+            {
+                raycaster.enabled = true;
+                Debug.Log($"[CardRewardUI] ✓ Keeping raycaster ENABLED: {raycaster.gameObject.name} (reward panel root)");
+            }
+            else
+            {
+                raycaster.enabled = false;
+                Debug.Log($"[CardRewardUI] ✓ DISABLED raycaster: {raycaster.gameObject.name}");
+            }
+        }
+        
+        // Method 3: Disable all CanvasGroups except reward panel hierarchy
+        CanvasGroup[] allCanvasGroups = FindObjectsByType<CanvasGroup>(FindObjectsSortMode.None);
+        Debug.Log($"[CardRewardUI] Found {allCanvasGroups.Length} CanvasGroups in scene");
+        
+        foreach (var group in allCanvasGroups)
+        {
+            // Don't disable reward panel's canvas group
+            if (rewardPanel != null && group.transform.IsChildOf(rewardPanel.transform))
+            {
+                group.blocksRaycasts = true;
+                group.interactable = true;
+                Debug.Log($"[CardRewardUI] ✓ Keeping CanvasGroup ENABLED: {group.gameObject.name} (reward panel)");
+            }
+            else if (rewardPanel != null && group.gameObject == rewardPanel)
+            {
+                group.blocksRaycasts = true;
+                group.interactable = true;
+                Debug.Log($"[CardRewardUI] ✓ Keeping CanvasGroup ENABLED: {group.gameObject.name} (reward panel root)");
+            }
+            else
+            {
+                group.blocksRaycasts = false;
+                group.interactable = false;
+                Debug.Log($"[CardRewardUI] ✓ DISABLED CanvasGroup: {group.gameObject.name}");
+            }
+        }
+        
+        Debug.Log("[CardRewardUI] ✅ Finished disabling blocking UI");
+    }
+
+    /// <summary>
+    /// Re-enable UI elements that were temporarily disabled
+    /// </summary>
+    private void EnableBlockingUI()
+    {
+        Debug.Log("[CardRewardUI] 🔍 Re-enabling all UI elements...");
+        
+        // Re-enable caption panel
+        GameObject captionPanel = GameObject.Find("CaptionPanel");
+        if (captionPanel != null)
+        {
+            var canvasGroup = captionPanel.GetComponent<CanvasGroup>();
+            if (canvasGroup != null)
+            {
+                canvasGroup.blocksRaycasts = true;
+                canvasGroup.interactable = true;
+                Debug.Log("[CardRewardUI] ✓ Re-enabled caption panel raycasts");
+            }
+            
+            var captionCanvas = captionPanel.GetComponent<Canvas>();
+            if (captionCanvas != null)
+            {
+                captionCanvas.enabled = true;
+                Debug.Log("[CardRewardUI] ✓ Re-enabled caption Canvas");
+            }
+        }
+        
+        // Re-enable ALL GraphicRaycasters
+        GraphicRaycaster[] allRaycasters = FindObjectsByType<GraphicRaycaster>(FindObjectsSortMode.None);
+        foreach (var raycaster in allRaycasters)
+        {
+            raycaster.enabled = true;
+            Debug.Log($"[CardRewardUI] ✓ Re-enabled raycaster: {raycaster.gameObject.name}");
+        }
+        
+        // Re-enable ALL CanvasGroups
+        CanvasGroup[] allCanvasGroups = FindObjectsByType<CanvasGroup>(FindObjectsSortMode.None);
+        foreach (var group in allCanvasGroups)
+        {
+            group.blocksRaycasts = true;
+            group.interactable = true;
+            Debug.Log($"[CardRewardUI] ✓ Re-enabled CanvasGroup: {group.gameObject.name}");
+        }
+        
+        Debug.Log("[CardRewardUI] ✅ Finished re-enabling all UI");
     }
 
     /// <summary>
