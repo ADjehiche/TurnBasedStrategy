@@ -118,6 +118,12 @@ public class LevelTwoReturnManager : MonoBehaviour
             
             GameSession.IsRespawning = false;
         }
+        // Skip positioning if boss was defeated - BossRoomManager handles this
+        else if (GameSession.BossDefeated)
+        {
+            if (debugMode) Debug.Log("[LevelTwoReturnManager] 👹 Boss battle return - skipping (BossRoomManager handles positioning)");
+            return;
+        }
         // Use battle trigger center if returning from battle
         else if (GameSession.BattleTriggerCenter != Vector3.zero && GameSession.EnemyDefeated)
         {

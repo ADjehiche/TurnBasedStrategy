@@ -77,6 +77,11 @@ public static class GameSession
     // Flashback system (for returning after flashback scene)
     public static string FlashbackReturnScene;
     public static bool HasPlayedRageFlashback; // True after rage flashback completed - companion should follow
+    
+    // Boss battle state
+    public static bool BossDefeated;           // True after boss battle won
+    public static bool WardensWarningShown;    // True after Warden's pre-death dialogue
+    public static bool BossSpawned;            // True after boss spawn animation played
 
     public static void SetReturnPosition(Vector3 pos)
     {
