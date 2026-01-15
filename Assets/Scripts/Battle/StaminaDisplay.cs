@@ -21,10 +21,11 @@ public class StaminaDisplay : MonoBehaviour
         if (staminaText == null || PlayerStamina.Instance == null) return;
         var s = PlayerStamina.Instance;
         
-        // Show temporary stamina in green if present
+        // Show total stamina in green if temporary stamina is present
         if (s.temporaryStamina > 0)
         {
-            staminaText.text = $"{s.currentStamina}<color=green>+{s.temporaryStamina}</color>/{s.maxStamina}";
+            int total = s.currentStamina + s.temporaryStamina;
+            staminaText.text = $"<color=green>{total}</color>/{s.maxStamina}";
         }
         else
         {

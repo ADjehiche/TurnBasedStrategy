@@ -247,6 +247,17 @@ public class SimpleLevelOneObjectives : MonoBehaviour
             hasEscapedCell = true;
             SaveObjectiveState(); // Save progress
             CompleteCurrentObjective(); // Complete "Escape the Cell", show "Defeat the Skeleton"
+            
+            // Show card reward for escaping the cell
+            if (ExplorationRewardManager.Instance != null)
+            {
+                Debug.Log("[SimpleLevelOneObjectives] Cell escaped! Showing card reward...");
+                ExplorationRewardManager.ShowReward();
+            }
+            else
+            {
+                Debug.LogWarning("[SimpleLevelOneObjectives] ExplorationRewardManager.Instance is null! Cannot show card reward.");
+            }
         }
     }
     
@@ -272,7 +283,17 @@ public class SimpleLevelOneObjectives : MonoBehaviour
         {
             hasExploredDungeon = true;
             SaveObjectiveState(); // Save progress
-            CompleteCurrentObjective(); // Complete "Explore the Dungeon", show "Escape the Dungeon"
+            CompleteCurrentObjective();
+                        // Show card reward for escaping the cell
+            if (ExplorationRewardManager.Instance != null)
+            {
+                Debug.Log("[SimpleLevelOneObjectives] Cell escaped! Showing card reward...");
+                ExplorationRewardManager.ShowReward();
+            }
+            else
+            {
+                Debug.LogWarning("[SimpleLevelOneObjectives] ExplorationRewardManager.Instance is null! Cannot show card reward.");
+            } // Complete "Explore the Dungeon", show "Escape the Dungeon"
         }
     }
     
