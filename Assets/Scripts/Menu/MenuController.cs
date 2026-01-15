@@ -15,7 +15,8 @@ public class MenuController : MonoBehaviour
     [Header("UI Panels")]
     public GameObject pauseRoot;
     public GameObject settingsRoot;
-    public GameObject menuRoot; // optional (title menu root)
+    public GameObject menuRoot; 
+    public GameObject controlsRoot; 
 
     [Header("Title UI (optional)")]
     public Button continueButton;
@@ -101,6 +102,32 @@ public class MenuController : MonoBehaviour
     public void BackFromSettings()
     {
         if (settingsRoot != null) settingsRoot.SetActive(false);
+
+        if (IsTitle())
+        {
+            if (menuRoot != null) menuRoot.SetActive(true);
+            ApplyCursorUI();
+        }
+        else
+        {
+            if (pauseRoot != null) pauseRoot.SetActive(true);
+            ApplyCursorUI();
+        }
+    }
+
+    public void OpenControls()
+    {
+        if (controlsRoot != null) controlsRoot.SetActive(true);
+        if (pauseRoot != null) pauseRoot.SetActive(false);
+        if (menuRoot != null) menuRoot.SetActive(false);
+
+        if (!IsTitle() && !_paused) SetPaused(true);
+        else ApplyCursorUI();
+    }
+
+    public void BackFromControls()
+    {
+        if (controlsRoot != null) controlsRoot.SetActive(false);
 
         if (IsTitle())
         {
