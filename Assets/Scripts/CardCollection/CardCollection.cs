@@ -30,14 +30,19 @@ public class CardCollection : MonoBehaviour
 
     private void Awake()
     {
+        Debug.Log($"[CardCollection] Awake on {gameObject.name}");
+
         if (Instance != null && Instance != this)
         {
+            Debug.LogWarning($"[CardCollection] Duplicate detected, destroying {gameObject.name}");
             Destroy(gameObject);
             return;
         }
+
         Instance = this;
         DontDestroyOnLoad(gameObject);
     }
+
 
     private void Start()
     {
