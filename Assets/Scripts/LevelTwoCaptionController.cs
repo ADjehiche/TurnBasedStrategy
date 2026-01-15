@@ -246,4 +246,20 @@ public class LevelTwoCaptionController : MonoBehaviour
             yield return new WaitForSeconds(duration);
         }
     }
+
+    /// <summary>
+    /// Check if dialogue audio is currently playing
+    /// </summary>
+    public bool IsDialoguePlaying()
+    {
+        return voiceSource != null && voiceSource.isPlaying;
+    }
+
+    /// <summary>
+    /// Get the AudioSource used for dialogue (for external systems to check)
+    /// </summary>
+    public AudioSource GetVoiceSource()
+    {
+        return voiceSource;
+    }
 }

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Manages card rewards in exploration areas (chests, interactions, etc.)
@@ -74,13 +75,29 @@ public class ExplorationRewardManager : MonoBehaviour
             return;
         }
 
-        // Lock player movement during reward selection
-        LockPlayerMovement(true);
+        // CRITICAL: Disable ALL player input FIRST
+        DisablePlayerInput();
 
         // Show the reward UI with starter cards only
         cardRewardUI.ShowExplorationReward(numberOfOptions);
 
+        // Lock player movement
+        LockPlayerMovement(true);
+        
+        // Use delay to ensure cursor unlock sticks
+        Invoke(nameof(ForceUnlockCursor), 0.1f);
+
         Debug.Log("[ExplorationRewardManager] Showing exploration card reward");
+    }
+
+    /// <summary>
+    /// Force cursor unlock (called with delay to ensure it sticks)
+    /// </summary>
+    private void ForceUnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        Debug.Log("[ExplorationRewardManager] ⚠️ FORCE unlocked cursor for card selection");
     }
 
     /// <summary>
@@ -89,7 +106,8 @@ public class ExplorationRewardManager : MonoBehaviour
     public void OnRewardClaimed()
     {
         LockPlayerMovement(false);
-        Debug.Log("[ExplorationRewardManager] Reward claimed, player movement unlocked");
+        EnablePlayerInput(); // Re-enable player input actions
+        Debug.Log("[ExplorationRewardManager] Reward claimed, player movement and input unlocked");
     }
 
     /// <summary>
@@ -127,6 +145,50 @@ public class ExplorationRewardManager : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             Debug.Log("[ExplorationRewardManager] Cursor locked for gameplay");
+        }
+    }
+
+    /// <summary>
+    /// Disable ALL player input actions to prevent interference with UI
+    /// </summary>
+    private void DisablePlayerInput()
+    {
+        // Find player and disable their InputActionAsset
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            var playerInput = player.GetComponent<UnityEngine.InputSystem.PlayerInput>();
+            if (playerInput != null && playerInput.actions != null)
+            {
+                playerInput.actions.Disable();
+                Debug.Log("[ExplorationRewardManager] ✅ Disabled ALL player input actions");
+            }
+            else
+            {
+                Debug.LogWarning("[ExplorationRewardManager] PlayerInput component or actions not found");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[ExplorationRewardManager] Player GameObject not found (needs 'Player' tag)");
+        }
+    }
+
+    /// <summary>
+    /// Re-enable ALL player input actions after UI interaction
+    /// </summary>
+    private void EnablePlayerInput()
+    {
+        // Find player and re-enable their InputActionAsset
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            var playerInput = player.GetComponent<UnityEngine.InputSystem.PlayerInput>();
+            if (playerInput != null && playerInput.actions != null)
+            {
+                playerInput.actions.Enable();
+                Debug.Log("[ExplorationRewardManager] ✅ Re-enabled ALL player input actions");
+            }
         }
     }
 
