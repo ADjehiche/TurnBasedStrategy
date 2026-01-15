@@ -16,7 +16,7 @@ public class DamagePopup : MonoBehaviour
     public void Setup(int amount)
     {
         if (text != null)
-            text.text = amount.ToString();
+            text.text = "-" + amount.ToString();
     }
 
     private void Awake()

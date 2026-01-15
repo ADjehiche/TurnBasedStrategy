@@ -106,7 +106,7 @@ public class PlayerStatusEffects : MonoBehaviour
     public void AddStaminaNextTurn(int amount)
     {
         staminaNextTurn += amount;
-        Debug.Log($"[PlayerStatus] Will gain {amount} stamina next turn (total: {staminaNextTurn})");
+        Debug.Log($"[PlayerStatus] Will gain {amount} TEMPORARY stamina next turn (total: {staminaNextTurn})");
     }
 
     #endregion
@@ -148,16 +148,13 @@ public class PlayerStatusEffects : MonoBehaviour
 
     public void TickStatuses()
     {
-        // Grant next-turn stamina
+        // Grant next-turn stamina as TEMPORARY stamina
         if (staminaNextTurn > 0)
         {
             if (PlayerStamina.Instance != null)
             {
-                PlayerStamina.Instance.currentStamina = Mathf.Min(
-                    PlayerStamina.Instance.maxStamina,
-                    PlayerStamina.Instance.currentStamina + staminaNextTurn
-                );
-                Debug.Log($"[PlayerStatus] Gained {staminaNextTurn} stamina from last turn's Brace");
+                PlayerStamina.Instance.AddTemporaryStamina(staminaNextTurn);
+                Debug.Log($"[PlayerStatus] Gained {staminaNextTurn} TEMPORARY stamina from Brace (lasts this turn only)");
             }
             staminaNextTurn = 0;
         }

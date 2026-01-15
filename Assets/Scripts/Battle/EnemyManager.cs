@@ -135,6 +135,17 @@ public class EnemyManager : MonoBehaviour
     /// </summary>
     public IEnumerator ExecuteAllEnemyTurns()
     {
+        // Clear all enemy blocks at the START of their turn
+        // This makes block last through the player's turn (providing defense)
+        List<EnemyHealth> allEnemies = GetLivingEnemies();
+        foreach (var enemy in allEnemies)
+        {
+            if (enemy != null && enemy.CurrentBlock > 0)
+            {
+                enemy.ClearBlock();
+            }
+        }
+
         // Check if enemies are disarmed
         if (PlayerStatusEffects.Instance != null && PlayerStatusEffects.Instance.EnemiesDisarmed)
         {
@@ -178,6 +189,16 @@ public class EnemyManager : MonoBehaviour
             yield break;
         }
 
+        // Check if enemy has custom AI (like BossAI)
+        BossAI bossAI = enemy.GetComponent<BossAI>();
+        if (bossAI != null)
+        {
+            // Boss has custom AI - let it handle its turn
+            yield return bossAI.ExecuteTurn();
+            yield break;
+        }
+
+        // Regular enemy attack behavior
         Debug.Log($"[EnemyManager] {enemy.gameObject.name} is attacking...");
 
         // Play skeleton scream before attack
@@ -208,6 +229,12 @@ public class EnemyManager : MonoBehaviour
         if (PlayerHealth.Instance != null)
         {
             int damage = Random.Range(1, 6);
+            
+            // Apply difficulty scaling
+            if (DifficultyManager.Instance != null)
+            {
+                damage = DifficultyManager.Instance.GetScaledDamage(damage);
+            }
             
             // Apply weaken if enemy has it
             damage = enemy.GetWeakenedDamage(damage);

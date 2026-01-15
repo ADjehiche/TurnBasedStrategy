@@ -136,6 +136,13 @@ public class CardMovement : MonoBehaviour
     /// </summary>
     private void OnCardClicked()
     {
+        // CRITICAL: Prevent clicking if a card is currently being played
+        if (TargetingSystem.Instance != null && TargetingSystem.Instance.IsBusy)
+        {
+            Debug.Log($"[CardMovement] Click ignored - another card is being played");
+            return;
+        }
+
         Debug.Log($"[CardMovement] 🃏 CLICK 1: Card clicked!");
         
         // Deselect any previously selected card
@@ -152,6 +159,14 @@ public class CardMovement : MonoBehaviour
         if (cardData == null)
         {
             Debug.LogError("[CardMovement] No Card data found on this card.");
+            ResetVisual();
+            return;
+        }
+
+        // Check stamina BEFORE doing anything
+        if (PlayerStamina.Instance != null && PlayerStamina.Instance.currentStamina < cardData.staminaCost)
+        {
+            Debug.Log($"[CardMovement] Not enough stamina to play {cardData.cardName} (cost: {cardData.staminaCost}, have: {PlayerStamina.Instance.currentStamina})");
             ResetVisual();
             return;
         }

@@ -1,11 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class EnemyHealth : MonoBehaviour
 {
     [Header("Health")]
     public int maxHP = 20;
     public int currentHP;
+    public int currentBlock; // Block/armor that absorbs damage
 
     [Header("Status Effects")]
     public int bleedStacks;
@@ -15,9 +17,13 @@ public class EnemyHealth : MonoBehaviour
     [Header("UI")]
     [SerializeField] private RectTransform enemyDamagePopupAnchor;
     [SerializeField] private EnemyStatusDisplay statusDisplay;
+    [SerializeField] private GameObject blockGroup; // Container for block UI
+    [SerializeField] private TMP_Text blockText; // Text displaying block amount (TextMeshPro)
+    [SerializeField] private Text blockTextLegacy; // Fallback for legacy UI.Text
 
     public int CurrentHP => currentHP;
     public int MaxHP => maxHP;
+    public int CurrentBlock => currentBlock;
 
     public event System.Action<int, int> OnHealthChanged;
 
@@ -36,6 +42,12 @@ public class EnemyHealth : MonoBehaviour
 
     void Start()
     {
+        // Apply difficulty scaling to enemy health
+        if (DifficultyManager.Instance != null)
+        {
+            maxHP = DifficultyManager.Instance.GetScaledHealth(maxHP);
+        }
+        
         currentHP = maxHP;
         Debug.Log($"[EnemyHealth] {gameObject.name} initialized with HP: {currentHP}/{maxHP}");
         
@@ -47,6 +59,9 @@ public class EnemyHealth : MonoBehaviour
             statusDisplay.SetBleedTurns(bleedStacks);
             statusDisplay.SetWeakenPercent(weakenPercent);
         }
+
+        // Initialize block display
+        UpdateBlockUI();
 
         // Fallback: try to find the anchor if it's not assigned
         if (enemyDamagePopupAnchor == null)
@@ -60,13 +75,32 @@ public class EnemyHealth : MonoBehaviour
     {
         if (amount <= 0) return;
 
-        int oldHP = currentHP;
-        currentHP = Mathf.Max(0, currentHP - amount);
-        Debug.Log($"[EnemyHealth] {gameObject.name} took {amount} damage. HP: {oldHP} → {currentHP}/{maxHP}");
+        // Block absorbs damage first
+        int damageToHP = amount;
+        if (currentBlock > 0)
+        {
+            int blockedAmount = Mathf.Min(currentBlock, amount);
+            currentBlock -= blockedAmount;
+            damageToHP = amount - blockedAmount;
+            
+            Debug.Log($"[EnemyHealth] {gameObject.name} blocked {blockedAmount} damage. Block: {currentBlock + blockedAmount} → {currentBlock}");
+            UpdateBlockUI();
+        }
 
-        OnHealthChanged?.Invoke(currentHP, maxHP);
-        Debug.Log($"[EnemyHealth] OnHealthChanged event invoked. Subscribers: {(OnHealthChanged?.GetInvocationList().Length ?? 0)}");
+        // Apply remaining damage to HP
+        if (damageToHP > 0)
+        {
+            int oldHP = currentHP;
+            currentHP = Mathf.Max(0, currentHP - damageToHP);
+            Debug.Log($"[EnemyHealth] {gameObject.name} took {damageToHP} damage. HP: {oldHP} → {currentHP}/{maxHP}");
 
+            OnHealthChanged?.Invoke(currentHP, maxHP);
+            Debug.Log($"[EnemyHealth] OnHealthChanged event invoked. Subscribers: {(OnHealthChanged?.GetInvocationList().Length ?? 0)}");
+        }
+        else
+        {
+            Debug.Log($"[EnemyHealth] {gameObject.name} damage fully blocked!");
+        }
         // 🔥 SWITCHED POPUP - Shows damage at PLAYER's position (the attacker)
         if (BattleAnimator.Instance != null && PlayerHealth.Instance != null)
         {
@@ -104,12 +138,60 @@ public class EnemyHealth : MonoBehaviour
         }
     }
 
+    public void Heal(int amount)
+    {
+        if (amount <= 0) return;
+
+        int oldHP = currentHP;
+        currentHP = Mathf.Min(currentHP + amount, maxHP);
+        
+        Debug.Log($"[EnemyHealth] {gameObject.name} healed for {amount}. HP: {oldHP} → {currentHP}/{maxHP}");
+
+        OnHealthChanged?.Invoke(currentHP, maxHP);
+    }
+
     public void AddBleed(int amount)
     {
         if (amount <= 0) return;
 
         bleedStacks += amount;
         statusDisplay?.SetBleedTurns(bleedStacks);
+    }
+
+    public void AddBlock(int amount)
+    {
+        if (amount <= 0) return;
+
+        currentBlock += amount;
+        UpdateBlockUI();
+        Debug.Log($"[EnemyHealth] {gameObject.name} gained {amount} block. Total: {currentBlock}");
+    }
+
+    public void ClearBlock()
+    {
+        currentBlock = 0;
+        UpdateBlockUI();
+        Debug.Log($"[EnemyHealth] {gameObject.name} block cleared.");
+    }
+
+    private void UpdateBlockUI()
+    {
+        if (blockGroup != null)
+        {
+            blockGroup.SetActive(currentBlock > 0);
+        }
+
+        // Update TextMeshPro text
+        if (blockText != null)
+        {
+            blockText.text = currentBlock.ToString();
+        }
+        
+        // Fallback for legacy Text component
+        if (blockTextLegacy != null)
+        {
+            blockTextLegacy.text = currentBlock.ToString();
+        }
     }
 
     public void AddPoison(int percent)
@@ -125,9 +207,13 @@ public class EnemyHealth : MonoBehaviour
     /// <summary>
     /// Tick status effects at start of turn.
     /// NEW: Bleed countdown system - takes N damage, then decreases by 1.
+    /// NOTE: Block is NOT cleared here - it persists through player turn for challenge!
     /// </summary>
     public void TickStatuses()
     {
+        // DO NOT clear block here - let it persist through player's turn
+        // Block will be cleared manually when enemy takes its turn again
+        
         // Bleed countdown: Deal damage equal to current stacks, then decrease
         if (bleedStacks > 0)
         {

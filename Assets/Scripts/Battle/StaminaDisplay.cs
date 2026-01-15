@@ -20,6 +20,15 @@ public class StaminaDisplay : MonoBehaviour
     {
         if (staminaText == null || PlayerStamina.Instance == null) return;
         var s = PlayerStamina.Instance;
-        staminaText.text = $"{s.currentStamina}/{s.maxStamina}";
+        
+        // Show temporary stamina in green if present
+        if (s.temporaryStamina > 0)
+        {
+            staminaText.text = $"{s.currentStamina}<color=green>+{s.temporaryStamina}</color>/{s.maxStamina}";
+        }
+        else
+        {
+            staminaText.text = $"{s.currentStamina}/{s.maxStamina}";
+        }
     }
 }
