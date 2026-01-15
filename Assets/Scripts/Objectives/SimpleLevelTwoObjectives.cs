@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 /// <summary>
 /// SIMPLE Level Two objectives - handles archive exploration progression
@@ -213,10 +214,52 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
             hasExploredArchive = true;
             SaveObjectiveState(); // Save progress
             CompleteCurrentObjective(); // Complete "Explore the Archive", show "Explore Further Inside"
+            
+            // Wait for dialogue audio to finish before showing reward
+            StartCoroutine(WaitForDialogueAndShowReward());
         }
         else
         {
             Debug.LogWarning($"[SimpleLevelTwoObjectives] Tunnel entered but conditions not met - hasExploredArchive: {hasExploredArchive}, currentObjectiveIndex: {currentObjectiveIndex} (expected 0)");
+        }
+    }
+
+    /// <summary>
+    /// Wait for dialogue audio to finish, then show exploration reward
+    /// </summary>
+    private IEnumerator WaitForDialogueAndShowReward()
+    {
+        Debug.Log("[SimpleLevelTwoObjectives] Waiting for dialogue to finish before showing reward...");
+
+        // Find the LevelTwoCaptionController
+        LevelTwoCaptionController captionController = FindFirstObjectByType<LevelTwoCaptionController>();
+        
+        if (captionController != null)
+        {
+            // Wait while dialogue audio is playing
+            while (captionController.IsDialoguePlaying())
+            {
+                yield return new WaitForSeconds(0.1f);
+            }
+            
+            // Add a small buffer to ensure audio fully completes
+            yield return new WaitForSeconds(0.5f);
+            Debug.Log("[SimpleLevelTwoObjectives] Dialogue finished!");
+        }
+        else
+        {
+            Debug.LogWarning("[SimpleLevelTwoObjectives] LevelTwoCaptionController not found, showing reward immediately");
+        }
+
+        // Show card reward for exploring the archive
+        if (ExplorationRewardManager.Instance != null)
+        {
+            Debug.Log("[SimpleLevelTwoObjectives] Archive explored! Showing card reward...");
+            ExplorationRewardManager.ShowReward();
+        }
+        else
+        {
+            Debug.LogWarning("[SimpleLevelTwoObjectives] ExplorationRewardManager.Instance is null! Cannot show card reward.");
         }
     }
     
@@ -297,6 +340,7 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
     /// <summary>
     /// Call this when player returns to the archive
     /// </summary>
+    /// 
     public void OnReturnedToArchive()
     {
         Debug.Log($"[SimpleLevelTwoObjectives] OnReturnedToArchive called - hasReturnedToArchive: {hasReturnedToArchive}, currentObjectiveIndex: {currentObjectiveIndex}");
@@ -308,6 +352,17 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
             hasReturnedToArchive = true;
             SaveObjectiveState(); // Save progress
             CompleteCurrentObjective(); // Complete "Return to the Archive", show "Defeat the Warden"
+            
+            // Show card reward for returning to the archive
+            if (ExplorationRewardManager.Instance != null)
+            {
+                Debug.Log("[SimpleLevelTwoObjectives] Returned to archive! Showing card reward...");
+                ExplorationRewardManager.ShowReward();
+            }
+            else
+            {
+                Debug.LogWarning("[SimpleLevelTwoObjectives] ExplorationRewardManager.Instance is null! Cannot show card reward.");
+            }
         }
         else
         {
