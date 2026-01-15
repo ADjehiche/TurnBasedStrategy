@@ -25,6 +25,9 @@ public class CardMovement : MonoBehaviour
     [SerializeField] private float selectedScale = 1.3f;
     [SerializeField] private Vector3 selectedPosition = new Vector3(0f, 100f, 0f); // Highlight position
     
+    // NEW: Flag to disable clicking/playing while keeping hover active
+    [HideInInspector] public bool isRewardCard = false; // Set by CardRewardUI
+    
     private static CardMovement currentlySelectedCard = null;
     private Canvas canvas;
 
@@ -136,6 +139,13 @@ public class CardMovement : MonoBehaviour
     /// </summary>
     private void OnCardClicked()
     {
+        // NEW: If this is a reward card, don't handle clicks (Button component handles it)
+        if (isRewardCard)
+        {
+            Debug.Log($"[CardMovement] Click ignored - this is a reward card (handled by Button)");
+            return;
+        }
+        
         // CRITICAL: Prevent clicking if a card is currently being played
         if (TargetingSystem.Instance != null && TargetingSystem.Instance.IsBusy)
         {

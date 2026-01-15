@@ -285,15 +285,7 @@ public class SimpleLevelOneObjectives : MonoBehaviour
             SaveObjectiveState(); // Save progress
             CompleteCurrentObjective();
                         // Show card reward for escaping the cell
-            if (ExplorationRewardManager.Instance != null)
-            {
-                Debug.Log("[SimpleLevelOneObjectives] Cell escaped! Showing card reward...");
-                ExplorationRewardManager.ShowReward();
-            }
-            else
-            {
-                Debug.LogWarning("[SimpleLevelOneObjectives] ExplorationRewardManager.Instance is null! Cannot show card reward.");
-            } // Complete "Explore the Dungeon", show "Escape the Dungeon"
+       
         }
     }
     

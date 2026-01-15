@@ -99,6 +99,61 @@ public class CardRewardUI : MonoBehaviour
     }
 
     /// <summary>
+    /// Update card scale - can be called from inspector or code
+    /// </summary>
+    public void UpdateCardScale(float newScale)
+    {
+        cardScale = newScale;
+        Debug.Log($"[CardRewardUI] Card scale updated to: {cardScale}");
+        
+        // Update existing displayed cards if any
+        foreach (var cardObj in currentCardDisplays)
+        {
+            if (cardObj != null)
+            {
+                cardObj.transform.localScale = Vector3.one * cardScale;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Update card spacing - can be called from inspector or code
+    /// </summary>
+    public void UpdateCardSpacing(float newSpacing)
+    {
+        cardSpacing = newSpacing;
+        Debug.Log($"[CardRewardUI] Card spacing updated to: {cardSpacing}");
+        
+        var layoutGroup = cardOptionsContainer?.GetComponent<HorizontalLayoutGroup>();
+        if (layoutGroup != null)
+        {
+            layoutGroup.spacing = cardSpacing;
+        }
+    }
+
+    // Called when inspector values change in editor
+    private void OnValidate()
+    {
+        // Update layout if in editor mode
+        if (!Application.isPlaying) return;
+        
+        var layoutGroup = cardOptionsContainer?.GetComponent<HorizontalLayoutGroup>();
+        if (layoutGroup != null)
+        {
+            layoutGroup.spacing = cardSpacing;
+        }
+        
+        // Update scale on existing cards
+        foreach (var cardObj in currentCardDisplays)
+        {
+            if (cardObj != null)
+            {
+                cardObj.transform.localScale = Vector3.one * cardScale;
+            }
+        }
+    }
+
+    /// <summary>
     /// Show the reward selection UI with 2 random card options
     /// </summary>
     public void ShowRewardSelection()
@@ -238,13 +293,13 @@ public class CardRewardUI : MonoBehaviour
             }
         }
 
-        // CRITICAL: Disable CardMovement component to prevent card from playing on click
-        // Reward cards should only use Button component, not battle card interactions
+        // CRITICAL: Mark as reward card to disable click-to-play while keeping hover
+        // Reward cards should only use Button component for selection, not battle card interactions
         var cardMovement = cardObj.GetComponent<CardMovement>();
         if (cardMovement != null)
         {
-            cardMovement.enabled = false;
-            Debug.Log($"[CardRewardUI] Disabled CardMovement component on {card.cardName}");
+            cardMovement.isRewardCard = true; // Disable clicking but keep hover active
+            Debug.Log($"[CardRewardUI] Marked {card.cardName} as reward card (hover enabled, click disabled)");
         }
 
         // Now enable the card (OnEnable will see the data)
