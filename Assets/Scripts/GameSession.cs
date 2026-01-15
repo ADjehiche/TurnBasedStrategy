@@ -3,7 +3,8 @@ using UnityEngine;
 public static class GameSession
 {
     // Enemy state
-    public static bool EnemyDefeated;
+    // Enemy state
+    public static bool LevelOneEnemyDefeated;
 
     // Player position state
     public static bool HasReturnPosition;
@@ -83,6 +84,7 @@ public static class GameSession
     public static bool BossDefeated;           // True after boss battle won
     public static bool WardensWarningShown;    // True after Warden's pre-death dialogue
     public static bool BossSpawned;            // True after boss spawn animation played
+    public static bool HasPlayedBossDoorCutscene; // True after boss door unlock cutscene has played
 
     public static void SetReturnPosition(Vector3 pos)
     {
@@ -130,7 +132,7 @@ public static class GameSession
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     public static void Reset()
     {
-        EnemyDefeated = false;
+        LevelOneEnemyDefeated = false;
         HasReturnPosition = false;
         ReturnPosition = default;
         BattleTriggerCenter = default;
@@ -162,5 +164,8 @@ public static class GameSession
         HasCollectedRedFragment = false;
         HasCollectedBlueFragment = false;
         HasCollectedPurpleFragment = false;
+        
+        // Reset boss door cutscene
+        HasPlayedBossDoorCutscene = false;
     }
 }

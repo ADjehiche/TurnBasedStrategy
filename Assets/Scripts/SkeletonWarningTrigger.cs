@@ -80,7 +80,7 @@ public class SkeletonWarningTrigger : MonoBehaviour
         }
         
         // If skeleton already defeated, destroy this trigger immediately
-        if (GameSession.EnemyDefeated)
+        if (GameSession.LevelOneEnemyDefeated)
         {
             if (showDebugLogs)
                 Debug.Log("[SkeletonWarningTrigger] Skeleton already defeated - destroying trigger");
@@ -92,7 +92,7 @@ public class SkeletonWarningTrigger : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         // Don't trigger if skeleton already defeated
-        if (GameSession.EnemyDefeated)
+        if (GameSession.LevelOneEnemyDefeated)
         {
             if (showDebugLogs)
                 Debug.Log("[SkeletonWarningTrigger] Skeleton defeated - ignoring trigger");

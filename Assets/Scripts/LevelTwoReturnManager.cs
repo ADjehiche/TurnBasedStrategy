@@ -40,16 +40,16 @@ public class LevelTwoReturnManager : MonoBehaviour
         RestoreBlueCompanion();
         
         // Notify objectives system if skeletons were defeated
-        if (GameSession.EnemyDefeated || GameSession.CombatWingVictory)
+        if (GameSession.CombatWingVictory)
         {
             NotifySkeletonsDefeated();
         }
         
         // Play boss door cutscene if returning from flashback with both fragments
         if (debugMode) 
-            Debug.Log($"[LevelTwoReturnManager] Checking Boss Door: FlashbackPlayed={GameSession.HasPlayedRageFlashback}, CanUnlock={GameSession.CanUnlockBossDoor} (Red={GameSession.HasCollectedRedFragment}, Blue={GameSession.HasCollectedBlueFragment})");
+            Debug.Log($"[LevelTwoReturnManager] Checking Boss Door: FlashbackPlayed={GameSession.HasPlayedRageFlashback}, CanUnlock={GameSession.CanUnlockBossDoor}, PlayedOnce={GameSession.HasPlayedBossDoorCutscene}");
             
-        if (GameSession.HasPlayedRageFlashback && GameSession.CanUnlockBossDoor)
+        if (GameSession.HasPlayedRageFlashback && GameSession.CanUnlockBossDoor && !GameSession.HasPlayedBossDoorCutscene)
         {
             TriggerBossDoorCutscene();
         }
@@ -72,6 +72,7 @@ public class LevelTwoReturnManager : MonoBehaviour
         yield return new WaitForSeconds(1f);
         
         if (debugMode) Debug.Log("[LevelTwoReturnManager] 🏰 Playing boss door cutscene!");
+        GameSession.HasPlayedBossDoorCutscene = true;
         bossDoorCutscene.Play();
     }
     
@@ -131,7 +132,7 @@ public class LevelTwoReturnManager : MonoBehaviour
             return;
         }
         // Use battle trigger center if returning from battle
-        else if (GameSession.BattleTriggerCenter != Vector3.zero && GameSession.EnemyDefeated)
+        else if (GameSession.BattleTriggerCenter != Vector3.zero && GameSession.CombatWingVictory)
         {
             spawnPosition = GameSession.BattleTriggerCenter;
             spawnPosition += new Vector3(0, 0, -3f); // Move back 3 units to avoid re-trigger
@@ -165,7 +166,7 @@ public class LevelTwoReturnManager : MonoBehaviour
     /// </summary>
     private void HandleEnemyState()
     {
-        if (enemyRoots == null || enemyRoots.Length == 0 || !GameSession.EnemyDefeated) return;
+        if (enemyRoots == null || enemyRoots.Length == 0 || !GameSession.CombatWingVictory) return;
         
         foreach (GameObject enemyRoot in enemyRoots)
         {
@@ -200,7 +201,7 @@ public class LevelTwoReturnManager : MonoBehaviour
     /// </summary>
     private void HandleBattleTriggers()
     {
-        if (!GameSession.EnemyDefeated && !GameSession.CombatWingVictory) return;
+        if (!GameSession.CombatWingVictory) return;
         
         // Disable assigned triggers
         if (combatWingTriggers != null)

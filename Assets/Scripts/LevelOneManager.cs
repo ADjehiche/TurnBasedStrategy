@@ -71,7 +71,7 @@ public class LevelOneReturnManager : MonoBehaviour
         // Restore companion if it was active
         RestoreCompanion();
 
-        if (enemyRoot != null && GameSession.EnemyDefeated)
+        if (enemyRoot != null && GameSession.LevelOneEnemyDefeated)
         {
             // Instead of deactivating the entire enemyRoot, handle individual enemies
             HandleEnemiesAfterDefeat();
