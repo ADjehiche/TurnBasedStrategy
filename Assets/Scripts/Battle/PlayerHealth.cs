@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.SceneManagement;
+#endif
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -31,6 +35,8 @@ public class PlayerHealth : MonoBehaviour
     public int CurrentHealth => currentHealth;
     public int MaxHealth => maxHealth;
 
+    private bool hasHandledDeath;
+
     // ✅ IMPORTANT: your HUD needs this
     public int CurrentBlock => currentBlock;
 
@@ -51,6 +57,7 @@ public class PlayerHealth : MonoBehaviour
     {
         currentHealth = maxHealth;
         currentBlock = 0;
+        hasHandledDeath = false;
         UpdateHealthUI();
 
         // Fallback: try to find the anchor if it's not assigned
@@ -63,6 +70,7 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(int amount, EnemyHealth attacker = null)
     {
+        if (hasHandledDeath) return;
         if (amount <= 0) return;
 
         // Check for Dodge (completely avoids damage)
@@ -318,16 +326,64 @@ public class PlayerHealth : MonoBehaviour
 
     private void OnPlayerDeath()
     {
+        if (hasHandledDeath) return;
+        hasHandledDeath = true;
+
         Debug.Log("[PlayerHealth] Player defeated! Loading death screen...");
 
         BattleState.SetOver(true);
-        GameSession.IsRespawning = true;
+        
+        const string finalCellSceneName = "Final_Cell";
+        const string deathSceneName = "DeathScene";
 
-        SceneManager.LoadScene("DeathScene");
-
-        if (TurnManager.Instance != null)
+        // Check if this is the Level Two final boss battle
+        if (GameSession.BattleSceneName == "Battle_Boss" && GameSession.ReturnSceneName == "LevelTwo")
         {
-            TurnManager.Instance.enabled = false;
+            // Player lost to the final boss - send to Final_Cell ending
+            Debug.Log("[PlayerHealth] Lost to final boss - loading Final_Cell ending...");
+            GameSession.LostToFinalBoss = true;
+            GameSession.IsRespawning = false; // Not a respawn, it's an ending
+
+            LoadSceneOrEditorFallback(
+                finalCellSceneName,
+                sceneGuid: "adb933c4394f741aab9ca401f5a964b9",
+                expectedAssetPath: "Assets/Scenes/Final_Cell.unity"
+            );
         }
+        else
+        {
+            // Normal death - regular respawn flow
+            GameSession.IsRespawning = true;
+
+            LoadSceneOrEditorFallback(
+                deathSceneName,
+                sceneGuid: "e4b7855ed4041490f879690d9c6ec5a5",
+                expectedAssetPath: "Assets/Scenes/Battle/DeathScene.unity"
+            );
+        }
+    }
+
+    private static void LoadSceneOrEditorFallback(string sceneName, string sceneGuid, string expectedAssetPath)
+    {
+        // Preferred path (works in builds): scene must be in Build Settings.
+        if (Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            SceneManager.LoadScene(sceneName);
+            return;
+        }
+
+#if UNITY_EDITOR
+        // Editor-only fallback (works in Play Mode even if not in Build Settings).
+        string assetPath = AssetDatabase.GUIDToAssetPath(sceneGuid);
+        if (string.IsNullOrEmpty(assetPath)) assetPath = expectedAssetPath;
+
+        if (!string.IsNullOrEmpty(assetPath))
+        {
+            EditorSceneManager.LoadSceneInPlayMode(assetPath, new LoadSceneParameters(LoadSceneMode.Single));
+            return;
+        }
+#endif
+
+        Debug.LogError($"[PlayerHealth] Cannot load scene '{sceneName}'. Add it to File > Build Settings > Scenes In Build.");
     }
 }

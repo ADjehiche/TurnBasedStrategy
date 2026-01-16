@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using TMPro;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// Exit trigger behind boss that shows game ending:
@@ -45,6 +46,8 @@ public class GameEndingTrigger : MonoBehaviour
     
     void Start()
     {
+        EnsureEventSystem();
+
         // Hide ending UI initially
         if (endingCanvas != null)
         {
@@ -182,10 +185,15 @@ public class GameEndingTrigger : MonoBehaviour
     
     private void ShowReturnButton()
     {
+        EnsureEventSystem();
+
         if (returnToTitleButton != null)
         {
             returnToTitleButton.gameObject.SetActive(true);
+            returnToTitleButton.interactable = true;
+            returnToTitleButton.onClick.RemoveAllListeners();
             returnToTitleButton.onClick.AddListener(ReturnToTitle);
+            returnToTitleButton.Select();
             
             // Unlock cursor for button interaction
             Cursor.lockState = CursorLockMode.None;
@@ -202,8 +210,33 @@ public class GameEndingTrigger : MonoBehaviour
         GameSession.Reset();
         
         if (debugMode) Debug.Log($"[GameEndingTrigger] Returning to title: {titleSceneName}");
-        
+
+        if (!Application.CanStreamedLevelBeLoaded(titleSceneName))
+        {
+            Debug.LogError($"[GameEndingTrigger] Cannot load scene '{titleSceneName}'. Is it added to Build Settings?");
+            SceneManager.LoadScene(0);
+            return;
+        }
+
         SceneManager.LoadScene(titleSceneName);
+    }
+
+    private static void EnsureEventSystem()
+    {
+        if (EventSystem.current != null) return;
+
+        var eventSystemGo = new GameObject("EventSystem");
+        eventSystemGo.AddComponent<EventSystem>();
+
+        var inputSystemUiType = System.Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
+        if (inputSystemUiType != null)
+        {
+            eventSystemGo.AddComponent(inputSystemUiType);
+        }
+        else
+        {
+            eventSystemGo.AddComponent<StandaloneInputModule>();
+        }
     }
     
     [ContextMenu("Test: Evil Ending")]

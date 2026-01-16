@@ -17,18 +17,18 @@ public static class StarterCardGenerator
         EnsureFolder(Path.Combine(BasePath, "Attack"));
         EnsureFolder(Path.Combine(BasePath, "Defense"));
         EnsureFolder(Path.Combine(BasePath, "Utility"));
-        EnsureFolder(Path.Combine(BasePath, "MergeOnly"));
+        // Merge feature removed: no MergeOnly folder/cards
 
         // Generate all cards
         CreateStarterAttackCards();      // 1-11: starter attacks
         CreateStarterDefenseCards();     // 12-17: starter defense
         CreateStarterUtilityCards();     // 18-23: ALL utility (includes Battle Focus & Disarm)
-        CreateMergeOnlyCards();          // 24-32: merge-only cards
+        // Merge feature removed: no merge-only cards
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log("✅ All 32 cards generated! (23 starting pool + 9 merge-only)");
+        Debug.Log("✅ All starter cards generated!");
     }
 
 
@@ -145,29 +145,7 @@ public static class StarterCardGenerator
         EditorUtility.SetDirty(c);
     }
 
-    // Finish setup for Merge-Only cards (cannot be found)
-    private static void FinishMergeOnly(Card c, CardRarity rarity, int maxCopies, bool exhaust, params string[] tags)
-    {
-        c.rarity = rarity;
-        c.maxCopiesInDeck = maxCopies;
-        c.canAppearAsReward = false;
-        c.canAppearInStartingDecks = false;
-        c.exhaustOnPlay = exhaust;
-        c.isStarterCard = false;
-        c.unlockedByDefault = false;
-        c.unlockLevelRequired = 0;
-
-        if (c.tags == null)
-            c.tags = new System.Collections.Generic.List<string>();
-        c.tags.Clear();
-        foreach (var t in tags)
-        {
-            if (!string.IsNullOrWhiteSpace(t))
-                c.tags.Add(t);
-        }
-
-        EditorUtility.SetDirty(c);
-    }
+    // Merge feature removed: no merge-only cards.
 
     // ---------- STARTER ATTACK CARDS (1-11) ----------
 
@@ -417,104 +395,6 @@ public static class StarterCardGenerator
         }
     }
 
-    // ---------- MERGE-ONLY CARDS (24-32) ----------
-
-    private static void CreateMergeOnlyCards()
-    {
-        string attackFolder = Path.Combine(BasePath, "Attack");
-        string defenseFolder = Path.Combine(BasePath, "Defense");
-        string mergeFolder = Path.Combine(BasePath, "MergeOnly");
-
-        // 24) Hemorrhage (Quick Slash + Stab)
-        {
-            var c = GetOrCreate(mergeFolder, "Hemorrhage");
-            BaseSetup(c, "Hemorrhage", "Deal 2 damage. Apply Bleed 4.", CardCategory.Attack, 2, TargetType.SingleEnemy);
-            ClearEffects(c, 2);
-            SetEffect(c, 0, EffectType.Damage, 2, 0, DamageSchool.Physical);
-            SetEffect(c, 1, EffectType.ApplyBleed, 4, 4, DamageSchool.Bleed);
-            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "attack", "bleed", "finisher");
-        }
-
-        // 25) Vanguard Strike (Low Sweep + Quick Slash)
-        {
-            var c = GetOrCreate(mergeFolder, "Vanguard Strike");
-            BaseSetup(c, "Vanguard Strike", "Deal 3 damage. Gain 4 Block.", CardCategory.Attack, 2, TargetType.SingleEnemy);
-            ClearEffects(c, 2);
-            SetEffect(c, 0, EffectType.Damage, 3, 0, DamageSchool.Physical);
-            SetEffect(c, 1, EffectType.ApplyBlock, 4, 0, DamageSchool.None, applyToSelf: true);
-            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "attack", "defense", "block");
-        }
-
-        // 26) Whirlwind (Quick Slash + Quick Slash)
-        {
-            var c = GetOrCreate(mergeFolder, "Whirlwind");
-            BaseSetup(c, "Whirlwind", "Deal 2 damage to all enemies.", CardCategory.Attack, 2, TargetType.AllEnemies);
-            ClearEffects(c, 1);
-            SetEffect(c, 0, EffectType.Damage, 2, 0, DamageSchool.Physical);
-            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "attack", "aoe");
-        }
-
-        // 27) Skewer (Crossbow Bolt + Poison Arrow)
-        {
-            var c = GetOrCreate(mergeFolder, "Skewer");
-            BaseSetup(c, "Skewer", "Deal 6 damage. Apply Bleed 3. Apply Weak 15% for 2 turns.", CardCategory.Attack, 3, TargetType.SingleEnemy);
-            ClearEffects(c, 3);
-            SetEffect(c, 0, EffectType.Damage, 6, 0, DamageSchool.Physical);
-            SetEffect(c, 1, EffectType.ApplyBleed, 3, 3, DamageSchool.Bleed);
-            SetEffect(c, 2, EffectType.ApplyWeak, 15, 2, DamageSchool.None);
-            FinishMergeOnly(c, CardRarity.Rare, 1, false, "attack", "ranged", "bleed", "debuff");
-        }
-
-        // 28) Weighted Tip (Improvised Bolt + Brawler's Jab)
-        {
-            var c = GetOrCreate(mergeFolder, "Weighted Tip");
-            BaseSetup(c, "Weighted Tip", "Deal 3 damage. Apply Bleed 2. Gain 1 stamina.", CardCategory.Attack, 2, TargetType.SingleEnemy);
-            ClearEffects(c, 3);
-            SetEffect(c, 0, EffectType.Damage, 3, 0, DamageSchool.Physical);
-            SetEffect(c, 1, EffectType.ApplyBleed, 2, 2, DamageSchool.Bleed);
-            SetEffect(c, 2, EffectType.GainStamina, 1, 0, DamageSchool.None, applyToSelf: true);
-            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "attack", "bleed", "tempo");
-        }
-
-        // 29) Deep Cuts (Stab + Rend)
-        {
-            var c = GetOrCreate(mergeFolder, "Deep Cuts");
-            BaseSetup(c, "Deep Cuts", "Deal 1 damage. Apply Bleed 4.", CardCategory.Attack, 2, TargetType.SingleEnemy);
-            ClearEffects(c, 2);
-            SetEffect(c, 0, EffectType.Damage, 1, 0, DamageSchool.Physical);
-            SetEffect(c, 1, EffectType.ApplyBleed, 4, 4, DamageSchool.Bleed);
-            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "attack", "bleed");
-        }
-
-        // 30) Counter Sweep (Low Sweep + Parry)
-        {
-            var c = GetOrCreate(mergeFolder, "Counter Sweep");
-            BaseSetup(c, "Counter Sweep", "Gain 4 Block. Deal 2 damage. Apply Weak 15% for 1 turn.", CardCategory.Defense, 2, TargetType.SingleEnemy);
-            ClearEffects(c, 3);
-            SetEffect(c, 0, EffectType.ApplyBlock, 4, 0, DamageSchool.None, applyToSelf: true);
-            SetEffect(c, 1, EffectType.Damage, 2, 0, DamageSchool.Physical);
-            SetEffect(c, 2, EffectType.ApplyWeak, 15, 1, DamageSchool.None);
-            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "defense", "counter", "block", "debuff");
-        }
-
-        // 31) Evasive Maneuver (Dodge + Quick Draw)
-        {
-            var c = GetOrCreate(mergeFolder, "Evasive Maneuver");
-            BaseSetup(c, "Evasive Maneuver", "Become untargetable for 1 turn. Draw 2 cards.", CardCategory.Defense, 2, TargetType.Self);
-            ClearEffects(c, 2);
-            SetEffect(c, 0, EffectType.PreventAttack, 0, 1, DamageSchool.None);
-            SetEffect(c, 1, EffectType.DrawCards, 2, 0, DamageSchool.None);
-            FinishMergeOnly(c, CardRarity.Uncommon, 2, false, "defense", "evasion", "draw");
-        }
-
-        // 32) Execution (Battle Focus + Lunging Thrust)
-        {
-            var c = GetOrCreate(mergeFolder, "Execution");
-            BaseSetup(c, "Execution", "Deal 8 damage. Exhaust.", CardCategory.Attack, 3, TargetType.SingleEnemy);
-            ClearEffects(c, 1);
-            SetEffect(c, 0, EffectType.Damage, 8, 0, DamageSchool.Physical);
-            FinishMergeOnly(c, CardRarity.Rare, 1, true, "attack", "finisher", "heavy", "exhaust");
-        }
-    }
+    // Merge feature removed: no merge-only cards.
 }
 #endif

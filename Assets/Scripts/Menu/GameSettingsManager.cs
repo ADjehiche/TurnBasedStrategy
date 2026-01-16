@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
+using System;
 
 public class GameSettingsManager : MonoBehaviour
 {
@@ -45,6 +46,8 @@ public class GameSettingsManager : MonoBehaviour
     public Difficulty CurrentDifficulty => _difficulty;
     public float MouseSensitivity => _mouseSensitivity;
 
+    public event Action<float> MouseSensitivityChanged;
+
     public bool HasChosenDifficulty => PlayerPrefs.GetInt(K_DifficultyChosen, 0) == 1;
 
     void Awake()
@@ -78,6 +81,7 @@ public class GameSettingsManager : MonoBehaviour
         ApplyVolume(_volume);
         TextScaleUtility.ApplyGlobalTextScale(_textScale);
         ApplyColorSensitivity(_colorSensitivity);
+        ApplyMouseSensitivityToScene();
     }
 
     public void SetVolume01(float v)
@@ -152,5 +156,19 @@ public class GameSettingsManager : MonoBehaviour
         _mouseSensitivity = Mathf.Clamp(value, 1f, 30f);
         PlayerPrefs.SetFloat(K_MouseSensitivity, _mouseSensitivity);
         PlayerPrefs.Save();
+
+        ApplyMouseSensitivityToScene();
+        MouseSensitivityChanged?.Invoke(_mouseSensitivity);
+    }
+
+    void ApplyMouseSensitivityToScene()
+    {
+        // Apply to any PlayerController present (including inactive during scene transitions).
+        var players = FindObjectsByType<PlayerController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var pc in players)
+        {
+            if (pc == null) continue;
+            pc.sensitivity = _mouseSensitivity;
+        }
     }
 }
