@@ -101,8 +101,13 @@ public class CardMergeManager : MonoBehaviour
         
         if (cardCollection == null)
         {
-            Debug.LogError("[CardMergeManager] CardCollection is null!");
-            return false;
+            cardCollection = CardCollection.Instance ?? FindObjectOfType<CardCollection>();
+            
+            if (cardCollection == null)
+            {
+                Debug.LogError("[CardMergeManager] CardCollection is null and could not be found!");
+                return false;
+            }
         }
         
         // Validate player has the required cards

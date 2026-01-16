@@ -101,6 +101,14 @@ public class CardMergeUI : MonoBehaviour
         // Show panel
         mergePanel.SetActive(true);
         
+        // Make sure selection panel is hidden
+        if (selectedRecipePanel != null)
+        {
+            selectedRecipePanel.SetActive(false);
+        }
+        
+        selectedRecipe = null;
+        
         // Unlock cursor for UI interaction
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -153,6 +161,110 @@ public class CardMergeUI : MonoBehaviour
     }
     
     /// <summary>
+    /// Ensure the recipe list container has proper layout components for scrolling
+    /// Also positions the ScrollView (or container) to avoid overlapping main buttons
+    /// </summary>
+    private void EnsureLayoutComponents()
+    {
+        if (recipeListContainer == null)
+            return;
+        
+        // 1. Identify the root layout object to position
+        // This should be the child of "MergePanel" that leads to our list items.
+        // We walk up the tree until we find the transform just below 'mergePanel'.
+        RectTransform targetRect = null;
+        
+        if (mergePanel != null)
+        {
+            Transform current = recipeListContainer;
+            while (current.parent != null && current.parent != mergePanel.transform)
+            {
+                current = current.parent;
+            }
+            
+            // If current.parent is mergePanel, then 'current' is the object we want to resize (e.g. Scroll View)
+            if (current.parent == mergePanel.transform)
+            {
+                targetRect = current.GetComponent<RectTransform>();
+                Debug.Log($"[CardMergeUI] Identified root list object: {targetRect.name}");
+            }
+        }
+        
+        // Fallback: If logic failed, try finding ScrollRect
+        if (targetRect == null)
+        {
+            var scrollRect = recipeListContainer.GetComponentInParent<ScrollRect>();
+            if (scrollRect != null)
+            {
+                targetRect = scrollRect.GetComponent<RectTransform>();
+            }
+        }
+        
+        // 2. Apply Safe Zone Anchors to the target
+        if (targetRect != null)
+        {
+            // SAFE ZONE CONFIGURATION:
+            // Left (X Min): 0.4 (40%) - Clears left navigation column
+            // Right (X Max): 0.95 (95%) - Slight padding from screen edge
+            // Bottom (Y Min): 0.2 (20%) - Clears 'Done' button area
+            // Top (Y Max): 0.85 (85%) - Clears Header area
+            
+            targetRect.anchorMin = new Vector2(0.4f, 0.2f);
+            targetRect.anchorMax = new Vector2(0.95f, 0.85f);
+            
+            // Important: Reset offsets so the rect snaps effectively to the anchors
+            targetRect.offsetMin = Vector2.zero;
+            targetRect.offsetMax = Vector2.zero;
+            
+            // Ensure pivot is standard
+            targetRect.pivot = new Vector2(0.5f, 0.5f);
+            
+            Debug.Log("[CardMergeUI] Applied Safe Zone Anchors to List Container");
+        }
+        else
+        {
+            Debug.LogError("[CardMergeUI] Could not find root container to resize! List may overlap UI.");
+        }
+
+        // 3. Ensure Content RectTransform is properly configured for vertical list
+        var contentRect = recipeListContainer.GetComponent<RectTransform>();
+        if (contentRect != null)
+        {
+            // Anchor to top-stretch of the viewport
+            contentRect.anchorMin = new Vector2(0, 1);
+            contentRect.anchorMax = new Vector2(1, 1);
+            contentRect.pivot = new Vector2(0.5f, 1);
+        }
+        
+        // 4. Add VerticalLayoutGroup
+        var layoutGroup = recipeListContainer.GetComponent<VerticalLayoutGroup>();
+        if (layoutGroup == null)
+        {
+            layoutGroup = recipeListContainer.gameObject.AddComponent<VerticalLayoutGroup>();
+        }
+        
+        // Configure layout settings
+        layoutGroup.childControlHeight = false; // Allow items to set their own height
+        layoutGroup.childControlWidth = true;   // Force items to expand width-wise
+        layoutGroup.childForceExpandHeight = false;
+        layoutGroup.childForceExpandWidth = true;
+        layoutGroup.childAlignment = TextAnchor.UpperCenter;
+        layoutGroup.spacing = 20f; // Wide spacing
+        layoutGroup.padding = new RectOffset(20, 20, 20, 20);
+        
+        // 5. Add ContentSizeFitter
+        var sizeFitter = recipeListContainer.GetComponent<ContentSizeFitter>();
+        if (sizeFitter == null)
+        {
+            sizeFitter = recipeListContainer.gameObject.AddComponent<ContentSizeFitter>();
+        }
+        
+        // Configure size fitter
+        sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+    }
+    
+    /// <summary>
     /// Refresh the list of available recipes
     /// </summary>
     private void RefreshRecipeList()
@@ -166,6 +278,9 @@ public class CardMergeUI : MonoBehaviour
             }
             return;
         }
+
+        // Ensure the recipeListContainer has a VerticalLayoutGroup for proper layout
+        EnsureLayoutComponents();
 
         // Clear existing items
         foreach (var item in recipeItems)
@@ -209,6 +324,13 @@ public class CardMergeUI : MonoBehaviour
         }
 
         Debug.Log($"[CardMergeUI] Created {createdCount} recipe UI items (recipes loaded: {recipes.Count})");
+        
+        // Force layout rebuild
+        Canvas.ForceUpdateCanvases();
+        if (recipeListContainer != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(recipeListContainer.GetComponent<RectTransform>());
+        }
     }
     
     /// <summary>
@@ -218,6 +340,26 @@ public class CardMergeUI : MonoBehaviour
     {
         GameObject item = Instantiate(recipeItemPrefab, recipeListContainer);
         recipeItems.Add(item);
+        
+        // Configure RectTransform
+        var rectTransform = item.GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            rectTransform.anchorMin = new Vector2(0, 1);
+            rectTransform.anchorMax = new Vector2(1, 1);
+            rectTransform.pivot = new Vector2(0.5f, 1);
+            rectTransform.localScale = Vector3.one;
+        }
+        
+        // Add LayoutElement to control sizing
+        var layoutElement = item.GetComponent<LayoutElement>();
+        if (layoutElement == null)
+        {
+            layoutElement = item.AddComponent<LayoutElement>();
+        }
+        layoutElement.preferredHeight = 80f;
+        layoutElement.minHeight = 60f;
+        layoutElement.flexibleHeight = 0f;
         
         // Try to use RecipeItemUI component if available
         var recipeItemUI = item.GetComponent<RecipeItemUI>();
@@ -267,23 +409,35 @@ public class CardMergeUI : MonoBehaviour
                 images[2].sprite = recipe.result.artwork;
         }
         
-        // Visual feedback for craftable vs locked
+        // Only allow interaction with craftable recipes
         bool canCraft = recipe.CanCraft(CardCollection.Instance);
-        if (!canCraft && button != null)
+        if (button != null)
         {
-            var colors = button.colors;
-            colors.normalColor = new Color(0.5f, 0.5f, 0.5f, 0.5f); // Grayed out
-            button.colors = colors;
+            button.interactable = canCraft;
+            if (!canCraft)
+            {
+                var colors = button.colors;
+                colors.disabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f); // Grayed out
+                button.colors = colors;
+            }
         }
     }
     
     /// <summary>
     /// Called when player selects a recipe from the list
+    /// Only craftable recipes can be selected
     /// </summary>
     private void OnRecipeSelected(CardRecipe recipe)
     {
         if (recipe == null)
             return;
+        
+        // Only allow selection of craftable recipes
+        if (!recipe.CanCraft(CardCollection.Instance))
+        {
+            Debug.LogWarning($"[CardMergeUI] Cannot select non-craftable recipe: {recipe.GetRecipeString()}");
+            return;
+        }
             
         selectedRecipe = recipe;
         
@@ -375,24 +529,15 @@ public class CardMergeUI : MonoBehaviour
         {
             Debug.Log($"[CardMergeUI] ✨ Successfully merged: {selectedRecipe.GetRecipeString()}");
             
-            // Refresh UI
+            // Refresh the recipe list to update craftable states
             RefreshRecipeList();
             
-            // Clear selection or update it
-            if (selectedRecipe.CanCraft(CardCollection.Instance))
+            // Hide selection panel
+            if (selectedRecipePanel != null)
             {
-                // Can still craft - update counts
-                OnRecipeSelected(selectedRecipe);
+                selectedRecipePanel.SetActive(false);
             }
-            else
-            {
-                // Can't craft anymore - hide selection panel
-                if (selectedRecipePanel != null)
-                {
-                    selectedRecipePanel.SetActive(false);
-                }
-                selectedRecipe = null;
-            }
+            selectedRecipe = null;
         }
         else
         {
