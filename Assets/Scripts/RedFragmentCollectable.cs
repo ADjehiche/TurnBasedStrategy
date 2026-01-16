@@ -33,6 +33,7 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
         "What... what have I done?"
     };
     [SerializeField] private float dialogueLineDuration = 3f;
+    [SerializeField] private string[] flashbackDialogueAudio; // Parallel audio array for flashback
     
     [Header("Visual Effects")]
     [Tooltip("Particle effect to play on collection")]
@@ -47,7 +48,12 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
     
     [Header("Interaction Prompt")]
     [SerializeField] private string interactionPrompt = "[System] Press E to interact";
+    [SerializeField] private string interactionPromptAudio;
     [SerializeField] private float promptDuration = 5f;
+    
+    [Header("Collection Audio")]
+    [SerializeField] private string introAudio; // "I am your rage."
+    [SerializeField] private string systemMessageAudio; // "Rage Fragment Acquired"
     
     [Header("Boss Door Cutscene")]
     [Tooltip("Timeline cutscene to play when both fragments collected")]
@@ -92,7 +98,7 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
             // Show interaction prompt
             if (CaptionManager.Instance != null)
             {
-                CaptionManager.Instance.ShowSystemMessage(interactionPrompt, promptDuration);
+                CaptionManager.Instance.ShowSystemMessage(interactionPrompt, promptDuration, interactionPromptAudio);
             }
             
             if (debugMode) Debug.Log("[RedFragmentCollectable] Player in range - showing prompt");
@@ -160,7 +166,7 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
         // Show intro dialogue
         if (CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowFlashback("[Red Fragment] I am your rage.", 2.5f);
+            CaptionManager.Instance.ShowFlashback("[Red Fragment] I am your rage.", 2.5f, introAudio);
         }
         
         // Lock player movement during dialogue
@@ -295,7 +301,7 @@ public class RedFragmentCollectable : MonoBehaviour, IInteractable
             // Show fragment acquired message
             if (CaptionManager.Instance != null)
             {
-                CaptionManager.Instance.ShowSystemMessage("[Rage Fragment Acquired]", 2f);
+                CaptionManager.Instance.ShowSystemMessage("[Rage Fragment Acquired]", 2f, systemMessageAudio);
             }
         }
     }

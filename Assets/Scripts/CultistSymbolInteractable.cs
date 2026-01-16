@@ -20,6 +20,7 @@ public class CultistSymbolInteractable : MonoBehaviour
         "[You] Strange markings... I don't recognize them.",
         "[You] They look ancient. Deliberate."
     };
+    [SerializeField] private string[] audioBeforeFragment; // Parallel array for audio
     
     [Header("Dialogue - After Fragment")]
     [Tooltip("Fragment's explanation of what the symbols mean")]
@@ -29,6 +30,7 @@ public class CultistSymbolInteractable : MonoBehaviour
         "[You] Can you break them?",
         "[Fragment] Already broken. You're free now."
     };
+    [SerializeField] private string[] audioAfterFragment; // Parallel array for audio
     
     [Header("Timing")]
     [SerializeField] private float dialogueDuration = 2.5f;
@@ -37,6 +39,9 @@ public class CultistSymbolInteractable : MonoBehaviour
     
     [Header("UI")]
     [SerializeField] private string promptMessage = "[System] Press E to inspect";
+    [SerializeField] private string promptAudio; // Optional audio for prompt
+    [SerializeField] private string unlockMessage = "[System] The ancient seals break... the exit opens";
+    [SerializeField] private string unlockAudio; 
     [SerializeField] private bool showPrompt = true;
     
     [Header("Debug")]
@@ -65,7 +70,7 @@ public class CultistSymbolInteractable : MonoBehaviour
             
             if (showPrompt && CaptionManager.Instance != null)
             {
-                CaptionManager.Instance.ShowSystemMessage(promptMessage, 3f);
+                CaptionManager.Instance.ShowSystemMessage(promptMessage, 3f, promptAudio);
             }
             
             if (showDebugLogs)
@@ -96,17 +101,17 @@ public class CultistSymbolInteractable : MonoBehaviour
             ActivateSymbol();
             
             // Show Fragment's explanation
-            StartCoroutine(ShowDialogueSequence(dialogueAfterFragment));
+            StartCoroutine(ShowDialogueSequence(dialogueAfterFragment, audioAfterFragment));
         }
         else if (GameSession.CompanionActive && hasBeenActivated)
         {
             // Already activated - show Fragment's explanation again
-            StartCoroutine(ShowDialogueSequence(dialogueAfterFragment));
+            StartCoroutine(ShowDialogueSequence(dialogueAfterFragment, audioAfterFragment));
         }
         else
         {
             // Show player's confusion (no Fragment yet)
-            StartCoroutine(ShowDialogueSequence(dialogueBeforeFragment));
+            StartCoroutine(ShowDialogueSequence(dialogueBeforeFragment, audioBeforeFragment));
         }
     }
     
@@ -146,7 +151,7 @@ public class CultistSymbolInteractable : MonoBehaviour
         // Show caption that the seals are breaking/door is opening
         if (CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowSystemMessage("[System] The ancient seals break... the exit opens", 4f);
+            CaptionManager.Instance.ShowSystemMessage(unlockMessage, 4f, unlockAudio);
         }
         
         // Trigger the cutscene - the cutscene itself will handle opening the door
@@ -187,15 +192,18 @@ public class CultistSymbolInteractable : MonoBehaviour
         }
     }
     
-    private IEnumerator ShowDialogueSequence(string[] dialogue)
+    private IEnumerator ShowDialogueSequence(string[] dialogue, string[] audioClips = null)
     {
         isShowingDialogue = true;
         
-        foreach (string line in dialogue)
+        for (int i = 0; i < dialogue.Length; i++)
         {
+            string line = dialogue[i];
+            string audioName = (audioClips != null && i < audioClips.Length) ? audioClips[i] : null;
+
             if (CaptionManager.Instance != null)
             {
-                CaptionManager.Instance.ShowMonologue(line, dialogueDuration);
+                CaptionManager.Instance.ShowMonologue(line, dialogueDuration, audioName);
             }
             else
             {
@@ -210,7 +218,7 @@ public class CultistSymbolInteractable : MonoBehaviour
         // Show prompt again after dialogue
         if (showPrompt && playerInRange && CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowSystemMessage(promptMessage, 2f);
+            CaptionManager.Instance.ShowSystemMessage(promptMessage, 2f, promptAudio);
         }
     }
     

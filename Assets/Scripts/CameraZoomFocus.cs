@@ -31,6 +31,7 @@ public class CameraZoomFocus : MonoBehaviour
     [Header("Caption")]
     [SerializeField] private bool showCaption = true;
     [SerializeField] private string captionMessage = "[You] A key... on that skeleton.";
+    [SerializeField] private string captionAudio; // Audio for the caption
     [SerializeField] private float captionDuration = 2.5f;
     
     [Header("Debug")]
@@ -82,7 +83,7 @@ public class CameraZoomFocus : MonoBehaviour
         // Show caption
         if (showCaption && CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowMonologue(captionMessage, captionDuration);
+            CaptionManager.Instance.ShowMonologue(captionMessage, captionDuration, captionAudio);
         }
         
         // Zoom in with rotation

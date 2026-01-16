@@ -19,6 +19,7 @@ public class BossTrigger : MonoBehaviour
     
     [Header("Dialogue")]
     [SerializeField] private string blueFragmentDialogue = "[Blue Fragment] Its the warden!";
+    [SerializeField] private string blueFragmentDialogueAudio;
     [SerializeField] private float dialogueDuration = 2.5f;
     
     [Header("Battle Scene")]
@@ -97,7 +98,7 @@ public class BossTrigger : MonoBehaviour
         // Show Blue Fragment dialogue
         if (CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowMonologue(blueFragmentDialogue, dialogueDuration);
+            CaptionManager.Instance.ShowMonologue(blueFragmentDialogue, dialogueDuration, blueFragmentDialogueAudio);
         }
         
         // Play warning sound

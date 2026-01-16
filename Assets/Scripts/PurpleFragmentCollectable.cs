@@ -13,7 +13,10 @@ public class PurpleFragmentCollectable : MonoBehaviour, IInteractable
     
     [Header("Settings")]
     [SerializeField] private string collectMessage = "[Purple Fragment] Your true power... reclaimed.";
+    [SerializeField] private string collectMessageAudio;
     [SerializeField] private float messageDuration = 3f;
+    [SerializeField] private string interactionPrompt = "[System] Press E to interact";
+    [SerializeField] private string interactionPromptAudio;
     [SerializeField] private bool debugMode = true;
     
     private bool hasBeenCollected = false;
@@ -50,7 +53,7 @@ public class PurpleFragmentCollectable : MonoBehaviour, IInteractable
         // Show message
         if (CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowMonologue(collectMessage, messageDuration);
+            CaptionManager.Instance.ShowMonologue(collectMessage, messageDuration, collectMessageAudio);
         }
         
         // Play ominous sound
@@ -101,7 +104,7 @@ public class PurpleFragmentCollectable : MonoBehaviour, IInteractable
     {
         if (other.CompareTag("Player") && CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowSystemMessage("[System] Press E to interact", 3f);
+            CaptionManager.Instance.ShowSystemMessage(interactionPrompt, 3f, interactionPromptAudio);
         }
     }
 }
