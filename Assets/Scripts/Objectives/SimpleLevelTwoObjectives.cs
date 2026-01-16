@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 /// <summary>
 /// SIMPLE Level Two objectives - handles archive exploration progression
@@ -18,15 +19,23 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
     private string[] objectives = {
         "Explore the Archive",
         "Explore Further Inside", 
+        "Defeat the Skeletons",    // Combat Wing battle
+        "Explore Further Inside",  // Return to exploration after battle
         "Explore the Maze",
-        "Return to the Archive"
+        "Return to the Archive",
+        "Defeat the Warden",       // NEW: Boss battle
+        "Make Your Choice"         // NEW: Final choice (take fragment or leave)
     };
     
     // Completion flags
     private bool hasExploredArchive = false;
     private bool hasExploredTunnel = false;
+    private bool hasEnteredCombatWing = false;
+    private bool hasDefeatedSkeletons = false;
     private bool hasExploredMaze = false;
     private bool hasReturnedToArchive = false;
+    private bool hasEnteredBossRoom = false;     // NEW
+    private bool hasDefeatedWarden = false;      // NEW
     
     private void Awake()
     {
@@ -205,10 +214,52 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
             hasExploredArchive = true;
             SaveObjectiveState(); // Save progress
             CompleteCurrentObjective(); // Complete "Explore the Archive", show "Explore Further Inside"
+            
+            // Wait for dialogue audio to finish before showing reward
+            StartCoroutine(WaitForDialogueAndShowReward());
         }
         else
         {
             Debug.LogWarning($"[SimpleLevelTwoObjectives] Tunnel entered but conditions not met - hasExploredArchive: {hasExploredArchive}, currentObjectiveIndex: {currentObjectiveIndex} (expected 0)");
+        }
+    }
+
+    /// <summary>
+    /// Wait for dialogue audio to finish, then show exploration reward
+    /// </summary>
+    private IEnumerator WaitForDialogueAndShowReward()
+    {
+        Debug.Log("[SimpleLevelTwoObjectives] Waiting for dialogue to finish before showing reward...");
+
+        // Find the LevelTwoCaptionController
+        LevelTwoCaptionController captionController = FindFirstObjectByType<LevelTwoCaptionController>();
+        
+        if (captionController != null)
+        {
+            // Wait while dialogue audio is playing
+            while (captionController.IsDialoguePlaying())
+            {
+                yield return new WaitForSeconds(0.1f);
+            }
+            
+            // Add a small buffer to ensure audio fully completes
+            yield return new WaitForSeconds(0.5f);
+            Debug.Log("[SimpleLevelTwoObjectives] Dialogue finished!");
+        }
+        else
+        {
+            Debug.LogWarning("[SimpleLevelTwoObjectives] LevelTwoCaptionController not found, showing reward immediately");
+        }
+
+        // Show card reward for exploring the archive
+        if (ExplorationRewardManager.Instance != null)
+        {
+            Debug.Log("[SimpleLevelTwoObjectives] Archive explored! Showing card reward...");
+            ExplorationRewardManager.ShowReward();
+        }
+        else
+        {
+            Debug.LogWarning("[SimpleLevelTwoObjectives] ExplorationRewardManager.Instance is null! Cannot show card reward.");
         }
     }
     
@@ -219,7 +270,8 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
     {
         Debug.Log($"[SimpleLevelTwoObjectives] OnMazeEntered called - hasExploredTunnel: {hasExploredTunnel}, currentObjectiveIndex: {currentObjectiveIndex}");
         
-        if (!hasExploredTunnel && currentObjectiveIndex == 1)
+        // Maze is now objective index 4 (after skeleton defeat)
+        if (!hasExploredTunnel && currentObjectiveIndex == 3)
         {
             Debug.Log("[SimpleLevelTwoObjectives] Conditions met - completing 'Explore Further Inside' objective");
             hasExploredTunnel = true;
@@ -228,7 +280,39 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[SimpleLevelTwoObjectives] Maze entered but conditions not met - hasExploredTunnel: {hasExploredTunnel}, currentObjectiveIndex: {currentObjectiveIndex} (expected 1)");
+            Debug.LogWarning($"[SimpleLevelTwoObjectives] Maze entered but conditions not met - hasExploredTunnel: {hasExploredTunnel}, currentObjectiveIndex: {currentObjectiveIndex} (expected 3)");
+        }
+    }
+    
+    /// <summary>
+    /// Call this when player enters the Combat Wing (skeleton trigger area)
+    /// </summary>
+    public void OnCombatWingEntered()
+    {
+        Debug.Log($"[SimpleLevelTwoObjectives] OnCombatWingEntered called - hasEnteredCombatWing: {hasEnteredCombatWing}, currentObjectiveIndex: {currentObjectiveIndex}");
+        
+        if (!hasEnteredCombatWing && currentObjectiveIndex == 1)
+        {
+            Debug.Log("[SimpleLevelTwoObjectives] Entering Combat Wing - showing 'Defeat the Skeletons' objective");
+            hasEnteredCombatWing = true;
+            SaveObjectiveState();
+            CompleteCurrentObjective(); // Complete "Explore Further Inside", show "Defeat the Skeletons"
+        }
+    }
+    
+    /// <summary>
+    /// Call this when skeletons are defeated (after battle victory)
+    /// </summary>
+    public void OnSkeletonsDefeated()
+    {
+        Debug.Log($"[SimpleLevelTwoObjectives] OnSkeletonsDefeated called - hasDefeatedSkeletons: {hasDefeatedSkeletons}, currentObjectiveIndex: {currentObjectiveIndex}");
+        
+        if (!hasDefeatedSkeletons && currentObjectiveIndex == 2)
+        {
+            Debug.Log("[SimpleLevelTwoObjectives] Skeletons defeated - returning to 'Explore Further Inside'");
+            hasDefeatedSkeletons = true;
+            SaveObjectiveState();
+            CompleteCurrentObjective(); // Complete "Defeat the Skeletons", show "Explore Further Inside"
         }
     }
     
@@ -239,7 +323,8 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
     {
         Debug.Log($"[SimpleLevelTwoObjectives] OnMazeExplored called - hasExploredMaze: {hasExploredMaze}, currentObjectiveIndex: {currentObjectiveIndex}");
         
-        if (!hasExploredMaze && currentObjectiveIndex == 2)
+        // Maze explore is now objective index 4
+        if (!hasExploredMaze && currentObjectiveIndex == 4)
         {
             Debug.Log("[SimpleLevelTwoObjectives] Conditions met - completing 'Explore the Maze' objective");
             hasExploredMaze = true;
@@ -248,27 +333,73 @@ public class SimpleLevelTwoObjectives : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[SimpleLevelTwoObjectives] Maze explored but conditions not met - hasExploredMaze: {hasExploredMaze}, currentObjectiveIndex: {currentObjectiveIndex} (expected 2)");
+            Debug.LogWarning($"[SimpleLevelTwoObjectives] Maze explored but conditions not met - hasExploredMaze: {hasExploredMaze}, currentObjectiveIndex: {currentObjectiveIndex} (expected 4)");
         }
     }
     
     /// <summary>
     /// Call this when player returns to the archive
     /// </summary>
+    /// 
     public void OnReturnedToArchive()
     {
         Debug.Log($"[SimpleLevelTwoObjectives] OnReturnedToArchive called - hasReturnedToArchive: {hasReturnedToArchive}, currentObjectiveIndex: {currentObjectiveIndex}");
         
-        if (!hasReturnedToArchive && currentObjectiveIndex == 3)
+        // Return to archive is now objective index 5
+        if (!hasReturnedToArchive && currentObjectiveIndex == 5)
         {
             Debug.Log("[SimpleLevelTwoObjectives] Conditions met - completing 'Return to the Archive' objective");
             hasReturnedToArchive = true;
             SaveObjectiveState(); // Save progress
-            CompleteCurrentObjective(); // Complete "Return to the Archive"
+            CompleteCurrentObjective(); // Complete "Return to the Archive", show "Defeat the Warden"
+            
+            // Show card reward for returning to the archive
+            if (ExplorationRewardManager.Instance != null)
+            {
+                Debug.Log("[SimpleLevelTwoObjectives] Returned to archive! Showing card reward...");
+                ExplorationRewardManager.ShowReward();
+            }
+            else
+            {
+                Debug.LogWarning("[SimpleLevelTwoObjectives] ExplorationRewardManager.Instance is null! Cannot show card reward.");
+            }
         }
         else
         {
-            Debug.LogWarning($"[SimpleLevelTwoObjectives] Returned to archive but conditions not met - hasReturnedToArchive: {hasReturnedToArchive}, currentObjectiveIndex: {currentObjectiveIndex} (expected 3)");
+            Debug.LogWarning($"[SimpleLevelTwoObjectives] Returned to archive but conditions not met - hasReturnedToArchive: {hasReturnedToArchive}, currentObjectiveIndex: {currentObjectiveIndex} (expected 5)");
+        }
+    }
+    
+    /// <summary>
+    /// Call this when player enters the boss room (triggers boss fight)
+    /// </summary>
+    public void OnBossRoomEntered()
+    {
+        Debug.Log($"[SimpleLevelTwoObjectives] OnBossRoomEntered called - hasEnteredBossRoom: {hasEnteredBossRoom}, currentObjectiveIndex: {currentObjectiveIndex}");
+        
+        // Boss room is objective index 6
+        if (!hasEnteredBossRoom && currentObjectiveIndex == 6)
+        {
+            Debug.Log("[SimpleLevelTwoObjectives] Entering boss room - 'Defeat the Warden' objective active");
+            hasEnteredBossRoom = true;
+            SaveObjectiveState();
+            // Don't complete yet - objective stays as "Defeat the Warden" during battle
+        }
+    }
+    
+    /// <summary>
+    /// Call this when the Warden is defeated
+    /// </summary>
+    public void OnWardenDefeated()
+    {
+        Debug.Log($"[SimpleLevelTwoObjectives] OnWardenDefeated called - hasDefeatedWarden: {hasDefeatedWarden}, currentObjectiveIndex: {currentObjectiveIndex}");
+        
+        if (!hasDefeatedWarden && currentObjectiveIndex == 6)
+        {
+            Debug.Log("[SimpleLevelTwoObjectives] Warden defeated - showing 'Make Your Choice' objective");
+            hasDefeatedWarden = true;
+            SaveObjectiveState();
+            CompleteCurrentObjective(); // Complete "Defeat the Warden", show "Make Your Choice"
         }
     }
     

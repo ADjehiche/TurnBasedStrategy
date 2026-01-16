@@ -30,14 +30,19 @@ public class CardCollection : MonoBehaviour
 
     private void Awake()
     {
+        Debug.Log($"[CardCollection] Awake on {gameObject.name}");
+
         if (Instance != null && Instance != this)
         {
+            Debug.LogWarning($"[CardCollection] Duplicate detected, destroying {gameObject.name}");
             Destroy(gameObject);
             return;
         }
+
         Instance = this;
         DontDestroyOnLoad(gameObject);
     }
+
 
     private void Start()
     {
@@ -178,6 +183,34 @@ public class CardCollection : MonoBehaviour
             options.Add(selectedCard);
         }
 
+        return options;
+    }
+
+    /// <summary>
+    /// Get random STARTER cards only (for exploration rewards, chests, etc.)
+    /// NO rare/merge-only cards - only basic starter pool cards
+    /// </summary>
+    public List<Card> GetRandomStarterCards(int count = 2)
+    {
+        List<Card> options = new List<Card>();
+        
+        // Ensure starter pool is loaded
+        if (starterPool == null || starterPool.Count == 0)
+        {
+            LoadStarterCardPool();
+        }
+
+        List<Card> availablePool = new List<Card>(starterPool);
+
+        for (int i = 0; i < count && availablePool.Count > 0; i++)
+        {
+            int randomIndex = Random.Range(0, availablePool.Count);
+            Card selectedCard = availablePool[randomIndex];
+            availablePool.RemoveAt(randomIndex); // Prevent duplicates in same selection
+            options.Add(selectedCard);
+        }
+
+        Debug.Log($"[CardCollection] Selected {options.Count} starter cards for exploration reward");
         return options;
     }
 

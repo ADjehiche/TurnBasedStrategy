@@ -90,6 +90,35 @@ public class MazeGenerator : MonoBehaviour
     
     void Start()
     {
+        // Apply difficulty scaling BEFORE initializing grid
+        if (DifficultyManager.Instance != null)
+        {
+            var difficulty = DifficultyManager.Instance.GetDifficulty();
+            switch (difficulty)
+            {
+                case DifficultyManager.DifficultyMode.Easy:
+                    _mazeWidth = 8;
+                    _mazeDepth = 8;
+                    Debug.Log("[MazeGenerator] Difficulty Easy: Setting maze size to 8x8");
+                    break;
+                case DifficultyManager.DifficultyMode.Normal:
+                    _mazeWidth = 10;
+                    _mazeDepth = 10;
+                    Debug.Log("[MazeGenerator] Difficulty Normal: Setting maze size to 10x10");
+                    break;
+                case DifficultyManager.DifficultyMode.Hard:
+                case DifficultyManager.DifficultyMode.Nightmare:
+                    _mazeWidth = 12;
+                    _mazeDepth = 12;
+                    Debug.Log($"[MazeGenerator] Difficulty {difficulty}: Setting maze size to 12x12");
+                    break;
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[MazeGenerator] DifficultyManager instance not found! Using Inspector values.");
+        }
+
         _mazeGrid = new MazeCell[_mazeWidth, _mazeDepth];
 
         for (int x = 0; x < _mazeWidth; x++)

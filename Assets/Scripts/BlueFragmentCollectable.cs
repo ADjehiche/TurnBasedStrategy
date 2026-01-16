@@ -23,6 +23,14 @@ public class BlueFragmentCollectable : MonoBehaviour, IInteractable
     
     void Start()
     {
+        // If already collected previously, destroy this (prevents duplicates in maze)
+        if (GameSession.HasCollectedBlueFragment)
+        {
+            if (debugMode) Debug.Log("[BlueFragmentCollectable] Already collected, destroying duplicate from maze!");
+            Destroy(gameObject);
+            return;
+        }
+        
         // Find the guidance controller
         guidanceController = FindFirstObjectByType<MazeGuidanceController>();
         
@@ -86,8 +94,11 @@ public class BlueFragmentCollectable : MonoBehaviour, IInteractable
         // Wait for effects
         yield return new UnityEngine.WaitForSeconds(collectDelay);
         
-        // Spawn the follower version
-        SpawnBlueFragmentFollower();
+        // Mark as collected for persistence
+        GameSession.HasCollectedBlueFragment = true;
+        
+        // Become follower (same object, just change behavior)
+        BecomeFollower();
         
         // Notify guidance controller
         if (guidanceController != null)
@@ -95,39 +106,38 @@ public class BlueFragmentCollectable : MonoBehaviour, IInteractable
             guidanceController.OnBlueFragmentCollected();
         }
         
-        // Destroy this collectible
-        Destroy(gameObject);
-        
         OnInteractionComplete?.Invoke(this);
     }
     
     /// <summary>
-    /// Spawn the blue fragment as a follower
+    /// Transform this collectible into a follower
     /// </summary>
-    private void SpawnBlueFragmentFollower()
+    private void BecomeFollower()
     {
-        if (blueFragmentFollowerPrefab == null)
+        // Get the CompanionFollower on this same object
+        CompanionFollower follower = GetComponent<CompanionFollower>();
+        if (follower != null)
         {
-            Debug.LogError("[BlueFragmentCollectable] Blue fragment follower prefab not assigned!");
-            return;
+            follower.StartFollowing();
+            GameSession.BlueCompanionActive = true;
+            
+            if (debugMode)
+                Debug.Log("[BlueFragmentCollectable] Became follower (same object)");
+        }
+        else
+        {
+            Debug.LogError("[BlueFragmentCollectable] No CompanionFollower on this object!");
         }
         
-        Vector3 spawnPos = spawnPosition != null ? spawnPosition.position : transform.position;
+        // Disable this collectible script (no longer interactable)
+        this.enabled = false;
         
-        // Spawn slightly to the side of the player
-        spawnPos += Vector3.right * 2f + Vector3.up * 0.5f;
-        
-        GameObject follower = Instantiate(blueFragmentFollowerPrefab, spawnPos, Quaternion.identity);
-        
-        // Make sure it starts following
-        CompanionFollower followerScript = follower.GetComponent<CompanionFollower>();
-        if (followerScript != null)
+        // Remove collider so player can't interact again
+        Collider col = GetComponent<Collider>();
+        if (col != null)
         {
-            followerScript.StartFollowing();
+            col.enabled = false;
         }
-        
-        if (debugMode)
-            Debug.Log("[BlueFragmentCollectable] Spawned blue fragment follower");
     }
     
     /// <summary>

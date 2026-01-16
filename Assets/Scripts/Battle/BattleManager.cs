@@ -47,11 +47,26 @@ public class BattleManager : MonoBehaviour
     /// </summary>
     public void ReturnToLevelOne()
     {
-        GameSession.EnemyDefeated = true;
+        GameSession.LevelOneEnemyDefeated = true;
         Debug.Log($"[BattleManager] Setting EnemyDefeated to true, GameManager exists: {GameManager.Instance != null}");
         
-        // The skeleton defeat objective will be triggered when Level One loads
-        Debug.Log("[BattleManager] Skeleton defeat marked - objective will trigger on Level One load");
+        // Check if this was a Combat Wing battle (Battle_2 from LevelTwo)
+        if (GameSession.BattleSceneName == "Battle_2" && GameSession.ReturnSceneName == "LevelTwo")
+        {
+            GameSession.CombatWingVictory = true;
+            GameSession.RedFragmentSpawnPosition = GameSession.ReturnPosition;
+            Debug.Log("[BattleManager] Combat Wing victory - Red Fragment will spawn on return");
+        }
+        
+        // Check if this was the Boss battle (Battle_Boss from LevelTwo)
+        if (GameSession.BattleSceneName == "Battle_Boss" && GameSession.ReturnSceneName == "LevelTwo")
+        {
+            GameSession.BossDefeated = true;
+            Debug.Log("[BattleManager] Boss defeated! Warden dialogue and purple fragment will spawn on return");
+        }
+        
+        // The skeleton defeat objective will be triggered when level loads
+        Debug.Log($"[BattleManager] Returning to: {GameSession.ReturnSceneName}");
         
         // Try to ensure GameManager state is set
         if (GameManager.Instance != null)
@@ -64,6 +79,7 @@ public class BattleManager : MonoBehaviour
             Debug.LogWarning("[BattleManager] GameManager instance not found, using direct scene loading");
         }
         
-        SceneManager.LoadScene("LevelOne", LoadSceneMode.Single);
+        // Return to the scene we came from (dynamic - works for both LevelOne and LevelTwo)
+        SceneManager.LoadScene(GameSession.ReturnSceneName, LoadSceneMode.Single);
     }
 }

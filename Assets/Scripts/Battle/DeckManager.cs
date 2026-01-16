@@ -91,16 +91,22 @@ public class DeckManager : MonoBehaviour
     /// Draw 1 (reshuffle discards if needed). Returns null if deck truly empty.
     public Card DrawOne()
     {
+        // CRITICAL: If draw pile has 2 or fewer cards and there are discards, reshuffle NOW
+        // This prevents ending up with only 1-2 cards in hand
+        if (drawPile.Count <= 2 && discardPile.Count > 0)
+        {
+            Debug.Log($"[DeckManager] ⚠️ Draw pile low ({drawPile.Count} cards). Reshuffling discard pile early.");
+            drawPile.AddRange(discardPile);
+            discardPile.Clear();
+            Shuffle(drawPile);
+            Debug.Log($"[DeckManager] ✅ Reshuffled. Draw pile now has {drawPile.Count} cards.");
+        }
+
         if (drawPile.Count == 0)
         {
-            if (discardPile.Count > 0)
-            {
-                drawPile.AddRange(discardPile);
-                discardPile.Clear();
-                Shuffle(drawPile);
-            }
+            Debug.LogWarning("[DeckManager] Draw pile empty and no discards available!");
+            return null;
         }
-        if (drawPile.Count == 0) return null;
 
         var c = drawPile[0];
         drawPile.RemoveAt(0);

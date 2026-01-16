@@ -10,7 +10,7 @@ public class PlayerStateHandler : MonoBehaviour
     {
         Debug.Log($"[PlayerStateHandler] Start - GameManager exists: {GameManager.Instance != null}");
         Debug.Log($"[PlayerStateHandler] Start - hasSavedState: {(GameManager.Instance != null ? GameManager.Instance.hasSavedState : "null")}");
-        Debug.Log($"[PlayerStateHandler] Start - GameSession.EnemyDefeated: {GameSession.EnemyDefeated}");
+        Debug.Log($"[PlayerStateHandler] Start - GameSession.LevelOneEnemyDefeated: {GameSession.LevelOneEnemyDefeated}");
         
         // Check if we need to restore state after battle
         bool shouldRestoreState = false;
@@ -24,7 +24,7 @@ public class PlayerStateHandler : MonoBehaviour
         }
         
         // Always check if enemy was defeated and handle battle trigger accordingly
-        if (GameSession.EnemyDefeated || shouldRestoreState)
+        if (GameSession.LevelOneEnemyDefeated || shouldRestoreState)
         {
             Debug.Log("[PlayerStateHandler] Enemy defeated or state restored - cleaning up battle triggers and enemies");
             DestroyBattleTriggerAndEnemy();

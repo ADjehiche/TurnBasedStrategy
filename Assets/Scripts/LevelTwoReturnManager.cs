@@ -1,0 +1,374 @@
+using UnityEngine;
+using UnityEngine.Playables;
+
+/// <summary>
+/// Handles player positioning and state restoration when returning to Level Two
+/// Mirrors LevelOneReturnManager functionality
+/// </summary>
+public class LevelTwoReturnManager : MonoBehaviour
+{
+    [Header("References")]
+    [SerializeField] private Transform player;
+    [SerializeField] private GameObject[] enemyRoots; // Combat Wing enemies (assign both skeletons)
+    
+    [Header("Battle Triggers to Disable")]
+    [Tooltip("Battle triggers that should be disabled after enemies are defeated")]
+    [SerializeField] private GameObject[] combatWingTriggers;
+    
+    [Header("Boss Door Cutscene")]
+    [Tooltip("Timeline cutscene to play when returning after both fragments collected")]
+    [SerializeField] private PlayableDirector bossDoorCutscene;
+    
+    [Header("Debug")]
+    [SerializeField] private bool debugMode = true;
+    
+    void Start()
+    {
+        // Set return scene name for Respawn (death)
+        GameSession.ReturnSceneName = "LevelTwo";
+        
+        // Position player correctly after battle
+        HandlePlayerPosition();
+        
+        // Handle enemy state (death animations, cleanup)
+        HandleEnemyState();
+        
+        // Disable battle triggers if enemies defeated
+        HandleBattleTriggers();
+        
+        // Restore red companion if it was active
+        RestoreRedCompanion();
+        
+        // Restore blue companion if it was active
+        RestoreBlueCompanion();
+        
+        // Notify objectives system if skeletons were defeated
+        if (GameSession.CombatWingVictory)
+        {
+            NotifySkeletonsDefeated();
+        }
+        
+        // Play boss door cutscene if returning from flashback with both fragments
+        if (debugMode) 
+            Debug.Log($"[LevelTwoReturnManager] Checking Boss Door: FlashbackPlayed={GameSession.HasPlayedRageFlashback}, CanUnlock={GameSession.CanUnlockBossDoor}, PlayedOnce={GameSession.HasPlayedBossDoorCutscene}");
+            
+        if (GameSession.HasPlayedRageFlashback && GameSession.CanUnlockBossDoor && !GameSession.HasPlayedBossDoorCutscene)
+        {
+            TriggerBossDoorCutscene();
+        }
+    }
+    
+    /// <summary>
+    /// Play boss door cutscene when both fragments collected
+    /// </summary>
+    public void TriggerBossDoorCutscene()
+    {
+        if (bossDoorCutscene != null)
+        {
+            // Small delay to let scene initialize
+            StartCoroutine(PlayCutsceneDelayed());
+        }
+    }
+    
+    private System.Collections.IEnumerator PlayCutsceneDelayed()
+    {
+        yield return new WaitForSeconds(1f);
+        
+        if (debugMode) Debug.Log("[LevelTwoReturnManager] 🏰 Playing boss door cutscene!");
+        GameSession.HasPlayedBossDoorCutscene = true;
+        bossDoorCutscene.Play();
+    }
+    
+    /// <summary>
+    /// Notify objectives system that skeletons were defeated
+    /// </summary>
+    private void NotifySkeletonsDefeated()
+    {
+        SimpleLevelTwoObjectives objectives = FindFirstObjectByType<SimpleLevelTwoObjectives>();
+        if (objectives != null)
+        {
+            objectives.OnSkeletonsDefeated();
+            if (debugMode) Debug.Log("[LevelTwoReturnManager] Notified objectives: Skeletons defeated");
+        }
+    }
+    
+    /// <summary>
+    /// Position player at battle trigger location (not spawn point)
+    /// </summary>
+    private void HandlePlayerPosition()
+    {
+        if (player == null)
+        {
+            player = GameObject.FindGameObjectWithTag("Player")?.transform;
+            if (player == null)
+            {
+                Debug.LogError("[LevelTwoReturnManager] Player not found!");
+                return;
+            }
+        }
+        
+        Vector3 spawnPosition = player.position;
+        Quaternion spawnRotation = player.rotation;
+        
+        // Check if respawning from death with a valid checkpoint for THIS level
+        bool matchesScene = GameSession.CheckpointSceneName == UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        
+        if (GameSession.IsRespawning && GameSession.HasCheckpoint && matchesScene)
+        {
+            spawnPosition = GameSession.CheckpointPosition;
+            spawnRotation = GameSession.CheckpointRotation;
+            spawnPosition += new Vector3(0, 0, -3f); // Move back to avoid re-trigger
+            
+            if (debugMode) Debug.Log($"[LevelTwoReturnManager] ⚰️ Respawning at checkpoint: {spawnPosition}");
+            
+            // Reset player health
+            PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
+            if (playerHealth != null)
+            {
+                playerHealth.ResetHealth();
+            }
+            
+            GameSession.IsRespawning = false;
+        }
+        // Skip positioning if boss was defeated - BossRoomManager handles this
+        else if (GameSession.BossDefeated)
+        {
+            if (debugMode) Debug.Log("[LevelTwoReturnManager] 👹 Boss battle return - skipping (BossRoomManager handles positioning)");
+            return;
+        }
+        // Use battle trigger center if returning from battle
+        else if (GameSession.BattleTriggerCenter != Vector3.zero && GameSession.CombatWingVictory)
+        {
+            spawnPosition = GameSession.BattleTriggerCenter;
+            spawnPosition += new Vector3(0, 0, -3f); // Move back 3 units to avoid re-trigger
+            
+            if (debugMode) Debug.Log($"[LevelTwoReturnManager] 🗡️ Returning from battle to: {spawnPosition}");
+        }
+        // Use return position if available
+        else if (GameSession.HasReturnPosition)
+        {
+            spawnPosition = GameSession.ReturnPosition;
+            spawnPosition.y = player.position.y;
+            
+            if (debugMode) Debug.Log($"[LevelTwoReturnManager] Using return position: {spawnPosition}");
+        }
+        else
+        {
+            if (debugMode) Debug.Log("[LevelTwoReturnManager] No saved position, keeping current position");
+            return; // Don't change position
+        }
+        
+        player.position = spawnPosition;
+        player.position = new Vector3(player.position.x, 1.5f, player.position.z); // Always spawn at y=1.5
+        player.rotation = spawnRotation;
+        
+        // Clear the return position flag
+        GameSession.HasReturnPosition = false;
+        
+        // Safety: If we don't have a valid checkpoint for this level yet, save one now at spawn position
+        // This ensures if the player dies instantly, they don't respawn in the abyss
+        if (!GameSession.HasCheckpoint || GameSession.CheckpointSceneName != UnityEngine.SceneManagement.SceneManager.GetActiveScene().name)
+        {
+            if (debugMode) Debug.Log($"[LevelTwoReturnManager] 🛡️ Saving initial safety checkpoint at {player.position}");
+            GameSession.SaveCheckpoint(player.position, player.rotation);
+        }
+    }
+    
+    /// <summary>
+    /// Handle enemy death animations or cleanup
+    /// </summary>
+    private void HandleEnemyState()
+    {
+        if (enemyRoots == null || enemyRoots.Length == 0 || !GameSession.CombatWingVictory) return;
+        
+        foreach (GameObject enemyRoot in enemyRoots)
+        {
+            if (enemyRoot == null) continue;
+            
+            // Find enemies with death components
+            Animator[] animators = enemyRoot.GetComponentsInChildren<Animator>(true);
+            
+            foreach (Animator anim in animators)
+            {
+                // Trigger death animation if it has one
+                if (anim.HasState(0, Animator.StringToHash("Death")) || 
+                    anim.HasState(0, Animator.StringToHash("Die")))
+                {
+                    anim.SetTrigger("Die");
+                    if (debugMode) Debug.Log($"[LevelTwoReturnManager] Triggering death animation on {anim.gameObject.name}");
+                }
+            }
+            
+            // Also check for LevelOneEnemyAutoHide components (reused from Level One)
+            var autoHideEnemies = enemyRoot.GetComponentsInChildren<LevelOneEnemyAutoHide>(true);
+            if (autoHideEnemies.Length > 0)
+            {
+                if (debugMode) Debug.Log($"[LevelTwoReturnManager] Found {autoHideEnemies.Length} auto-hide enemies in {enemyRoot.name}");
+                // They handle their own death animations
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Disable battle triggers after enemies defeated
+    /// </summary>
+    private void HandleBattleTriggers()
+    {
+        if (!GameSession.CombatWingVictory) return;
+        
+        // Disable assigned triggers
+        if (combatWingTriggers != null)
+        {
+            foreach (GameObject trigger in combatWingTriggers)
+            {
+                if (trigger != null)
+                {
+                    trigger.SetActive(false);
+                    if (debugMode) Debug.Log($"[LevelTwoReturnManager] Disabled trigger: {trigger.name}");
+                }
+            }
+        }
+        
+        // Also find any BattleTrigger components and disable them
+        BattleTrigger[] triggers = FindObjectsByType<BattleTrigger>(FindObjectsSortMode.None);
+        foreach (BattleTrigger trigger in triggers)
+        {
+            // Check if this trigger uses Battle_2 (Combat Wing battle)
+            var sceneName = trigger.GetType()
+                .GetField("battleSceneName", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.GetValue(trigger) as string;
+                
+            if (sceneName == "Battle_2")
+            {
+                trigger.gameObject.SetActive(false);
+                if (debugMode) Debug.Log($"[LevelTwoReturnManager] Auto-disabled Battle_2 trigger: {trigger.gameObject.name}");
+            }
+        }
+    }
+    
+    [Header("Red Companion Restore")]
+    [SerializeField] private GameObject redCompanionPrefab;
+    [SerializeField] private GameObject blueCompanionPrefab;
+    
+    /// <summary>
+    /// Restore the red companion if it was active before scene change
+    /// </summary>
+    private void RestoreRedCompanion()
+    {
+        if (!GameSession.RedCompanionActive) return;
+        
+        // Check if red companion already exists in scene
+        CompanionFollower[] existingCompanions = FindObjectsByType<CompanionFollower>(FindObjectsSortMode.None);
+        foreach (var comp in existingCompanions)
+        {
+            if (comp.gameObject.name.Contains("Red") || comp.gameObject.name.Contains("Rage"))
+            {
+                if (debugMode) Debug.Log("[LevelTwoReturnManager] Red companion already exists, skipping spawn");
+                return;
+            }
+        }
+        
+        if (redCompanionPrefab == null)
+        {
+            Debug.LogWarning("[LevelTwoReturnManager] Red Companion prefab not assigned! Cannot restore.");
+            return;
+        }
+        
+        // Spawn near player
+        Vector3 spawnPos = player != null ? player.position : Vector3.zero;
+        spawnPos += Vector3.left * 2f + Vector3.up * 0.5f;
+        
+        GameObject companion = Instantiate(redCompanionPrefab, spawnPos, Quaternion.identity);
+        
+        CompanionFollower follower = companion.GetComponent<CompanionFollower>();
+        if (follower != null)
+        {
+            follower.StartFollowing();
+        }
+        
+        if (debugMode) Debug.Log("[LevelTwoReturnManager] 🔴 Red companion restored!");
+    }
+    
+    /// <summary>
+    /// Restore the blue companion if it was active before scene change
+    /// </summary>
+    private void RestoreBlueCompanion()
+    {
+        if (!GameSession.BlueCompanionActive) return;
+        
+        // Strategy: Find the blue fragment that the maze generated and "hijack" it
+        // We move it to the player and set it to follow mode
+        
+        GameObject blueBlob = null;
+        
+        // Find existing blue companion
+        CompanionFollower[] existingCompanions = FindObjectsByType<CompanionFollower>(FindObjectsSortMode.None);
+        foreach (var comp in existingCompanions)
+        {
+            if (comp.gameObject.name.Contains("Blue") || comp.gameObject.name.Contains("Logic"))
+            {
+                blueBlob = comp.gameObject;
+                break;
+            }
+        }
+        
+        // If found (which it should be if maze spawned it), use it
+        if (blueBlob != null)
+        {
+            if (debugMode) Debug.Log($"[LevelTwoReturnManager] 🔵 Found existing blob '{blueBlob.name}', hijacking it for restoration");
+            
+            // 1. Teleport to player
+            Vector3 spawnPos = player != null ? player.position : Vector3.zero;
+            spawnPos += Vector3.right * 2f + Vector3.up * 0.5f;
+            
+            // Use NavMeshAgent warp if attached, otherwise transform
+            UnityEngine.AI.NavMeshAgent agent = blueBlob.GetComponent<UnityEngine.AI.NavMeshAgent>();
+            if (agent != null)
+            {
+                agent.Warp(spawnPos);
+            }
+            else
+            {
+                blueBlob.transform.position = spawnPos;
+            }
+            
+            // 2. Start following
+            CompanionFollower follower = blueBlob.GetComponent<CompanionFollower>();
+            if (follower != null)
+            {
+                follower.StartFollowing();
+            }
+            
+            // 3. Disable Interaction Scripts
+            BlueFragmentCollectable collectable = blueBlob.GetComponent<BlueFragmentCollectable>();
+            if (collectable != null) collectable.enabled = false;
+            
+            CompanionInteraction interaction = blueBlob.GetComponent<CompanionInteraction>();
+            if (interaction != null) interaction.enabled = false;
+            
+            // 4. Disable Trigger Collider
+            Collider col = blueBlob.GetComponent<Collider>();
+            if (col != null) col.enabled = false;
+        }
+        else
+        {
+            // Fallback: If for some reason maze didn't spawn it, create from prefab
+            if (debugMode) Debug.LogWarning("[LevelTwoReturnManager] Could not find existing blue blob to restore! Spawning from prefab.");
+            
+            if (blueCompanionPrefab != null)
+            {
+                Vector3 spawnPos = player != null ? player.position : Vector3.zero;
+                spawnPos += Vector3.right * 2f + Vector3.up * 0.5f;
+                GameObject newBlob = Instantiate(blueCompanionPrefab, spawnPos, Quaternion.identity);
+                newBlob.GetComponent<CompanionFollower>()?.StartFollowing();
+                
+                // Disable interactions on new blob too
+                if (newBlob.GetComponent<BlueFragmentCollectable>()) newBlob.GetComponent<BlueFragmentCollectable>().enabled = false;
+                if (newBlob.GetComponent<CompanionInteraction>()) newBlob.GetComponent<CompanionInteraction>().enabled = false;
+                if (newBlob.GetComponent<Collider>()) newBlob.GetComponent<Collider>().enabled = false;
+            }
+        }
+        
+        if (debugMode) Debug.Log("[LevelTwoReturnManager] 🔵 Blue companion restored!");
+    }
+}

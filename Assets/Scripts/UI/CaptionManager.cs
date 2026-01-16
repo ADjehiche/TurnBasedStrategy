@@ -20,6 +20,7 @@ public class CaptionManager : MonoBehaviour
     [SerializeField] private Color instructionColor = Color.white;
     [SerializeField] private Color monologueColor = Color.yellow;
     [SerializeField] private Color systemColor = Color.cyan;
+    [SerializeField] private Color flashbackColor = new Color(1f, 0.3f, 0.3f, 1f); // Red for flashbacks
     
     // Singleton pattern for easy access
     public static CaptionManager Instance { get; private set; }
@@ -82,6 +83,14 @@ public class CaptionManager : MonoBehaviour
     public void ShowSystemMessage(string text, float? duration = null)
     {
         ShowCaption(text, CaptionType.System, duration);
+    }
+    
+    /// <summary>
+    /// Show a flashback caption (red color for memory sequences)
+    /// </summary>
+    public void ShowFlashback(string text, float? duration = null)
+    {
+        ShowCaption(text, CaptionType.Flashback, duration);
     }
     
     private IEnumerator DisplayCaptionCoroutine(string text, CaptionType type, float duration)
@@ -161,6 +170,8 @@ public class CaptionManager : MonoBehaviour
                 return monologueColor;
             case CaptionType.System:
                 return systemColor;
+            case CaptionType.Flashback:
+                return flashbackColor;
             default:
                 return instructionColor;
         }
@@ -188,5 +199,6 @@ public enum CaptionType
 {
     Instruction,
     Monologue,
-    System
+    System,
+    Flashback
 }

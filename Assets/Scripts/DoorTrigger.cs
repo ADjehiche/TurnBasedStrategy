@@ -216,6 +216,12 @@ public class DoorTrigger : MonoBehaviour
     {
         isOpening = true;
         
+        // Play door unlock sound
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.Play("DoorUnlock");
+        }
+        
         // Mark door as opened (for first door only)
         if (gameObject.name == "Door" || gameObject.name.Contains("Door") && !gameObject.name.Contains("Door_2"))
         {

@@ -62,6 +62,10 @@ public class LevelTwoCaptionController : MonoBehaviour
         {
             voiceSource = GetComponent<AudioSource>();
         }
+        
+        // Load saved state from GameSession
+        hasShownArrival = GameSession.HasShownLevelTwoArrival;
+        hasShownHallwayPrompt = GameSession.HasShownLevelTwoHallway;
 
         if (!hasShownArrival)
         {
@@ -89,6 +93,7 @@ public class LevelTwoCaptionController : MonoBehaviour
         yield return new WaitForSeconds(startDelay);
 
         hasShownArrival = true;
+        GameSession.HasShownLevelTwoArrival = true; // Persist to survive scene reload
 
         // Arrival dialogue (3)
         yield return StartCoroutine(ShowLineWithVoice(archiveArrivalDialogue[0], l2_001_archive));
@@ -120,6 +125,7 @@ public class LevelTwoCaptionController : MonoBehaviour
         if (hasShownHallwayPrompt) return;
 
         hasShownHallwayPrompt = true;
+        GameSession.HasShownLevelTwoHallway = true; // Persist to survive scene reload
         StartCoroutine(HallwayDiscoverySequence());
     }
 
@@ -239,5 +245,21 @@ public class LevelTwoCaptionController : MonoBehaviour
             Debug.LogWarning("[LevelTwoCaptionController] CaptionManager not found!");
             yield return new WaitForSeconds(duration);
         }
+    }
+
+    /// <summary>
+    /// Check if dialogue audio is currently playing
+    /// </summary>
+    public bool IsDialoguePlaying()
+    {
+        return voiceSource != null && voiceSource.isPlaying;
+    }
+
+    /// <summary>
+    /// Get the AudioSource used for dialogue (for external systems to check)
+    /// </summary>
+    public AudioSource GetVoiceSource()
+    {
+        return voiceSource;
     }
 }

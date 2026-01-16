@@ -44,7 +44,7 @@ public class SimpleLevelOneObjectives : MonoBehaviour
         RestoreObjectiveState();
         
         // Check if skeleton was just defeated and trigger objective update
-        if (GameSession.EnemyDefeated && !hasDefeatedSkeleton && GameSession.ObjectivesStarted)
+        if (GameSession.LevelOneEnemyDefeated && !hasDefeatedSkeleton && GameSession.ObjectivesStarted)
         {
             Debug.Log("[SimpleLevelOneObjectives] Skeleton was defeated - triggering objective update");
             Invoke(nameof(CheckSkeletonDefeated), 0.5f); // Small delay to ensure UI is ready
@@ -143,7 +143,7 @@ public class SimpleLevelOneObjectives : MonoBehaviour
     /// </summary>
     private void CheckSkeletonDefeated()
     {
-        if (GameSession.EnemyDefeated && currentObjectiveIndex == 2)
+        if (GameSession.LevelOneEnemyDefeated && currentObjectiveIndex == 2)
         {
             Debug.Log("[SimpleLevelOneObjectives] Processing skeleton defeat after battle return");
             OnSkeletonDefeated();
@@ -247,6 +247,17 @@ public class SimpleLevelOneObjectives : MonoBehaviour
             hasEscapedCell = true;
             SaveObjectiveState(); // Save progress
             CompleteCurrentObjective(); // Complete "Escape the Cell", show "Defeat the Skeleton"
+            
+            // Show card reward for escaping the cell
+            if (ExplorationRewardManager.Instance != null)
+            {
+                Debug.Log("[SimpleLevelOneObjectives] Cell escaped! Showing card reward...");
+                ExplorationRewardManager.ShowReward();
+            }
+            else
+            {
+                Debug.LogWarning("[SimpleLevelOneObjectives] ExplorationRewardManager.Instance is null! Cannot show card reward.");
+            }
         }
     }
     
@@ -272,7 +283,18 @@ public class SimpleLevelOneObjectives : MonoBehaviour
         {
             hasExploredDungeon = true;
             SaveObjectiveState(); // Save progress
-            CompleteCurrentObjective(); // Complete "Explore the Dungeon", show "Escape the Dungeon"
+            CompleteCurrentObjective();
+            
+            // Show card reward after exploring the dungeon
+            if (ExplorationRewardManager.Instance != null)
+            {
+                Debug.Log("[SimpleLevelOneObjectives] Dungeon explored! Showing card reward...");
+                ExplorationRewardManager.ShowReward();
+            }
+            else
+            {
+                Debug.LogWarning("[SimpleLevelOneObjectives] ExplorationRewardManager.Instance is null! Cannot show card reward.");
+            }
         }
     }
     
