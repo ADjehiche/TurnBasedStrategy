@@ -1,0 +1,58 @@
+name: Deploy Unity WebGL (Git LFS) to GitHub Pages
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout (with LFS)
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Ensure LFS files are present
+        run: |
+          git lfs install
+          git lfs pull
+          git lfs ls-files
+          # Fail if any LFS pointer files are still present in the checked-out build output
+          if grep -RIl --exclude-dir=.git "oid sha256:" .; then
+            echo "Found Git LFS pointer files in the repo checkout. LFS objects may not have been pulled correctly."
+            exit 1
+          fi
+
+      # If you already committed a built WebGL folder, set WEB_DIR to that folder.
+      # Common examples: "Build", "WebGLBuild", "docs", "dist", etc.
+      - name: Set web root
+        run: |
+          echo "WEB_DIR=Build" >> $GITHUB_ENV
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.WEB_DIR }}
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
