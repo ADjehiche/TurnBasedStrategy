@@ -20,6 +20,10 @@ public class CardMergeUI : MonoBehaviour
     [SerializeField] private GameObject recipeItemPrefab;
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private Button closeButton;
+
+    [Header("Cursor")]
+    [Tooltip("If true, closes will lock/hide the cursor during gameplay. If the game is paused (Time.timeScale == 0), the cursor will remain unlocked/visible regardless.")]
+    [SerializeField] private bool lockCursorOnCloseWhenNotPaused = true;
     
     [Header("Selected Recipe Display")]
     [SerializeField] private GameObject selectedRecipePanel;
@@ -31,9 +35,6 @@ public class CardMergeUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI resultText;
     [SerializeField] private TextMeshProUGUI recipeDescriptionText;
     [SerializeField] private Button mergeButton;
-    
-    [Header("Settings")]
-    [SerializeField] private bool showOnlyAvailable = true;
     
     private CardMergeManager mergeManager;
     private CardRecipe selectedRecipe;
@@ -131,9 +132,14 @@ public class CardMergeUI : MonoBehaviour
             selectedRecipePanel.SetActive(false);
         }
         
-        // Lock cursor for gameplay
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        // Cursor handling:
+        // - If paused (common for menus), keep cursor available.
+        // - Otherwise restore gameplay cursor lock (optional).
+        bool isPaused = Time.timeScale <= 0.0001f;
+        bool shouldLock = !isPaused && lockCursorOnCloseWhenNotPaused;
+
+        Cursor.lockState = shouldLock ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !shouldLock;
         
         // Unlock player movement
         if (PlayerMovementLock.Instance != null)
@@ -151,6 +157,16 @@ public class CardMergeUI : MonoBehaviour
     /// </summary>
     private void RefreshRecipeList()
     {
+        if (recipeListContainer == null || recipeItemPrefab == null)
+        {
+            Debug.LogError("[CardMergeUI] Missing references. Assign 'recipeListContainer' to ScrollView/Viewport/Content and assign 'recipeItemPrefab' to a prefab asset (not a scene object).");
+            if (titleText != null)
+            {
+                titleText.text = "Card Merge (UI not wired)";
+            }
+            return;
+        }
+
         // Clear existing items
         foreach (var item in recipeItems)
         {
@@ -159,19 +175,15 @@ public class CardMergeUI : MonoBehaviour
         }
         recipeItems.Clear();
         
-        // Get recipes to display
-        List<CardRecipe> recipes = showOnlyAvailable 
-            ? mergeManager.GetCraftableRecipes() 
-            : mergeManager.GetAllRecipes();
+        // Get all recipes
+        List<CardRecipe> recipes = mergeManager.GetAllRecipes();
         
         if (recipes.Count == 0)
         {
             Debug.Log("[CardMergeUI] No recipes to display");
             if (titleText != null)
             {
-                titleText.text = showOnlyAvailable 
-                    ? "No Recipes Available (Collect More Cards!)" 
-                    : "No Recipes Loaded";
+                titleText.text = "No Recipes Loaded";
             }
             return;
         }
@@ -182,32 +194,51 @@ public class CardMergeUI : MonoBehaviour
             titleText.text = $"Card Merge ({recipes.Count} Recipe{(recipes.Count != 1 ? "s" : "")} Available)";
         }
         
+        int createdCount = 0;
+
         // Create recipe items
         foreach (var recipe in recipes)
         {
             if (recipe == null || !recipe.IsValid())
                 continue;
-                
-            CreateRecipeItem(recipe);
+
+            if (CreateRecipeItem(recipe))
+            {
+                createdCount++;
+            }
         }
-        
-        Debug.Log($"[CardMergeUI] Displayed {recipes.Count} recipes");
+
+        Debug.Log($"[CardMergeUI] Created {createdCount} recipe UI items (recipes loaded: {recipes.Count})");
     }
     
     /// <summary>
     /// Create a recipe item in the scroll view
     /// </summary>
-    private void CreateRecipeItem(CardRecipe recipe)
+    private bool CreateRecipeItem(CardRecipe recipe)
     {
-        if (recipeItemPrefab == null || recipeListContainer == null)
-        {
-            Debug.LogError("[CardMergeUI] Recipe item prefab or container not assigned!");
-            return;
-        }
-        
         GameObject item = Instantiate(recipeItemPrefab, recipeListContainer);
         recipeItems.Add(item);
         
+        // Try to use RecipeItemUI component if available
+        var recipeItemUI = item.GetComponent<RecipeItemUI>();
+        if (recipeItemUI != null)
+        {
+            recipeItemUI.Setup(recipe, OnRecipeSelected);
+        }
+        else
+        {
+            // Fallback to old setup method
+            SetupRecipeItemFallback(item, recipe);
+        }
+
+        return true;
+    }
+    
+    /// <summary>
+    /// Fallback setup method for recipe items without RecipeItemUI component
+    /// </summary>
+    private void SetupRecipeItemFallback(GameObject item, CardRecipe recipe)
+    {
         // Set recipe data (assumes prefab has specific components)
         var button = item.GetComponent<Button>();
         if (button != null)
@@ -263,35 +294,43 @@ public class CardMergeUI : MonoBehaviour
         }
         
         // Update ingredient 1
-        if (ingredient1Image != null && recipe.ingredient1 != null)
+        if (ingredient1Image != null)
         {
-            ingredient1Image.sprite = recipe.ingredient1.artwork;
+            var sprite = recipe.ingredient1 != null ? recipe.ingredient1.artwork : null;
+            ingredient1Image.sprite = sprite;
+            ingredient1Image.enabled = sprite != null;
         }
         if (ingredient1Text != null && recipe.ingredient1 != null)
         {
             int count = CardCollection.Instance.OwnedCards.Count(c => c == recipe.ingredient1);
-            ingredient1Text.text = $"{recipe.ingredient1.cardName}\n(x{count})";
+            ingredient1Text.text = recipe.ingredient1.cardName;
+            ingredient1Text.color = count > 0 ? Color.white : Color.red;
         }
         
         // Update ingredient 2
-        if (ingredient2Image != null && recipe.ingredient2 != null)
+        if (ingredient2Image != null)
         {
-            ingredient2Image.sprite = recipe.ingredient2.artwork;
+            var sprite = recipe.ingredient2 != null ? recipe.ingredient2.artwork : null;
+            ingredient2Image.sprite = sprite;
+            ingredient2Image.enabled = sprite != null;
         }
         if (ingredient2Text != null && recipe.ingredient2 != null)
         {
             int count = CardCollection.Instance.OwnedCards.Count(c => c == recipe.ingredient2);
-            ingredient2Text.text = $"{recipe.ingredient2.cardName}\n(x{count})";
+            ingredient2Text.text = recipe.ingredient2.cardName;
+            ingredient2Text.color = count > 0 ? Color.white : Color.red;
         }
         
         // Update result
-        if (resultImage != null && recipe.result != null)
+        if (resultImage != null)
         {
-            resultImage.sprite = recipe.result.artwork;
+            var sprite = recipe.result != null ? recipe.result.artwork : null;
+            resultImage.sprite = sprite;
+            resultImage.enabled = sprite != null;
         }
         if (resultText != null && recipe.result != null)
         {
-            resultText.text = $"{recipe.result.cardName}\n{recipe.result.description}";
+            resultText.text = recipe.result.cardName;
         }
         
         // Update description
@@ -359,15 +398,6 @@ public class CardMergeUI : MonoBehaviour
         {
             Debug.LogWarning($"[CardMergeUI] Failed to merge: {selectedRecipe.GetRecipeString()}");
         }
-    }
-    
-    /// <summary>
-    /// Toggle between showing all recipes vs only available ones
-    /// </summary>
-    public void ToggleShowOnlyAvailable(bool value)
-    {
-        showOnlyAvailable = value;
-        RefreshRecipeList();
     }
     
     /// <summary>
