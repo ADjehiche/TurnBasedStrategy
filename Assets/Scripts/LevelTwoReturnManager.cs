@@ -24,6 +24,9 @@ public class LevelTwoReturnManager : MonoBehaviour
     
     void Start()
     {
+        // Set return scene name for Respawn (death)
+        GameSession.ReturnSceneName = "LevelTwo";
+        
         // Position player correctly after battle
         HandlePlayerPosition();
         
@@ -107,8 +110,10 @@ public class LevelTwoReturnManager : MonoBehaviour
         Vector3 spawnPosition = player.position;
         Quaternion spawnRotation = player.rotation;
         
-        // Check if respawning from death
-        if (GameSession.IsRespawning && GameSession.HasCheckpoint)
+        // Check if respawning from death with a valid checkpoint for THIS level
+        bool matchesScene = GameSession.CheckpointSceneName == UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        
+        if (GameSession.IsRespawning && GameSession.HasCheckpoint && matchesScene)
         {
             spawnPosition = GameSession.CheckpointPosition;
             spawnRotation = GameSession.CheckpointRotation;
@@ -159,6 +164,14 @@ public class LevelTwoReturnManager : MonoBehaviour
         
         // Clear the return position flag
         GameSession.HasReturnPosition = false;
+        
+        // Safety: If we don't have a valid checkpoint for this level yet, save one now at spawn position
+        // This ensures if the player dies instantly, they don't respawn in the abyss
+        if (!GameSession.HasCheckpoint || GameSession.CheckpointSceneName != UnityEngine.SceneManagement.SceneManager.GetActiveScene().name)
+        {
+            if (debugMode) Debug.Log($"[LevelTwoReturnManager] 🛡️ Saving initial safety checkpoint at {player.position}");
+            GameSession.SaveCheckpoint(player.position, player.rotation);
+        }
     }
     
     /// <summary>

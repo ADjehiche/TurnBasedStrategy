@@ -8,14 +8,19 @@ public class LevelOneReturnManager : MonoBehaviour
 
     void Start()
     {
+        // Set return scene name for Respawn (death)
+        GameSession.ReturnSceneName = "LevelOne";
+
         // Put the player back to where they entered the battle from
         if (player != null)
         {
             Vector3 spawnPosition;
             Quaternion spawnRotation = player.rotation; // Default to current
             
-            // Check if respawning from death
-            if (GameSession.IsRespawning && GameSession.HasCheckpoint)
+            // Check if respawning from death with a valid checkpoint for THIS level
+            bool matchesScene = GameSession.CheckpointSceneName == UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            
+            if (GameSession.IsRespawning && GameSession.HasCheckpoint && matchesScene)
             {
                 spawnPosition = GameSession.CheckpointPosition;
                 spawnRotation = GameSession.CheckpointRotation;

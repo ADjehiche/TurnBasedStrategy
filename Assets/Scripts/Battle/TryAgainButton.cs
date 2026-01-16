@@ -15,7 +15,7 @@ public class TryAgainButton : MonoBehaviour
         // GameSession.IsRespawning was already set by PlayerHealth.OnPlayerDeath()
         // This tells LevelOneReturnManager to use the checkpoint
         
-        // Load Level One (will spawn at checkpoint)
-        SceneManager.LoadScene("LevelOne");
+        // Load the correct level (will spawn at checkpoint)
+        SceneManager.LoadScene(GameSession.ReturnSceneName);
     }
 }
