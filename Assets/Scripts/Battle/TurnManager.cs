@@ -53,6 +53,16 @@ public class TurnManager : MonoBehaviour
             Debug.Log($"[TurnManager] Awake called on {gameObject.name} (InstanceID: {GetInstanceID()})");
         }
     }
+
+    private void OnEnable()
+    {
+        BattleState.OnBattleOverChanged += HandleBattleOverChanged;
+    }
+
+    private void OnDisable()
+    {
+        BattleState.OnBattleOverChanged -= HandleBattleOverChanged;
+    }
     
     private void Start()
     {
@@ -102,6 +112,11 @@ public class TurnManager : MonoBehaviour
 
     public void StartPlayerTurn()
     {
+        if (BattleState.IsOver)
+        {
+            if (endTurnButton != null) endTurnButton.interactable = false;
+            return;
+        }
       
         CurrentTurn = TurnState.PlayerTurn;
 
@@ -175,6 +190,8 @@ public class TurnManager : MonoBehaviour
 
     private void EndPlayerTurn()
     {
+        if (BattleState.IsOver) return;
+
         if (enableDebugLogs)
         {
             Debug.Log($"[TurnManager] EndPlayerTurn called. Transitioning from {CurrentTurn}");
@@ -259,8 +276,18 @@ public class TurnManager : MonoBehaviour
             Debug.Log("[TurnManager] Processing enemy turn...");
         }
 
+        if (BattleState.IsOver)
+        {
+            yield break;
+        }
+
         // Wait before enemies act
         yield return new WaitForSeconds(2f);
+
+        if (BattleState.IsOver)
+        {
+            yield break;
+        }
 
         // Use EnemyManager to execute all enemy turns
         if (EnemyManager.Instance != null)
@@ -305,8 +332,31 @@ public class TurnManager : MonoBehaviour
             }
         }
         
-        // Return to player turn
-        StartPlayerTurn();
+        // Return to player turn (only if battle still ongoing)
+        if (!BattleState.IsOver)
+        {
+            StartPlayerTurn();
+        }
+    }
+
+    private void HandleBattleOverChanged(bool isOver)
+    {
+        if (!isOver) return;
+
+        if (enableDebugLogs)
+        {
+            Debug.Log("[TurnManager] Battle over detected - stopping turn processing");
+        }
+
+        StopAllCoroutines();
+        CurrentTurn = TurnState.None;
+
+        if (endTurnButton != null)
+        {
+            endTurnButton.interactable = false;
+        }
+
+        OnTurnChanged?.Invoke(CurrentTurn);
     }
     
     // Optional: Method to manually check for duplicate instances

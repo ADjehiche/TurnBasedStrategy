@@ -33,17 +33,22 @@ public class BattleManager : MonoBehaviour
                 // Don't return to level yet - let BattleRewardManager handle it
                 // The reward UI will call ReturnToLevelOne() when player selects/skips reward
             }
+            else if (playerWon)
+            {
+                // Won but no reward system - return after delay
+                Debug.Log("[BattleManager] Battle won - returning to exploration after delay");
+                Invoke(nameof(ReturnToLevelOne), delayBeforeReturn);
+            }
             else
             {
-                // Player lost or no reward system - return immediately
-                Debug.Log("[BattleManager] Battle lost - returning to LevelOne after delay");
-                Invoke("ReturnToLevelOne", delayBeforeReturn);
+                // Player lost. PlayerHealth handles routing (DeathScene or Final_Cell for boss).
+                Debug.Log("[BattleManager] Battle lost - PlayerHealth will handle scene transition");
             }
         }
     }
     
     /// <summary>
-    /// Call this after rewards are selected to return to exploration
+    /// Call this after rewards are selected to return to exploration (WIN only).
     /// </summary>
     public void ReturnToLevelOne()
     {

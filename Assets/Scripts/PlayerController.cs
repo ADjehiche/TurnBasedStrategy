@@ -75,8 +75,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         // apply saved mouse sensitivity (if settings exist)
-        if (GameSettingsManager.Instance != null)
-            sensitivity = GameSettingsManager.Instance.MouseSensitivity;
+        ApplyMouseSensitivityFromSettings();
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -93,6 +92,22 @@ public class PlayerController : MonoBehaviour
 
         originalCameraPosition = camHolder.transform.localPosition;
         targetCameraPosition = originalCameraPosition;
+    }
+
+    void OnEnable()
+    {
+        if (GameSettingsManager.Instance != null)
+        {
+            GameSettingsManager.Instance.MouseSensitivityChanged += OnMouseSensitivityChanged;
+        }
+    }
+
+    void OnDisable()
+    {
+        if (GameSettingsManager.Instance != null)
+        {
+            GameSettingsManager.Instance.MouseSensitivityChanged -= OnMouseSensitivityChanged;
+        }
     }
 
 
@@ -326,7 +341,19 @@ public class PlayerController : MonoBehaviour
     public void ApplyMouseSensitivityFromSettings()
     {
         if (GameSettingsManager.Instance != null)
+        {
             sensitivity = GameSettingsManager.Instance.MouseSensitivity;
+            return;
+        }
+
+        // Fallback for starting a gameplay scene directly in the editor
+        // (no persistent settings manager instantiated yet).
+        sensitivity = Mathf.Clamp(PlayerPrefs.GetFloat("settings.mouseSensitivity", sensitivity), 1f, 30f);
+    }
+
+    private void OnMouseSensitivityChanged(float value)
+    {
+        sensitivity = Mathf.Clamp(value, 1f, 30f);
     }
 
     

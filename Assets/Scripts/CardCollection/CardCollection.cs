@@ -150,35 +150,18 @@ public class CardCollection : MonoBehaviour
 
     /// <summary>
     /// Get 2 random reward cards from the starter pool for post-battle selection
-    /// 10% chance to include a rare merge-only card if available
+    /// (Merge feature removed) Only uses the starter pool.
     /// </summary>
     public List<Card> GetRandomRewardOptions(int count = 2)
     {
         List<Card> options = new List<Card>();
         List<Card> availablePool = new List<Card>(starterPool);
 
-        // Load all cards including merge-only (for rare rewards)
-        Card[] allCards = Resources.LoadAll<Card>("Cards");
-        var mergeOnlyCards = allCards.Where(c => !c.canAppearInStartingDecks && !c.isStarterCard).ToList();
-
         for (int i = 0; i < count && availablePool.Count > 0; i++)
         {
-            Card selectedCard;
-
-            // 10% chance to offer a merge-only card (if available)
-            if (mergeOnlyCards.Count > 0 && Random.value < 0.10f)
-            {
-                selectedCard = mergeOnlyCards[Random.Range(0, mergeOnlyCards.Count)];
-                mergeOnlyCards.Remove(selectedCard); // Prevent duplicates in same choice
-                Debug.Log($"[CardCollection] Rare merge-only card offered: {selectedCard.cardName}");
-            }
-            else
-            {
-                // Normal starter pool card
-                int randomIndex = Random.Range(0, availablePool.Count);
-                selectedCard = availablePool[randomIndex];
-                availablePool.RemoveAt(randomIndex);
-            }
+            int randomIndex = Random.Range(0, availablePool.Count);
+            Card selectedCard = availablePool[randomIndex];
+            availablePool.RemoveAt(randomIndex);
 
             options.Add(selectedCard);
         }

@@ -85,7 +85,7 @@ public static class GameSession
     public static bool BossDefeated;           // True after boss battle won
     public static bool WardensWarningShown;    // True after Warden's pre-death dialogue
     public static bool BossSpawned;            // True after boss spawn animation played
-    public static bool HasPlayedBossDoorCutscene; // True after boss door unlock cutscene has played
+    public static bool LostToFinalBoss;        // True when player loses to the final boss (for Final_Cell ending)
 
     public static void SetReturnPosition(Vector3 pos)
     {
