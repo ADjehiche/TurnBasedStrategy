@@ -25,18 +25,28 @@ public class LevelOneCaptionController : MonoBehaviour
 
     [Header("Timing")]
     [SerializeField] private float startDelay = 2f;
-    [SerializeField] private float instructionDuration = 3f;
     [SerializeField] private float monologueDuration = 2.5f;
 
     void Start()
     {
-        // Show the initial wake-up sequence
+        // Make sure voiceSource can't auto-play the wrong thing
+        if (voiceSource == null)
+        {
+            voiceSource = GetComponent<AudioSource>();
+        }
+
+        if (voiceSource != null)
+        {
+            voiceSource.playOnAwake = false;
+            voiceSource.loop = false;
+            voiceSource.Stop();
+            voiceSource.clip = null;
+        }
+
         if (!GameSession.HasShownStartInstruction)
         {
             StartCoroutine(WakeUpSequence());
         }
-
-        // Show hallway observation when entering hallway (called externally)
     }
 
     private void PlayVoice(AudioClip clip)
@@ -44,12 +54,13 @@ public class LevelOneCaptionController : MonoBehaviour
         if (voiceSource == null || clip == null) return;
 
         voiceSource.Stop();
-        voiceSource.PlayOneShot(clip);
+        voiceSource.clip = null;
+        voiceSource.clip = clip;
+        voiceSource.Play();
     }
 
     private IEnumerator WakeUpSequence()
     {
-        // Lock movement during wake-up
         if (PlayerMovementLock.Instance != null)
             PlayerMovementLock.Instance.LockMovement("Wake-up sequence");
 
@@ -57,42 +68,35 @@ public class LevelOneCaptionController : MonoBehaviour
 
         if (!GameSession.HasShownStartInstruction && CaptionManager.Instance != null)
         {
-            // First thought: Confusion
+            // Confusion
             PlayVoice(st001_whereAmI);
             CaptionManager.Instance.ShowInstruction(wakeUpInstruction, 2f);
-
             yield return new WaitForSeconds(2.5f);
 
-            // Pan camera while thinking AND add blinking effect
+            // Camera pan (optional)
             if (CameraPanner.Instance != null)
             {
                 StartCoroutine(CameraPanner.Instance.PanLookAround(3f, 45f));
             }
 
-            // Add blinking effect (2 blinks) during the camera pan
+            // Blink (optional)
             if (ScreenBlinker.Instance != null)
             {
                 StartCoroutine(ScreenBlinker.Instance.BlinkMultiple(2, 0.3f, 0.3f));
             }
 
-            // Second thought: Amnesia
+            // Amnesia
             PlayVoice(st002_myHead);
             CaptionManager.Instance.ShowMonologue(wakeUpMonologue, monologueDuration);
-
             yield return new WaitForSeconds(monologueDuration + 1f);
 
             GameSession.HasShownStartInstruction = true;
-            Debug.Log("[LevelOneCaptionController] Wake-up sequence shown");
         }
 
-        // Unlock movement after wake-up
         if (PlayerMovementLock.Instance != null)
             PlayerMovementLock.Instance.UnlockMovement("Wake-up complete");
     }
 
-    /// <summary>
-    /// Call when entering hallway
-    /// </summary>
     public void OnEnterHallway()
     {
         if (CaptionManager.Instance != null)
@@ -102,9 +106,6 @@ public class LevelOneCaptionController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Call this when the player picks up the key
-    /// </summary>
     public void OnKeyPickedUp()
     {
         if (!GameSession.HasShownKeyPickup && CaptionManager.Instance != null)
@@ -118,17 +119,13 @@ public class LevelOneCaptionController : MonoBehaviour
     {
         // System message (no voice)
         CaptionManager.Instance.ShowSystemMessage(keyPickupMessage, 1.5f);
-
         yield return new WaitForSeconds(2f);
 
-        // Player thought
+        // Player thought (voice)
         PlayVoice(st005_keyDoor);
         CaptionManager.Instance.ShowMonologue(keyPickupMonologue, monologueDuration);
     }
 
-    /// <summary>
-    /// Call this when the door opens
-    /// </summary>
     public void OnDoorOpened()
     {
         if (!GameSession.HasShownDoorOpen && CaptionManager.Instance != null)
@@ -139,9 +136,6 @@ public class LevelOneCaptionController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Call this when skeleton is defeated
-    /// </summary>
     public void OnSkeletonDefeated()
     {
         if (!GameSession.HasShownEnemySpotted && CaptionManager.Instance != null)
@@ -155,28 +149,19 @@ public class LevelOneCaptionController : MonoBehaviour
     {
         // System: Defeated (no voice)
         CaptionManager.Instance.ShowSystemMessage(skeletonDefeated, 1.5f);
-
         yield return new WaitForSeconds(2f);
 
-        // Player: Glowing key observation
+        // Player line (voice)
         PlayVoice(st008_keyGlows);
         CaptionManager.Instance.ShowMonologue(skeletonKeyPickup, 2.5f);
     }
 
-    /// <summary>
-    /// Call when enemy is spotted (for EnemyLookDetector compatibility)
-    /// Shows warning before skeleton encounter
-    /// </summary>
+    // ✅ REQUIRED by EnemyLookDetector (fixes your CS1061 error)
     public void OnEnemySpotted()
     {
-        // This is now handled by SkeletonWarningTrigger
-        // But keep method for backward compatibility with EnemyLookDetector
-        Debug.Log("[LevelOneCaptionController] Enemy spotted (handled by warning trigger)");
+        Debug.Log("[LevelOneCaptionController] Enemy spotted (compatibility method).");
     }
 
-    /// <summary>
-    /// Reset the caption states (useful for testing)
-    /// </summary>
     [ContextMenu("Reset Caption States")]
     public void ResetStates()
     {
@@ -184,6 +169,5 @@ public class LevelOneCaptionController : MonoBehaviour
         GameSession.HasShownKeyPickup = false;
         GameSession.HasShownDoorOpen = false;
         GameSession.HasShownEnemySpotted = false;
-        Debug.Log("LevelOneCaptionController: States reset");
     }
 }
