@@ -1,4 +1,4 @@
-name: Deploy Unity WebGL (Git LFS) to GitHub Pages
+name: Deploy build/ (Git LFS) to GitHub Pages
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
@@ -28,30 +28,32 @@ jobs:
           lfs: true
           fetch-depth: 0
 
-      - name: Ensure LFS files are present
+      - name: Pull LFS objects
         run: |
           git lfs install
           git lfs pull
-          git lfs ls-files
-          # Fail if any LFS pointer files are still present in the checked-out build output
-          if grep -RIl --exclude-dir=.git "oid sha256:" .; then
-            echo "Found Git LFS pointer files in the repo checkout. LFS objects may not have been pulled correctly."
+
+      - name: Verify build/ is a complete site and not LFS pointers
+        run: |
+          if [ ! -f "build/index.html" ]; then
+            echo "build/index.html not found. Expected Unity WebGL site under build/."
+            ls -la build || true
             exit 1
           fi
 
-      # If you already committed a built WebGL folder, set WEB_DIR to that folder.
-      # Common examples: "Build", "WebGLBuild", "docs", "dist", etc.
-      - name: Set web root
-        run: |
-          echo "WEB_DIR=build" >> $GITHUB_ENV
+          echo "Checking for Git LFS pointer stubs under build/ ..."
+          if grep -RIl --exclude-dir=.git --exclude-dir=.github "oid sha256:" build/; then
+            echo "Found Git LFS pointer stubs under build/. LFS objects for the deployed site are missing."
+            exit 1
+          fi
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact to Pages
+      - name: Upload Pages artifact (build/)
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ${{ env.WEB_DIR }}
+          path: build
 
       - name: Deploy to GitHub Pages
         id: deployment
