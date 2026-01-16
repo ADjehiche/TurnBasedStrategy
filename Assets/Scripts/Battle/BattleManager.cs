@@ -52,7 +52,7 @@ public class BattleManager : MonoBehaviour
     /// </summary>
     public void ReturnToLevelOne()
     {
-        GameSession.EnemyDefeated = true;
+        GameSession.LevelOneEnemyDefeated = true;
         Debug.Log($"[BattleManager] Setting EnemyDefeated to true, GameManager exists: {GameManager.Instance != null}");
         
         // Check if this was a Combat Wing battle (Battle_2 from LevelTwo)

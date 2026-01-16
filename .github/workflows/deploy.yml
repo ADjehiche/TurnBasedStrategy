@@ -1,0 +1,60 @@
+name: Deploy build/ (Git LFS) to GitHub Pages
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout (with LFS)
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Pull LFS objects
+        run: |
+          git lfs install
+          git lfs pull
+
+      - name: Verify build/ is a complete site and not LFS pointers
+        run: |
+          if [ ! -f "build/index.html" ]; then
+            echo "build/index.html not found. Expected Unity WebGL site under build/."
+            ls -la build || true
+            exit 1
+          fi
+
+          echo "Checking for Git LFS pointer stubs under build/ ..."
+          if grep -RIl --exclude-dir=.git --exclude-dir=.github "oid sha256:" build/; then
+            echo "Found Git LFS pointer stubs under build/. LFS objects for the deployed site are missing."
+            exit 1
+          fi
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact (build/)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

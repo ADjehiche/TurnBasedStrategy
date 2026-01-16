@@ -13,6 +13,16 @@ public class LevelOneCaptionController : MonoBehaviour
     [SerializeField] private string skeletonDefeated = "[System] Guardian defeated";
     [SerializeField] private string skeletonKeyPickup = "[You] This key... I wonder if it opens another cell";
     
+    [Header("Audio")]
+    [SerializeField] private string wakeUpInstructionAudio;
+    [SerializeField] private string wakeUpMonologueAudio;
+    [SerializeField] private string hallwayObservationAudio;
+    [SerializeField] private string keyPickupMessageAudio;
+    [SerializeField] private string keyPickupMonologueAudio;
+    [SerializeField] private string doorOpenCelebrationAudio;
+    [SerializeField] private string skeletonDefeatedAudio;
+    [SerializeField] private string skeletonKeyPickupAudio;
+
     [Header("Timing")]
     [SerializeField] private float startDelay = 2f;
     [SerializeField] private float instructionDuration = 3f;
@@ -40,7 +50,7 @@ public class LevelOneCaptionController : MonoBehaviour
         if (!GameSession.HasShownStartInstruction && CaptionManager.Instance != null)
         {
             // First thought: Confusion
-            CaptionManager.Instance.ShowInstruction(wakeUpInstruction, 2f);
+            CaptionManager.Instance.ShowInstruction(wakeUpInstruction, 2f, wakeUpInstructionAudio);
             
             yield return new WaitForSeconds(2.5f);
             
@@ -57,7 +67,7 @@ public class LevelOneCaptionController : MonoBehaviour
             }
             
             // Second thought: Amnesia
-            CaptionManager.Instance.ShowMonologue(wakeUpMonologue, monologueDuration);
+            CaptionManager.Instance.ShowMonologue(wakeUpMonologue, monologueDuration, wakeUpMonologueAudio);
             
             yield return new WaitForSeconds(monologueDuration + 1f);
             
@@ -77,7 +87,7 @@ public class LevelOneCaptionController : MonoBehaviour
     {
         if (CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowMonologue(hallwayObservation, 2f);
+            CaptionManager.Instance.ShowMonologue(hallwayObservation, 2f, hallwayObservationAudio);
         }
     }
     
@@ -96,12 +106,12 @@ public class LevelOneCaptionController : MonoBehaviour
     private IEnumerator ShowKeyPickupSequence()
     {
         // System message
-        CaptionManager.Instance.ShowSystemMessage(keyPickupMessage, 1.5f);
+        CaptionManager.Instance.ShowSystemMessage(keyPickupMessage, 1.5f, keyPickupMessageAudio);
         
         yield return new WaitForSeconds(2f);
         
         // Player thought
-        CaptionManager.Instance.ShowMonologue(keyPickupMonologue, monologueDuration);
+        CaptionManager.Instance.ShowMonologue(keyPickupMonologue, monologueDuration, keyPickupMonologueAudio);
     }
     
     /// <summary>
@@ -111,7 +121,7 @@ public class LevelOneCaptionController : MonoBehaviour
     {
         if (!GameSession.HasShownDoorOpen && CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowMonologue(doorOpenCelebration, monologueDuration);
+            CaptionManager.Instance.ShowMonologue(doorOpenCelebration, monologueDuration, doorOpenCelebrationAudio);
             GameSession.HasShownDoorOpen = true;
         }
     }
@@ -131,12 +141,12 @@ public class LevelOneCaptionController : MonoBehaviour
     private IEnumerator ShowSkeletonDefeatedSequence()
     {
         // System: Defeated
-        CaptionManager.Instance.ShowSystemMessage(skeletonDefeated, 1.5f);
+        CaptionManager.Instance.ShowSystemMessage(skeletonDefeated, 1.5f, skeletonDefeatedAudio);
         
         yield return new WaitForSeconds(2f);
         
         // Player: Glowing key observation
-        CaptionManager.Instance.ShowMonologue(skeletonKeyPickup, 2.5f);
+        CaptionManager.Instance.ShowMonologue(skeletonKeyPickup, 2.5f, skeletonKeyPickupAudio);
     }
     
     /// <summary>

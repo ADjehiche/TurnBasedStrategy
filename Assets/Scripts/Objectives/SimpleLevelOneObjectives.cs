@@ -44,7 +44,7 @@ public class SimpleLevelOneObjectives : MonoBehaviour
         RestoreObjectiveState();
         
         // Check if skeleton was just defeated and trigger objective update
-        if (GameSession.EnemyDefeated && !hasDefeatedSkeleton && GameSession.ObjectivesStarted)
+        if (GameSession.LevelOneEnemyDefeated && !hasDefeatedSkeleton && GameSession.ObjectivesStarted)
         {
             Debug.Log("[SimpleLevelOneObjectives] Skeleton was defeated - triggering objective update");
             Invoke(nameof(CheckSkeletonDefeated), 0.5f); // Small delay to ensure UI is ready
@@ -143,7 +143,7 @@ public class SimpleLevelOneObjectives : MonoBehaviour
     /// </summary>
     private void CheckSkeletonDefeated()
     {
-        if (GameSession.EnemyDefeated && currentObjectiveIndex == 2)
+        if (GameSession.LevelOneEnemyDefeated && currentObjectiveIndex == 2)
         {
             Debug.Log("[SimpleLevelOneObjectives] Processing skeleton defeat after battle return");
             OnSkeletonDefeated();

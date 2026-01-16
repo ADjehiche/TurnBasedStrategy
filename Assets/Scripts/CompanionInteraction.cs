@@ -15,15 +15,23 @@ public class CompanionInteraction : MonoBehaviour
     
     [Header("Dialogue - Initial Greeting")]
     [SerializeField] private string companionGreeting = "[Fragment] Hello... I've been waiting.";
+    [SerializeField] private string companionGreetingAudio;
     [SerializeField] private string interactionPrompt = "[System] Press E to speak";
+    [SerializeField] private string interactionPromptAudio;
     
     [Header("Dialogue - Conversation")]
     [SerializeField] private string playerQuestion1 = "[You] What are you?";
+    [SerializeField] private string playerQuestion1Audio;
     [SerializeField] private string companionResponse1 = "[Fragment] Fragment. A piece of you.";
+    [SerializeField] private string companionResponse1Audio;
     [SerializeField] private string playerQuestion2 = "[You] My memory?";
+    [SerializeField] private string playerQuestion2Audio;
     [SerializeField] private string companionExplanation = "[Fragment] Yes. Your power. Stolen by them.";
+    [SerializeField] private string companionExplanationAudio;
     [SerializeField] private string playerRequest = "[You] Can you help me escape?";
+    [SerializeField] private string playerRequestAudio;
     [SerializeField] private string companionAgreement = "[Fragment] Together, we escape.";
+    [SerializeField] private string companionAgreementAudio;
     
     [Header("Timing")]
     [SerializeField] private float promptDuration = 2f;
@@ -33,6 +41,7 @@ public class CompanionInteraction : MonoBehaviour
     [Tooltip("Reference to the CompanionFollower component")]
     [SerializeField] private CompanionFollower companionFollower;
     [SerializeField] private string blobColour = "Yellow";
+    [SerializeField] private string markingsHintAudio; // Audio for the markings hint
     
     [Header("Debug")]
     [SerializeField] private bool showDebugLogs = true;
@@ -144,14 +153,14 @@ public class CompanionInteraction : MonoBehaviour
     private IEnumerator GreetingSequence()
     {
         // Companion speaks
-        CaptionManager.Instance.ShowMonologue(companionGreeting, promptDuration);
+        CaptionManager.Instance.ShowMonologue(companionGreeting, promptDuration, companionGreetingAudio);
         
         yield return new WaitForSeconds(1f); // Short pause
         
         // Show interaction instruction immediately as a system message so it's visible
         if (playerInRange && !hasInteracted)
         {
-            CaptionManager.Instance.ShowSystemMessage(interactionPrompt, 5f); // Show for longer
+            CaptionManager.Instance.ShowSystemMessage(interactionPrompt, 5f, interactionPromptAudio); // Show for longer
         }
     }
     
@@ -164,27 +173,27 @@ public class CompanionInteraction : MonoBehaviour
         if (CaptionManager.Instance != null)
         {
             // 1. Player asks what it is
-            CaptionManager.Instance.ShowMonologue(playerQuestion1, dialogueDuration);
+            CaptionManager.Instance.ShowMonologue(playerQuestion1, dialogueDuration, playerQuestion1Audio);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
             // 2. Fragment reveals it's a piece of player
-            CaptionManager.Instance.ShowMonologue(companionResponse1, dialogueDuration);
+            CaptionManager.Instance.ShowMonologue(companionResponse1, dialogueDuration, companionResponse1Audio);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
             // 3. Player realizes it's their memory
-            CaptionManager.Instance.ShowMonologue(playerQuestion2, dialogueDuration);
+            CaptionManager.Instance.ShowMonologue(playerQuestion2, dialogueDuration, playerQuestion2Audio);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
             // 4. Fragment explains the situation
-            CaptionManager.Instance.ShowMonologue(companionExplanation, dialogueDuration + 0.5f);
+            CaptionManager.Instance.ShowMonologue(companionExplanation, dialogueDuration + 0.5f, companionExplanationAudio);
             yield return new WaitForSeconds(dialogueDuration + 1f);
             
             // 5. Player asks for help
-            CaptionManager.Instance.ShowMonologue(playerRequest, dialogueDuration);
+            CaptionManager.Instance.ShowMonologue(playerRequest, dialogueDuration, playerRequestAudio);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
             // 6. Fragment agrees
-            CaptionManager.Instance.ShowMonologue(companionAgreement, dialogueDuration);
+            CaptionManager.Instance.ShowMonologue(companionAgreement, dialogueDuration, companionAgreementAudio);
             yield return new WaitForSeconds(dialogueDuration + 0.5f);
             
             // 7. System message - Fragment joined
@@ -194,7 +203,7 @@ public class CompanionInteraction : MonoBehaviour
             // 8. Hint about exploring symbols
             if(blobColour == "Yellow")
             {
-                CaptionManager.Instance.ShowSystemMessage("[System] Fragment may know more about the markings on the walls", 3f);
+                CaptionManager.Instance.ShowSystemMessage("[System] Fragment may know more about the markings on the walls", 3f, markingsHintAudio);
             }
             yield return new WaitForSeconds(0.5f);
         }

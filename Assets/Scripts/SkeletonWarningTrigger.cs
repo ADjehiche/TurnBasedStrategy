@@ -15,6 +15,7 @@ public class SkeletonWarningTrigger : MonoBehaviour
     
     [Header("Captions")]
     [SerializeField] private string warningMessage1 = "[You] Wait... movement ahead.";
+    [SerializeField] private string warningMessage1Audio; // Audio for first warning
     [SerializeField] private string warningMessage2 = "[System] Warning: Guardian detected";
     [SerializeField] private string warningMessage3 = "[System] Prepare for battle!";
     
@@ -80,7 +81,7 @@ public class SkeletonWarningTrigger : MonoBehaviour
         }
         
         // If skeleton already defeated, destroy this trigger immediately
-        if (GameSession.EnemyDefeated)
+        if (GameSession.LevelOneEnemyDefeated)
         {
             if (showDebugLogs)
                 Debug.Log("[SkeletonWarningTrigger] Skeleton already defeated - destroying trigger");
@@ -92,7 +93,7 @@ public class SkeletonWarningTrigger : MonoBehaviour
     void OnTriggerEnter(Collider other)
     {
         // Don't trigger if skeleton already defeated
-        if (GameSession.EnemyDefeated)
+        if (GameSession.LevelOneEnemyDefeated)
         {
             if (showDebugLogs)
                 Debug.Log("[SkeletonWarningTrigger] Skeleton defeated - ignoring trigger");
@@ -130,7 +131,7 @@ public class SkeletonWarningTrigger : MonoBehaviour
         
         if (CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowMonologue(warningMessage1, 1f);
+            CaptionManager.Instance.ShowMonologue(warningMessage1, 1f, warningMessage1Audio);
             yield return new WaitForSeconds(1.2f);
             
             CaptionManager.Instance.ShowSystemMessage(warningMessage2, 1f);

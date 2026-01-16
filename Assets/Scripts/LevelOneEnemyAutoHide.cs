@@ -15,6 +15,10 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
     [Tooltip("Offset from skeleton position to spawn the key")]
     [SerializeField] private Vector3 keySpawnOffset = new Vector3(0f, 0.5f, 0f);
     
+    [Header("Level Settings")]
+    [Tooltip("If true, checks CombatWingVictory (Level 2). If false, checks LevelOneEnemyDefeated (Level 1).")]
+    [SerializeField] private bool checkLevelTwoVictory = false;
+    
     private bool isAnimationCycling = false;
     private SkeletonAudioController audioController;
     private bool hasDroppedKey = false; // Prevent duplicate key spawns
@@ -29,13 +33,19 @@ public class LevelOneEnemyAutoHide : MonoBehaviour
         // Get audio controller if present
         audioController = GetComponent<SkeletonAudioController>();
         
-        // Add debug logging to see the state
-        Debug.Log($"Skeleton Start - EnemyDefeated: {GameSession.EnemyDefeated}");
+        // Determine which victory flag to check
+        bool isDefeated = checkLevelTwoVictory ? GameSession.CombatWingVictory : GameSession.LevelOneEnemyDefeated;
         
-        if (GameSession.EnemyDefeated)
+        // Add debug logging to see the state
+        Debug.Log($"Skeleton Start - CheckLevel2: {checkLevelTwoVictory}, IsDefeated: {isDefeated}");
+        
+        if (isDefeated)
         {
             PlayDeathAnimation();
-            SpawnSkeletonKey(); // Spawn key if skeleton is already defeated
+            if (!checkLevelTwoVictory) // Only spawn key for Level 1 skeleton
+            {
+                SpawnSkeletonKey(); 
+            }
         }
         else
         {

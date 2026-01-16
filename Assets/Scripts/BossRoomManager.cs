@@ -38,6 +38,7 @@ public class BossRoomManager : MonoBehaviour
         "[Warden] Take it, and you reclaim your evil.",
         "[Warden] Leave it... and perhaps... you find redemption..."
     };
+    [SerializeField] private string[] wardenDialogueAudio; // Parallel array for audio
     [SerializeField] private float dialogueLineDuration = 3f;
     
     [Header("Debug")]
@@ -126,11 +127,13 @@ public class BossRoomManager : MonoBehaviour
         yield return new WaitForSeconds(1f);
         
         // Show Warden's dialogue
-        foreach (string line in wardenDialogue)
+        for (int i = 0; i < wardenDialogue.Length; i++)
         {
+            string audioName = (wardenDialogueAudio != null && i < wardenDialogueAudio.Length) ? wardenDialogueAudio[i] : null;
+            
             if (CaptionManager.Instance != null)
             {
-                CaptionManager.Instance.ShowMonologue(line, dialogueLineDuration);
+                CaptionManager.Instance.ShowMonologue(wardenDialogue[i], dialogueLineDuration, audioName);
             }
             yield return new WaitForSeconds(dialogueLineDuration + 0.5f);
         }

@@ -24,6 +24,9 @@ public class LevelTwoReturnManager : MonoBehaviour
     
     void Start()
     {
+        // Set return scene name for Respawn (death)
+        GameSession.ReturnSceneName = "LevelTwo";
+        
         // Position player correctly after battle
         HandlePlayerPosition();
         
@@ -40,16 +43,16 @@ public class LevelTwoReturnManager : MonoBehaviour
         RestoreBlueCompanion();
         
         // Notify objectives system if skeletons were defeated
-        if (GameSession.EnemyDefeated || GameSession.CombatWingVictory)
+        if (GameSession.CombatWingVictory)
         {
             NotifySkeletonsDefeated();
         }
         
         // Play boss door cutscene if returning from flashback with both fragments
         if (debugMode) 
-            Debug.Log($"[LevelTwoReturnManager] Checking Boss Door: FlashbackPlayed={GameSession.HasPlayedRageFlashback}, CanUnlock={GameSession.CanUnlockBossDoor} (Red={GameSession.HasCollectedRedFragment}, Blue={GameSession.HasCollectedBlueFragment})");
+            Debug.Log($"[LevelTwoReturnManager] Checking Boss Door: FlashbackPlayed={GameSession.HasPlayedRageFlashback}, CanUnlock={GameSession.CanUnlockBossDoor}, PlayedOnce={GameSession.HasPlayedBossDoorCutscene}");
             
-        if (GameSession.HasPlayedRageFlashback && GameSession.CanUnlockBossDoor)
+        if (GameSession.HasPlayedRageFlashback && GameSession.CanUnlockBossDoor && !GameSession.HasPlayedBossDoorCutscene)
         {
             TriggerBossDoorCutscene();
         }
@@ -72,6 +75,7 @@ public class LevelTwoReturnManager : MonoBehaviour
         yield return new WaitForSeconds(1f);
         
         if (debugMode) Debug.Log("[LevelTwoReturnManager] 🏰 Playing boss door cutscene!");
+        GameSession.HasPlayedBossDoorCutscene = true;
         bossDoorCutscene.Play();
     }
     
@@ -106,8 +110,10 @@ public class LevelTwoReturnManager : MonoBehaviour
         Vector3 spawnPosition = player.position;
         Quaternion spawnRotation = player.rotation;
         
-        // Check if respawning from death
-        if (GameSession.IsRespawning && GameSession.HasCheckpoint)
+        // Check if respawning from death with a valid checkpoint for THIS level
+        bool matchesScene = GameSession.CheckpointSceneName == UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        
+        if (GameSession.IsRespawning && GameSession.HasCheckpoint && matchesScene)
         {
             spawnPosition = GameSession.CheckpointPosition;
             spawnRotation = GameSession.CheckpointRotation;
@@ -131,7 +137,7 @@ public class LevelTwoReturnManager : MonoBehaviour
             return;
         }
         // Use battle trigger center if returning from battle
-        else if (GameSession.BattleTriggerCenter != Vector3.zero && GameSession.EnemyDefeated)
+        else if (GameSession.BattleTriggerCenter != Vector3.zero && GameSession.CombatWingVictory)
         {
             spawnPosition = GameSession.BattleTriggerCenter;
             spawnPosition += new Vector3(0, 0, -3f); // Move back 3 units to avoid re-trigger
@@ -158,6 +164,14 @@ public class LevelTwoReturnManager : MonoBehaviour
         
         // Clear the return position flag
         GameSession.HasReturnPosition = false;
+        
+        // Safety: If we don't have a valid checkpoint for this level yet, save one now at spawn position
+        // This ensures if the player dies instantly, they don't respawn in the abyss
+        if (!GameSession.HasCheckpoint || GameSession.CheckpointSceneName != UnityEngine.SceneManagement.SceneManager.GetActiveScene().name)
+        {
+            if (debugMode) Debug.Log($"[LevelTwoReturnManager] 🛡️ Saving initial safety checkpoint at {player.position}");
+            GameSession.SaveCheckpoint(player.position, player.rotation);
+        }
     }
     
     /// <summary>
@@ -165,7 +179,7 @@ public class LevelTwoReturnManager : MonoBehaviour
     /// </summary>
     private void HandleEnemyState()
     {
-        if (enemyRoots == null || enemyRoots.Length == 0 || !GameSession.EnemyDefeated) return;
+        if (enemyRoots == null || enemyRoots.Length == 0 || !GameSession.CombatWingVictory) return;
         
         foreach (GameObject enemyRoot in enemyRoots)
         {
@@ -200,7 +214,7 @@ public class LevelTwoReturnManager : MonoBehaviour
     /// </summary>
     private void HandleBattleTriggers()
     {
-        if (!GameSession.EnemyDefeated && !GameSession.CombatWingVictory) return;
+        if (!GameSession.CombatWingVictory) return;
         
         // Disable assigned triggers
         if (combatWingTriggers != null)

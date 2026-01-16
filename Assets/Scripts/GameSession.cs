@@ -3,7 +3,8 @@ using UnityEngine;
 public static class GameSession
 {
     // Enemy state
-    public static bool EnemyDefeated;
+    // Enemy state
+    public static bool LevelOneEnemyDefeated;
 
     // Player position state
     public static bool HasReturnPosition;
@@ -73,6 +74,7 @@ public static class GameSession
     public static bool HasCheckpoint;
     public static Vector3 CheckpointPosition;
     public static Quaternion CheckpointRotation;
+    public static string CheckpointSceneName; // Track which scene the checkpoint belongs to
     public static bool IsRespawning; // Flag to indicate we're loading from death
     
     // Flashback system (for returning after flashback scene)
@@ -108,7 +110,8 @@ public static class GameSession
         HasCheckpoint = true;
         CheckpointPosition = pos;
         CheckpointRotation = rot;
-        Debug.Log($"[GameSession] ✅ Checkpoint saved at {pos}, rotation {rot.eulerAngles}");
+        CheckpointSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        Debug.Log($"[GameSession] ✅ Checkpoint saved at {pos} in {CheckpointSceneName}");
     }
     
     /// <summary>
@@ -123,6 +126,7 @@ public static class GameSession
         HasCheckpoint = false;
         CheckpointPosition = Vector3.zero;
         CheckpointRotation = Quaternion.identity;
+        CheckpointSceneName = "";
         IsRespawning = false;
         
         Debug.Log("[GameSession] 🧹 Positional flags cleared for new level.");
@@ -131,7 +135,7 @@ public static class GameSession
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     public static void Reset()
     {
-        EnemyDefeated = false;
+        LevelOneEnemyDefeated = false;
         HasReturnPosition = false;
         ReturnPosition = default;
         BattleTriggerCenter = default;
@@ -157,11 +161,15 @@ public static class GameSession
         HasCheckpoint = false;
         CheckpointPosition = default;
         CheckpointRotation = default;
+        CheckpointSceneName = "";
         IsRespawning = false;
         
         // Reset fragment collection
         HasCollectedRedFragment = false;
         HasCollectedBlueFragment = false;
         HasCollectedPurpleFragment = false;
+        
+        // Reset boss door cutscene
+        HasPlayedBossDoorCutscene = false;
     }
 }

@@ -2,6 +2,9 @@
 
 This game is a turnbased stategy game where the player must navigate a dungeon with a fragmented memory. Navigating clues and combatting enemies to regain memory fragments. The combat style is a unique deck drawing system where the player must use cards to deal damage, block or evade enemies.
 
+## VoiceOvers
+Character Voices - generated with Eleven Labs https://elevenlabs.io/
+
 ## External Assets Used
 
 This project makes use of the following third-party assets from the Unity Asset Store and other sources:
@@ -14,3 +17,6 @@ This project makes use of the following third-party assets from the Unity Asset 
 * **Lite Dungeon Pack**: [Unity Asset Store](https://assetstore.unity.com/packages/p/lite-dungeon-pack-low-poly-3d-art-by-gridness-242692)
 * **Procedural Fire**: [Unity Asset Store](https://assetstore.unity.com/packages/p/procedural-fire-141496)
 * **Stylized Low Poly Skeleton**: [Unity Asset Store](https://assetstore.unity.com/packages/p/stylized-low-poly-skeleton-306857)
+
+## GenAI Statement
+AI was used for some code reviews and in image generation.
