@@ -47,9 +47,9 @@ public class CaptionManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Show a caption with specified text, color, and duration
+    /// Show a caption with specified text, color, duration, and optional audio
     /// </summary>
-    public void ShowCaption(string text, CaptionType type = CaptionType.Instruction, float? customDuration = null)
+    public void ShowCaption(string text, CaptionType type = CaptionType.Instruction, float? customDuration = null, string audioName = null)
     {
         // Stop any current caption
         if (currentCaptionCoroutine != null)
@@ -58,47 +58,53 @@ public class CaptionManager : MonoBehaviour
         }
         
         // Start new caption
-        currentCaptionCoroutine = StartCoroutine(DisplayCaptionCoroutine(text, type, customDuration ?? displayDuration));
+        currentCaptionCoroutine = StartCoroutine(DisplayCaptionCoroutine(text, type, customDuration ?? displayDuration, audioName));
     }
     
     /// <summary>
     /// Show an instruction caption (like "Escape the cell")
     /// </summary>
-    public void ShowInstruction(string text, float? duration = null)
+    public void ShowInstruction(string text, float? duration = null, string audioName = null)
     {
-        ShowCaption(text, CaptionType.Instruction, duration);
+        ShowCaption(text, CaptionType.Instruction, duration, audioName);
     }
     
     /// <summary>
     /// Show an internal monologue caption (like "I wonder if this key would work on the door")
     /// </summary>
-    public void ShowMonologue(string text, float? duration = null)
+    public void ShowMonologue(string text, float? duration = null, string audioName = null)
     {
-        ShowCaption(text, CaptionType.Monologue, duration);
+        ShowCaption(text, CaptionType.Monologue, duration, audioName);
     }
     
     /// <summary>
     /// Show a system message (like "Key picked up")
     /// </summary>
-    public void ShowSystemMessage(string text, float? duration = null)
+    public void ShowSystemMessage(string text, float? duration = null, string audioName = null)
     {
-        ShowCaption(text, CaptionType.System, duration);
+        ShowCaption(text, CaptionType.System, duration, audioName);
     }
     
     /// <summary>
     /// Show a flashback caption (red color for memory sequences)
     /// </summary>
-    public void ShowFlashback(string text, float? duration = null)
+    public void ShowFlashback(string text, float? duration = null, string audioName = null)
     {
-        ShowCaption(text, CaptionType.Flashback, duration);
+        ShowCaption(text, CaptionType.Flashback, duration, audioName);
     }
     
-    private IEnumerator DisplayCaptionCoroutine(string text, CaptionType type, float duration)
+    private IEnumerator DisplayCaptionCoroutine(string text, CaptionType type, float duration, string audioName)
     {
         if (captionPanel == null || captionText == null)
         {
             Debug.LogWarning("CaptionManager: Missing UI components!");
             yield break;
+        }
+        
+        // Play audio if provided
+        if (!string.IsNullOrEmpty(audioName) && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.Play(audioName);
         }
         
         // Set up the caption

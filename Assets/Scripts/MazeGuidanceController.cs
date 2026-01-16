@@ -21,6 +21,22 @@ public class MazeGuidanceController : MonoBehaviour
     [Header("Dialogue References")]
     [SerializeField] private LevelTwoCaptionController captionController;
     
+    [Header("Dialogue Audio Clips")]
+    [Tooltip("Entry dialogue: 3 clips for Fragment, Player, Fragment")]
+    [SerializeField] private AudioClip[] mazeEntryAudio; // 3 clips
+    
+    [Tooltip("Help dialogue: 3 clips for Fragment, Fragment, Player")]
+    [SerializeField] private AudioClip[] yellowFragmentHelpAudio; // 3 clips
+    
+    [Tooltip("Reached blue fragment: 2 clips for Fragment, Fragment")]
+    [SerializeField] private AudioClip[] reachedBlueAudio; // 2 clips
+    
+    [Tooltip("Blue collected dialogue: 3 clips for Blue Fragment, Player, Blue Fragment")]
+    [SerializeField] private AudioClip[] blueCollectedAudio; // 3 clips
+    
+    [Tooltip("Reached entrance: 3 clips for Blue Fragment, Player, Blue Fragment")]
+    [SerializeField] private AudioClip[] reachedEntranceAudio; // 3 clips
+    
     [Header("Timer Settings")]
     [SerializeField] private float helpTimerDuration = 600f; // 10 minutes in seconds
     [SerializeField] private bool debugMode = true; // Enabled for debugging
@@ -256,11 +272,16 @@ public class MazeGuidanceController : MonoBehaviour
     /// </summary>
     private IEnumerator MazeEntryDialogueSequence()
     {
-        yield return captionController.ShowDialogue("Fragment", "This place... it's like a labyrinth of knowledge.", 3f);
+        AudioClip audio0 = (mazeEntryAudio != null && mazeEntryAudio.Length > 0) ? mazeEntryAudio[0] : null;
+        yield return captionController.ShowDialogue("Fragment", "This place... it's like a labyrinth of knowledge.", 3f, audio0);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Player", "Stay close. We need to find what we're looking for in here.", 3f);
+        
+        AudioClip audio1 = (mazeEntryAudio != null && mazeEntryAudio.Length > 1) ? mazeEntryAudio[1] : null;
+        yield return captionController.ShowDialogue("Player", "Stay close. We need to find what we're looking for in here.", 3f, audio1);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Fragment", "I sense something important deeper within. But this maze is vast...", 3f);
+        
+        AudioClip audio2 = (mazeEntryAudio != null && mazeEntryAudio.Length > 2) ? mazeEntryAudio[2] : null;
+        yield return captionController.ShowDialogue("Fragment", "I sense something important deeper within. But this maze is vast...", 3f, audio2);
     }
     
     /// <summary>
@@ -285,11 +306,16 @@ public class MazeGuidanceController : MonoBehaviour
     /// </summary>
     private IEnumerator YellowFragmentHelpSequence()
     {
-        yield return captionController.ShowDialogue("Fragment", "You've been wandering for quite some time...", 3f);
+        AudioClip audio0 = (yellowFragmentHelpAudio != null && yellowFragmentHelpAudio.Length > 0) ? yellowFragmentHelpAudio[0] : null;
+        yield return captionController.ShowDialogue("Fragment", "You've been wandering for quite some time...", 3f, audio0);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Fragment", "I can sense another fragment nearby. Let me guide you to it.", 3f);
+        
+        AudioClip audio1 = (yellowFragmentHelpAudio != null && yellowFragmentHelpAudio.Length > 1) ? yellowFragmentHelpAudio[1] : null;
+        yield return captionController.ShowDialogue("Fragment", "I can sense another fragment nearby. Let me guide you to it.", 3f, audio1);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Player", "That would be helpful. Lead the way.", 2f);
+        
+        AudioClip audio2 = (yellowFragmentHelpAudio != null && yellowFragmentHelpAudio.Length > 2) ? yellowFragmentHelpAudio[2] : null;
+        yield return captionController.ShowDialogue("Player", "That would be helpful. Lead the way.", 2f, audio2);
         
         // Start guidance to blue fragment
         StartGuidanceToBlueFragment();
@@ -359,11 +385,16 @@ public class MazeGuidanceController : MonoBehaviour
     {
         yield return new WaitForSeconds(1f); // Wait for collection animation
         
-        yield return captionController.ShowDialogue("Blue Fragment", "Thank you for freeing me from this maze!", 3f);
+        AudioClip audio0 = (blueCollectedAudio != null && blueCollectedAudio.Length > 0) ? blueCollectedAudio[0] : null;
+        yield return captionController.ShowDialogue("Blue Fragment", "Thank you for freeing me from this maze!", 3f, audio0);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Player", "We should get out of here.", 3f);
+        
+        AudioClip audio1 = (blueCollectedAudio != null && blueCollectedAudio.Length > 1) ? blueCollectedAudio[1] : null;
+        yield return captionController.ShowDialogue("Player", "We should get out of here.", 3f, audio1);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Blue Fragment", "Best to hold the left wall!", 3f);
+        
+        AudioClip audio2 = (blueCollectedAudio != null && blueCollectedAudio.Length > 2) ? blueCollectedAudio[2] : null;
+        yield return captionController.ShowDialogue("Blue Fragment", "Best to hold the left wall!", 3f, audio2);
         
         // Guidance removed per user request - fragment just follows normally
     }
@@ -464,9 +495,12 @@ public class MazeGuidanceController : MonoBehaviour
     /// </summary>
     private IEnumerator ReachedBlueFragmentDialogue()
     {
-        yield return captionController.ShowDialogue("Fragment", "There! I can sense it strongly now.", 2f);
+        AudioClip audio0 = (reachedBlueAudio != null && reachedBlueAudio.Length > 0) ? reachedBlueAudio[0] : null;
+        yield return captionController.ShowDialogue("Fragment", "There! I can sense it strongly now.", 2f, audio0);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Fragment", "The blue fragment should be very close. Look around!", 3f);
+        
+        AudioClip audio1 = (reachedBlueAudio != null && reachedBlueAudio.Length > 1) ? reachedBlueAudio[1] : null;
+        yield return captionController.ShowDialogue("Fragment", "The blue fragment should be very close. Look around!", 3f, audio1);
     }
     
     /// <summary>
@@ -495,11 +529,16 @@ public class MazeGuidanceController : MonoBehaviour
     /// </summary>
     private IEnumerator ReachedEntranceDialogue()
     {
-        yield return captionController.ShowDialogue("Blue Fragment", "Here we are - back to the entrance!", 2f);
+        AudioClip audio0 = (reachedEntranceAudio != null && reachedEntranceAudio.Length > 0) ? reachedEntranceAudio[0] : null;
+        yield return captionController.ShowDialogue("Blue Fragment", "Here we are - back to the entrance!", 2f, audio0);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Player", "Thanks for the help. That maze was more confusing than I thought.", 3f);
+        
+        AudioClip audio1 = (reachedEntranceAudio != null && reachedEntranceAudio.Length > 1) ? reachedEntranceAudio[1] : null;
+        yield return captionController.ShowDialogue("Player", "Thanks for the help. That maze was more confusing than I thought.", 3f, audio1);
         yield return new WaitForSeconds(0.5f);
-        yield return captionController.ShowDialogue("Blue Fragment", "Happy to help! Now we can continue our journey together.", 3f);
+        
+        AudioClip audio2 = (reachedEntranceAudio != null && reachedEntranceAudio.Length > 2) ? reachedEntranceAudio[2] : null;
+        yield return captionController.ShowDialogue("Blue Fragment", "Happy to help! Now we can continue our journey together.", 3f, audio2);
     }
     
     /// <summary>

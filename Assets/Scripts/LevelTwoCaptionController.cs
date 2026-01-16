@@ -21,16 +21,14 @@ public class LevelTwoCaptionController : MonoBehaviour
     [SerializeField] private string hallwayPrompt = "[Fragment] Through there... I sense something.";
     [SerializeField] private string hallwayApproach = "[You] A passage. Where does it lead?";
 
-    [Header("Voice Clips (Level Two)")]
-    [SerializeField] private AudioSource voiceSource;
-
-    [SerializeField] private AudioClip l2_001_archive;
-    [SerializeField] private AudioClip l2_002_texts;
-    [SerializeField] private AudioClip l2_003_whatIsThis;
-    [SerializeField] private AudioClip l2_004_beCareful;
-    [SerializeField] private AudioClip l2_005_watching;
-    [SerializeField] private AudioClip l2_006_throughThere;
-    [SerializeField] private AudioClip l2_007_passage;
+    [Header("Audio Clips")]
+    [SerializeField] private AudioClip[] archiveArrivalAudio;
+    [SerializeField] private AudioClip[] explorationAudio;
+    [SerializeField] private AudioClip hallwayPromptAudio;
+    [SerializeField] private AudioClip hallwayApproachAudio;
+    
+    [Header("Audio Source")]
+    [SerializeField] private AudioSource dialogueAudioSource;
 
     [Header("Timing")]
     [SerializeField] private float startDelay = 1.5f;
@@ -57,12 +55,13 @@ public class LevelTwoCaptionController : MonoBehaviour
         mainCamera = Camera.main;
         playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
 
-        // Auto-grab AudioSource if not assigned
-        if (voiceSource == null)
+        // Initialize AudioSource if not assigned
+        if (dialogueAudioSource == null)
         {
-            voiceSource = GetComponent<AudioSource>();
+            dialogueAudioSource = gameObject.AddComponent<AudioSource>();
+            dialogueAudioSource.playOnAwake = false;
         }
-        
+
         // Load saved state from GameSession
         hasShownArrival = GameSession.HasShownLevelTwoArrival;
         hasShownHallwayPrompt = GameSession.HasShownLevelTwoHallway;
@@ -96,23 +95,22 @@ public class LevelTwoCaptionController : MonoBehaviour
         GameSession.HasShownLevelTwoArrival = true; // Persist to survive scene reload
 
         // Arrival dialogue (3)
-        yield return StartCoroutine(ShowLineWithVoice(archiveArrivalDialogue[0], l2_001_archive));
-        yield return new WaitForSeconds(dialoguePauseDuration);
-
-        yield return StartCoroutine(ShowLineWithVoice(archiveArrivalDialogue[1], l2_002_texts));
-        yield return new WaitForSeconds(dialoguePauseDuration);
-
-        yield return StartCoroutine(ShowLineWithVoice(archiveArrivalDialogue[2], l2_003_whatIsThis));
-        yield return new WaitForSeconds(dialoguePauseDuration);
+        for (int i = 0; i < archiveArrivalDialogue.Length; i++)
+        {
+            AudioClip audioClip = (archiveArrivalAudio != null && i < archiveArrivalAudio.Length) ? archiveArrivalAudio[i] : null;
+            yield return StartCoroutine(ShowLineWithAudio(archiveArrivalDialogue[i], audioClip));
+            yield return new WaitForSeconds(dialoguePauseDuration);
+        }
 
         yield return new WaitForSeconds(1f);
 
         // Exploration dialogue (2)
-        yield return StartCoroutine(ShowLineWithVoice(explorationDialogue[0], l2_004_beCareful));
-        yield return new WaitForSeconds(dialoguePauseDuration);
-
-        yield return StartCoroutine(ShowLineWithVoice(explorationDialogue[1], l2_005_watching));
-        yield return new WaitForSeconds(dialoguePauseDuration);
+        for (int i = 0; i < explorationDialogue.Length; i++)
+        {
+            AudioClip audioClip = (explorationAudio != null && i < explorationAudio.Length) ? explorationAudio[i] : null;
+            yield return StartCoroutine(ShowLineWithAudio(explorationDialogue[i], audioClip));
+            yield return new WaitForSeconds(dialoguePauseDuration);
+        }
 
         if (PlayerMovementLock.Instance != null)
             PlayerMovementLock.Instance.UnlockMovement("Archive intro complete");
@@ -134,8 +132,8 @@ public class LevelTwoCaptionController : MonoBehaviour
         if (PlayerMovementLock.Instance != null)
             PlayerMovementLock.Instance.LockMovement("Hallway discovery");
 
-        // Fragment prompt + voice
-        yield return StartCoroutine(ShowLineWithVoice(hallwayPrompt, l2_006_throughThere));
+        // Fragment prompt + audio
+        yield return StartCoroutine(ShowLineWithAudio(hallwayPrompt, hallwayPromptAudio));
 
         // Pan camera
         if (hallwayTarget != null && mainCamera != null)
@@ -145,8 +143,8 @@ public class LevelTwoCaptionController : MonoBehaviour
 
         yield return new WaitForSeconds(hallwayPanDuration + panHoldDuration + hallwayPanDuration);
 
-        // Player response + voice
-        yield return StartCoroutine(ShowLineWithVoice(hallwayApproach, l2_007_passage));
+        // Player response + audio
+        yield return StartCoroutine(ShowLineWithAudio(hallwayApproach, hallwayApproachAudio));
 
         yield return new WaitForSeconds(monologueDuration);
 
@@ -156,27 +154,19 @@ public class LevelTwoCaptionController : MonoBehaviour
         Debug.Log("[LevelTwoCaptionController] Hallway discovery sequence complete");
     }
 
-    private IEnumerator ShowLineWithVoice(string line, AudioClip clip)
+    private IEnumerator ShowLineWithAudio(string line, AudioClip audioClip)
     {
+        // Show caption text
         if (CaptionManager.Instance != null)
         {
-            CaptionManager.Instance.ShowMonologue(line, monologueDuration);
+            CaptionManager.Instance.ShowMonologue(line, monologueDuration, null);
         }
 
-        // DEBUG: Check audio setup
-        Debug.Log($"[LevelTwoCaptionController] Audio Debug - voiceSource: {(voiceSource != null ? "Found" : "NULL")}, clip: {(clip != null ? clip.name : "NULL")}");
-
-        if (voiceSource != null && clip != null)
+        // Play audio if provided
+        if (audioClip != null && dialogueAudioSource != null)
         {
-            voiceSource.Stop();
-            voiceSource.clip = clip;
-            voiceSource.Play();
-            Debug.Log($"[LevelTwoCaptionController] Playing audio: {clip.name}");
-        }
-        else
-        {
-            if (voiceSource == null) Debug.LogError("[LevelTwoCaptionController] voiceSource is NULL! Add AudioSource component to this GameObject.");
-            if (clip == null) Debug.LogError("[LevelTwoCaptionController] AudioClip is NULL! Assign audio clips in the inspector.");
+            dialogueAudioSource.clip = audioClip;
+            dialogueAudioSource.Play();
         }
 
         yield return new WaitForSeconds(monologueDuration);
@@ -230,21 +220,27 @@ public class LevelTwoCaptionController : MonoBehaviour
         TriggerHallwayDiscovery();
     }
 
-    public IEnumerator ShowDialogue(string speaker, string message, float duration)
+    public IEnumerator ShowDialogue(string speaker, string message, float duration, AudioClip audioClip = null)
     {
+        // Show caption text
         if (CaptionManager.Instance != null)
         {
             string formattedMessage = $"[{speaker}] {message}";
-            CaptionManager.Instance.ShowMonologue(formattedMessage, duration);
-
-            // optional: no voice here unless you add mapping
-            yield return new WaitForSeconds(duration);
+            CaptionManager.Instance.ShowMonologue(formattedMessage, duration, null);
         }
         else
         {
             Debug.LogWarning("[LevelTwoCaptionController] CaptionManager not found!");
-            yield return new WaitForSeconds(duration);
         }
+
+        // Play audio if provided
+        if (audioClip != null && dialogueAudioSource != null)
+        {
+            dialogueAudioSource.clip = audioClip;
+            dialogueAudioSource.Play();
+        }
+
+        yield return new WaitForSeconds(duration);
     }
 
     /// <summary>
@@ -252,14 +248,7 @@ public class LevelTwoCaptionController : MonoBehaviour
     /// </summary>
     public bool IsDialoguePlaying()
     {
-        return voiceSource != null && voiceSource.isPlaying;
+        return dialogueAudioSource != null && dialogueAudioSource.isPlaying;
     }
 
-    /// <summary>
-    /// Get the AudioSource used for dialogue (for external systems to check)
-    /// </summary>
-    public AudioSource GetVoiceSource()
-    {
-        return voiceSource;
-    }
 }
