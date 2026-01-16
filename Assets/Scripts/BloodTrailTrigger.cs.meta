@@ -3,7 +3,12 @@ guid: 8ced782e11eb44fdbab610d6cc0531f6
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - voiceSource: {instanceID: 0}
+  - bt_001_fragment_bloodOld: {fileID: 8300000, guid: cdc2f8a274fd8453480f03df6d72e21a, type: 3}
+  - bt_002_you_escapeBefore: {fileID: 8300000, guid: e7fe474991216413b9ff7e5634cf75bd, type: 3}
+  - bt_003_fragment_manyNone: {fileID: 8300000, guid: 16704cab4cbf14a979badb2c9e09fb37, type: 3}
+  - bt_004_you_untilNow: {fileID: 8300000, guid: 98d98305277d14c6f9b6bcc6584fad8f, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

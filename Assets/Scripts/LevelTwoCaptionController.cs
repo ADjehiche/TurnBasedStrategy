@@ -49,6 +49,7 @@ public class LevelTwoCaptionController : MonoBehaviour
     private bool hasShownArrival = false;
     private bool hasShownHallwayPrompt = false;
     private bool isPanningToHallway = false;
+
     private Camera mainCamera;
     private Transform playerTransform;
 
@@ -57,7 +58,7 @@ public class LevelTwoCaptionController : MonoBehaviour
         mainCamera = Camera.main;
         playerTransform = GameObject.FindGameObjectWithTag("Player")?.transform;
 
-        // Auto-grab AudioSource if not assigned
+        // Make sure we have an AudioSource
         if (voiceSource == null)
         {
             voiceSource = GetComponent<AudioSource>();
@@ -66,6 +67,15 @@ public class LevelTwoCaptionController : MonoBehaviour
         // Load saved state from GameSession
         hasShownArrival = GameSession.HasShownLevelTwoArrival;
         hasShownHallwayPrompt = GameSession.HasShownLevelTwoHallway;
+
+        // ✅ Prevent any wrong clip from playing automatically at scene start
+        if (voiceSource != null)
+        {
+            voiceSource.playOnAwake = false;
+            voiceSource.loop = false;
+            voiceSource.Stop();
+            voiceSource.clip = null;
+        }
 
         if (!hasShownArrival)
         {
@@ -91,11 +101,10 @@ public class LevelTwoCaptionController : MonoBehaviour
             PlayerMovementLock.Instance.LockMovement("Archive arrival sequence");
 
         yield return new WaitForSeconds(startDelay);
-
         hasShownArrival = true;
         GameSession.HasShownLevelTwoArrival = true; // Persist to survive scene reload
 
-        // Arrival dialogue (3)
+        // Arrival dialogue (correct order)
         yield return StartCoroutine(ShowLineWithVoice(archiveArrivalDialogue[0], l2_001_archive));
         yield return new WaitForSeconds(dialoguePauseDuration);
 
@@ -107,7 +116,7 @@ public class LevelTwoCaptionController : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
 
-        // Exploration dialogue (2)
+        // Exploration dialogue
         yield return StartCoroutine(ShowLineWithVoice(explorationDialogue[0], l2_004_beCareful));
         yield return new WaitForSeconds(dialoguePauseDuration);
 
@@ -116,8 +125,6 @@ public class LevelTwoCaptionController : MonoBehaviour
 
         if (PlayerMovementLock.Instance != null)
             PlayerMovementLock.Instance.UnlockMovement("Archive intro complete");
-
-        Debug.Log("[LevelTwoCaptionController] Archive arrival sequence complete");
     }
 
     public void TriggerHallwayDiscovery()
@@ -152,31 +159,27 @@ public class LevelTwoCaptionController : MonoBehaviour
 
         if (PlayerMovementLock.Instance != null)
             PlayerMovementLock.Instance.UnlockMovement("Hallway discovery complete");
-
-        Debug.Log("[LevelTwoCaptionController] Hallway discovery sequence complete");
     }
 
     private IEnumerator ShowLineWithVoice(string line, AudioClip clip)
     {
+        // Show subtitle
         if (CaptionManager.Instance != null)
         {
             CaptionManager.Instance.ShowMonologue(line, monologueDuration);
         }
 
-        // DEBUG: Check audio setup
-        Debug.Log($"[LevelTwoCaptionController] Audio Debug - voiceSource: {(voiceSource != null ? "Found" : "NULL")}, clip: {(clip != null ? clip.name : "NULL")}");
-
-        if (voiceSource != null && clip != null)
+        // Play audio
+        if (voiceSource != null)
         {
             voiceSource.Stop();
-            voiceSource.clip = clip;
-            voiceSource.Play();
-            Debug.Log($"[LevelTwoCaptionController] Playing audio: {clip.name}");
-        }
-        else
-        {
-            if (voiceSource == null) Debug.LogError("[LevelTwoCaptionController] voiceSource is NULL! Add AudioSource component to this GameObject.");
-            if (clip == null) Debug.LogError("[LevelTwoCaptionController] AudioClip is NULL! Assign audio clips in the inspector.");
+            voiceSource.clip = null;
+
+            if (clip != null)
+            {
+                voiceSource.clip = clip;
+                voiceSource.Play();
+            }
         }
 
         yield return new WaitForSeconds(monologueDuration);
@@ -230,21 +233,20 @@ public class LevelTwoCaptionController : MonoBehaviour
         TriggerHallwayDiscovery();
     }
 
+    // ✅ REQUIRED by MazeGuidanceController + TeleportBlueFragmentCollectable (fixes your CS1061 errors)
     public IEnumerator ShowDialogue(string speaker, string message, float duration)
     {
         if (CaptionManager.Instance != null)
         {
             string formattedMessage = $"[{speaker}] {message}";
             CaptionManager.Instance.ShowMonologue(formattedMessage, duration);
-
-            // optional: no voice here unless you add mapping
-            yield return new WaitForSeconds(duration);
         }
         else
         {
             Debug.LogWarning("[LevelTwoCaptionController] CaptionManager not found!");
-            yield return new WaitForSeconds(duration);
         }
+
+        yield return new WaitForSeconds(duration);
     }
 
     /// <summary>
