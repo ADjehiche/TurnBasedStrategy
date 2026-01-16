@@ -43,7 +43,7 @@ jobs:
       # Common examples: "Build", "WebGLBuild", "docs", "dist", etc.
       - name: Set web root
         run: |
-          echo "WEB_DIR=Build" >> $GITHUB_ENV
+          echo "WEB_DIR=build" >> $GITHUB_ENV
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
